@@ -6,20 +6,17 @@ Core da plataforma SaaS multi-tenant responsável pela ingestão de inventário 
 
 ## 🛠️ Stack Tecnológica
 
-- **Runtime & Linguagem**: Node.js 22 LTS / TypeScript 5.7+
+- **Runtime & Linguagem**: Node.js 22 LTS / TypeScript 5.7+ (NodeNext)
+- **Servidor HTTP**: Fastify v5 com compressão GZIP/Deflate em tempo real (`@fastify/compress`) e CORS
 - **ORM & Banco de Dados**: Prisma ORM v6 + PostgreSQL Multi-tenant (Shared Database / Shared Schema)
 - **Filas & Mensageria**: BullMQ v6 + Redis
 - **Cache & Rate Limiting**: IORedis (Sliding Window Log & Concorrência por Host DMS)
-- **Integrações de Catálogo**: Meta Graph API (Business SDK) & Feeds XML DAA
+- **Streaming Parser**: SAX Stream, iconv-lite, unzipper e Circuit Breaker
+- **Integrações de Catálogo**: Meta Graph API v21.0 & Feeds XML Atom/Google Base DAA
 
 ---
 
-## 🏛️ Arquitetura de Dados & Multi-Tenancy
-
-O sistema adota o padrão **Shared Database com Segregação Lógica estrita por `workspace_id`**:
-- Todas as entidades de estoque, feeds e logs possuem a chave estrangeira `workspace_id`.
-- Índices compostos de alta performance para garantir consultas `< 60ms` e unicidade de veículos por loja (`uq_workspace_vehicle_external_id`).
-- Extensão do Prisma Client (`createTenantPrisma(workspaceId)`) para injeção automática e segura de escopo de tenant em queries e mutations.
+## 🏛️ Estrutura Arquitetural do Projeto
 
 ```
 backend-api/
@@ -37,8 +34,15 @@ backend-api/
 │   ├── lib/
 │   │   ├── prisma.ts              # Instância singleton do PrismaClient
 │   │   └── tenant-prisma.ts       # Extensão Multi-Tenant com escopo automático
-│   └── types/
-│       └── database.ts            # Tipagens canônicas JSON (imagens, opcionais, filtros)
+│   ├── modules/
+│   │   ├── xml-ingestion/         # Streaming Parser SAX, Circuit Breaker e Retry com Jitter
+│   │   ├── normalization/         # Auto-Matching Engine, normalizadores de marcas, anos e preços
+│   │   ├── stock-diff/            # Motor de Diffs (CREATE, UPDATE, SOLD, UNCHANGED) e SyncService
+│   │   ├── meta-feed/             # Gerador XML Atom Meta DAA e Controller de Feed Público
+│   │   └── meta-connector/        # OAuth 2.0 (Login for Business) e Cliente Graph API v21.0
+│   ├── types/
+│   │   └── database.ts            # Tipagens canônicas JSON (imagens, opcionais, filtros)
+│   └── server.ts                  # Servidor HTTP Fastify com rotas de API
 ├── .env.example                   # Modelo de variáveis de ambiente
 ├── package.json                   # Dependências e scripts de execução
 └── tsconfig.json                  # Configurações do compilador TypeScript
@@ -46,15 +50,26 @@ backend-api/
 
 ---
 
+## 🌐 Rotas HTTP Principais
+
+| Método | Rota | Descrição |
+|---|---|---|
+| `GET` | `/health` | Health check de integridade do serviço |
+| `GET` | `/api/v1/feeds/:token/meta-vehicles.xml` | Feed XML público Meta DAA com GZIP, ETag e Cache Redis (15m) |
+| `GET` | `/api/v1/integrations/meta/auth-url` | Gera URL de autorização OAuth do Facebook Login for Business |
+| `POST` | `/api/v1/integrations/meta/callback` | Troca de tokens temporários por tokens de longa duração (60 dias) |
+| `GET` | `/api/v1/workspaces/:wsId/meta-catalogs/:catId/diagnostics` | Consulta de rejeições e conformidade na Meta Graph API |
+
+---
+
 ## 🚀 Como Executar Localmente
 
 ### 1. Pré-requisitos
 - Node.js `>= 22.0.0`
-- PostgreSQL 15+ ou instância gerenciada
+- PostgreSQL 15+
 - Redis 7+
 
 ### 2. Configuração de Variáveis de Ambiente
-Copie o arquivo de exemplo e ajuste as credenciais do seu banco e Redis:
 ```bash
 cp .env.example .env
 ```
@@ -66,42 +81,28 @@ npm install
 
 ### 4. Prisma ORM: Gerar Tipos e Carga de Seeds
 ```bash
-# Validar e formatar o schema
-npm run prisma:format
+# Validar schema e gerar o Prisma Client
 npm run prisma:validate
-
-# Gerar o Prisma Client
 npm run prisma:generate
 
-# Executar a carga de seeds de desenvolvimento (Revenda Auto Elite + 5 veículos)
+# Executar seeds de desenvolvimento
 npm run prisma:seed
+```
+
+### 5. Iniciar o Servidor Fastify
+```bash
+npm start
 ```
 
 ---
 
-## 📋 Scripts Disponíveis no `package.json`
+## 🧪 Bateria de Testes Automatizados
 
-| Comando | Descrição |
+| Comando | Escopo do Teste |
 |---|---|
-| `npm run build` | Compila o projeto TypeScript para a pasta `dist/` |
-| `npm run typecheck` | Executa verificação estrita de tipagem sem emitir código |
-| `npm run prisma:generate` | Atualiza e gera os tipos do `@prisma/client` |
-| `npm run prisma:format` | Formata o arquivo `prisma/schema.prisma` |
-| `npm run prisma:validate` | Valida sintaxe e integridade relacional do schema |
-| `npm run prisma:migrate` | Cria e aplica migrações em ambiente de desenvolvimento |
-| `npm run prisma:deploy` | Aplica migrações pendentes em ambiente de produção |
-| `npm run prisma:seed` | Executa o script de seeds (`prisma/seed.ts`) |
-| `npm run prisma:studio` | Abre a interface web do Prisma Studio no navegador |
-| `npm run test:infra` | Executa o smoke test das filas BullMQ, cache Redis e rate limiting |
-
----
-
-## 🔒 Segurança, Filas e RNFs
-
-1. **Tokens de Feeds Públicos**: Criptografia HMAC-SHA256 com salt individual por tenant e suporte a rotação com janela de tolerância de 48 horas.
-2. **Filas Assíncronas (BullMQ)**:
-   - `xml-ingestion-queue`: Streaming de arquivos de 50MB+ com consumo de Heap `< 256MB`.
-   - `meta-sync-queue`: Sincronização periódica e disparo de diagnósticos.
-   - `ai-blog-queue`: Processamento de artigos de SEO.
-3. **Cache de Feeds XML**: TTL de 15 minutos (900 segundos) e invalidação sob demanda em tempo real por `workspaceId` após alteração de estoque.
-4. **Rate Limiting Distribuído**: Sliding Window de 120 req/min para rotas públicas e limite de 3 conexões concorrentes por host de DMS parceiro.
+| `npm run test:infra` | Smoke test de filas BullMQ, cache Redis e rate limiting |
+| `npm run test:parser` | Teste do SAX Streaming Parser com 6 fixtures reais XML (AutoCerto, Altimus, Sisvag, BomControle, Webmotors) |
+| `npm run test:normalization` | Teste de Auto-Matching e normalização com feeds reais JSON (4Boss, JRCA) e XML |
+| `npm run test:diff` | Teste dos 4 cenários do motor de Diffs (Inserção, Inalterado, Preço/Km e Vendidos) |
+| `npm run test:meta-feed` | Teste da geração de XML Atom Meta DAA, ETag (304 Not Modified) e latência em cache |
+| `npm run test:meta-connector` | Teste de autenticação OAuth 2.0 (Anti-CSRF), Graph API e diagnósticos |
