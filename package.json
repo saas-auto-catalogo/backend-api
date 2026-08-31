@@ -1,0 +1,47 @@
+{
+  "name": "@saas-auto-catalogo/backend-api",
+  "version": "1.0.0",
+  "description": "Core da plataforma SaaS multi-tenant para ingestão de inventário automotivo e catálogos Meta Ads DAA",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:deploy": "prisma migrate deploy",
+    "prisma:seed": "tsx prisma/seed.ts",
+    "prisma:format": "prisma format",
+    "prisma:validate": "prisma validate",
+    "prisma:studio": "prisma studio",
+    "typecheck": "tsc --noEmit",
+    "test:infra": "tsx src/infra/test-infra.ts"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  },
+  "keywords": [
+    "saas",
+    "automotive",
+    "meta-ads",
+    "inventory",
+    "prisma",
+    "postgresql",
+    "multitenancy"
+  ],
+  "author": "SaaS Auto Catálogo",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "@prisma/client": "^6.4.1",
+    "bullmq": "^6.3.3",
+    "dotenv": "^16.4.7",
+    "ioredis": "^6.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.5",
+    "prisma": "^6.4.1",
+    "tsx": "^4.19.3",
+    "typescript": "^5.7.3"
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  }
+}

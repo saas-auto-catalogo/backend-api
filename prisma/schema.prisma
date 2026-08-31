@@ -1,0 +1,442 @@
+// ==============================================================================
+// SaaS Auto Catálogo - Schema do Prisma ORM Multi-Tenancy & PostgreSQL
+// ==============================================================================
+// Arquitetura: Shared Database, Shared Schema com isolamento por workspace_id
+// ==============================================================================
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// ------------------------------------------------------------------------------
+// ENUMS DE NEGÓCIO E SEGURANÇA
+// ------------------------------------------------------------------------------
+
+enum Role {
+  SUPER_ADMIN // Acesso Backoffice global (SaaS Team)
+  OWNER // Dono/Sócio da Revenda (Tenant Admin)
+  MANAGER // Gestor de Estoque/Tráfego (Operador do Catálogo)
+  VIEWER // Visualizador (Apenas Leitura)
+}
+
+enum WorkspaceStatus {
+  ACTIVE
+  SUSPENDED
+  CANCELLED
+}
+
+enum FeedSourceType {
+  AUTOCERTO
+  ALTIMUS
+  SISVAG
+  BOMCONTROLE
+  WEBMOTORS
+  BASE44
+  SPICE_DIGITAL
+  GENERIC_XML
+  GENERIC_JSON
+  CUSTOM_API
+}
+
+enum SyncStatus {
+  SUCCESS
+  PARTIAL_SUCCESS
+  FAILED
+  RUNNING
+}
+
+enum VehicleStatus {
+  AVAILABLE
+  RESERVED
+  SOLD
+}
+
+enum VehicleCondition {
+  NOVO
+  SEMINOVO
+  USADO
+}
+
+enum FuelType {
+  FLEX
+  GASOLINA
+  ETANOL
+  DIESEL
+  HIBRIDO
+  HIBRIDO_PLUG_IN
+  MHEV_HIBRIDO_LEVE
+  ELETRICO
+  GNV
+  TETRAFUEL
+  OUTRO
+}
+
+enum TransmissionType {
+  MANUAL
+  AUTOMATICO
+  AUTOMATIZADO
+  CVT
+  DUPLA_EMBREAGEM
+  SEMI_AUTOMATICO
+  OUTRO
+}
+
+enum BodyStyle {
+  SUV
+  SEDAN
+  HATCHBACK
+  COUPE
+  CONVERTIBLE
+  PICKUP
+  MINIVAN
+  VAN
+  WAGON
+  COMMERCIAL
+  MOTORCYCLE
+  OTHER
+}
+
+// ------------------------------------------------------------------------------
+// MODELOS DE TENANT, USUÁRIOS E AUTORIZAÇÃO
+// ------------------------------------------------------------------------------
+
+model Workspace {
+  id     String          @id @default(uuid()) @db.Uuid
+  name   String          @db.VarChar(255)
+  slug   String          @unique @db.VarChar(100)
+  cnpj   String?         @db.VarChar(20)
+  phone  String?         @db.VarChar(30)
+  city   String?         @db.VarChar(100)
+  state  String?         @db.VarChar(2)
+  status WorkspaceStatus @default(ACTIVE)
+
+  // Relacionamentos Multi-Tenant
+  dealerships  Dealership[]
+  members      WorkspaceMember[]
+  feedConfigs  FeedConfig[]
+  vehicles     Vehicle[]
+  metaCatalogs MetaCatalog[]
+  syncHistory  SyncHistory[]
+  auditLogs    AuditLog[]
+  subscription Subscription?
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("workspaces")
+}
+
+model Dealership {
+  id             String  @id @default(uuid()) @db.Uuid
+  workspaceId    String  @map("workspace_id") @db.Uuid
+  tradeName      String  @map("trade_name") @db.VarChar(255) // Nome Fantasia
+  legalName      String? @map("legal_name") @db.VarChar(255) // Razão Social
+  cnpj           String? @db.VarChar(20)
+  phone          String? @db.VarChar(30)
+  email          String? @db.VarChar(255)
+  address        String? @db.VarChar(255)
+  city           String? @db.VarChar(100)
+  state          String? @db.VarChar(2)
+  postalCode     String? @map("postal_code") @db.VarChar(10)
+  websiteUrl     String? @map("website_url") @db.VarChar(2000)
+  logoUrl        String? @map("logo_url") @db.VarChar(2000)
+  metaBusinessId String? @map("meta_business_id") @db.VarChar(100)
+  metaCatalogId  String? @map("meta_catalog_id") @db.VarChar(100)
+  isActive       Boolean @default(true) @map("is_active")
+
+  // Relacionamentos
+  workspace    Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  feedConfigs  FeedConfig[]
+  vehicles     Vehicle[]
+  metaCatalogs MetaCatalog[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([workspaceId])
+  @@index([cnpj])
+  @@map("dealerships")
+}
+
+model User {
+  id           String  @id @default(uuid()) @db.Uuid
+  email        String  @unique @db.VarChar(255)
+  name         String  @db.VarChar(255)
+  passwordHash String  @map("password_hash") @db.VarChar(255)
+  isSuperAdmin Boolean @default(false) @map("is_super_admin")
+  mfaEnabled   Boolean @default(false) @map("mfa_enabled")
+  mfaSecret    String? @map("mfa_secret") @db.VarChar(255)
+  avatarUrl    String? @map("avatar_url") @db.VarChar(1000)
+
+  // Relacionamentos
+  memberships WorkspaceMember[]
+  auditLogs   AuditLog[]        @relation("ActorAuditLogs")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("users")
+}
+
+model WorkspaceMember {
+  id          String @id @default(uuid()) @db.Uuid
+  workspaceId String @map("workspace_id") @db.Uuid
+  userId      String @map("user_id") @db.Uuid
+  role        Role   @default(MANAGER)
+
+  // Relacionamentos
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@unique([workspaceId, userId], name: "uq_workspace_user")
+  @@index([workspaceId, role])
+  @@map("workspace_members")
+}
+
+// ------------------------------------------------------------------------------
+// MODELOS DE CONFIGURAÇÃO DE FEED & SEGURANÇA DE TOKENS
+// ------------------------------------------------------------------------------
+
+model FeedConfig {
+  id                  String         @id @default(uuid()) @db.Uuid
+  workspaceId         String         @map("workspace_id") @db.Uuid
+  dealershipId        String?        @map("dealership_id") @db.Uuid
+  sourceType          FeedSourceType @map("source_type")
+  feedUrl             String         @map("feed_url") @db.VarChar(2000)
+  syncIntervalMinutes Int            @default(60) @map("sync_interval_minutes")
+  isActive            Boolean        @default(true) @map("is_active")
+
+  // Segurança de Token Público do Feed Meta DAA (HMAC-SHA256)
+  activeTokenHash     String    @map("active_token_hash") @db.VarChar(128)
+  tokenSalt           String    @map("token_salt") @db.VarChar(64)
+  previousTokenHash   String?   @map("previous_token_hash") @db.VarChar(128)
+  previousTokenExpiry DateTime? @map("previous_token_expiry")
+
+  lastSyncAt      DateTime?   @map("last_sync_at")
+  lastSyncStatus  SyncStatus? @map("last_sync_status")
+  lastSyncMessage String?     @map("last_sync_message") @db.Text
+
+  // Relacionamentos
+  workspace   Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  dealership  Dealership?   @relation(fields: [dealershipId], references: [id], onDelete: SetNull)
+  vehicles    Vehicle[]
+  syncHistory SyncHistory[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([workspaceId, isActive])
+  @@index([activeTokenHash])
+  @@index([previousTokenHash])
+  @@map("feed_configs")
+}
+
+// ------------------------------------------------------------------------------
+// MODELO CANÔNICO DE VEÍCULOS
+// ------------------------------------------------------------------------------
+
+model Vehicle {
+  id           String  @id @default(uuid()) @db.Uuid
+  workspaceId  String  @map("workspace_id") @db.Uuid
+  feedConfigId String  @map("feed_config_id") @db.Uuid
+  dealershipId String? @map("dealership_id") @db.Uuid
+
+  // Identificadores de Estoque
+  externalId   String  @map("external_id") @db.VarChar(255)
+  vin          String? @db.VarChar(50)
+  licensePlate String? @map("license_plate") @db.VarChar(20)
+  stockNumber  String? @map("stock_number") @db.VarChar(100)
+
+  // Dados Principais
+  make            String    @db.VarChar(100)
+  model           String    @db.VarChar(100)
+  version         String    @db.VarChar(255)
+  title           String    @db.VarChar(255)
+  bodyStyle       BodyStyle @map("body_style")
+  manufactureYear Int       @map("manufacture_year")
+  modelYear       Int       @map("model_year")
+  doors           Int       @default(4)
+  exteriorColor   String    @map("exterior_color") @db.VarChar(100)
+  interiorColor   String?   @map("interior_color") @db.VarChar(100)
+  mileage         Int       @default(0)
+
+  // Mecânica & Trem de Força
+  fuelType     FuelType         @map("fuel_type")
+  transmission TransmissionType
+  engineSize   String?          @map("engine_size") @db.VarChar(50)
+  drivetrain   String?          @db.VarChar(50)
+  armored      Boolean          @default(false)
+
+  // Comercial
+  price            Decimal          @db.Decimal(12, 2)
+  promotionalPrice Decimal?         @map("promotional_price") @db.Decimal(12, 2)
+  currency         String           @default("BRL") @db.VarChar(3)
+  priceOnRequest   Boolean          @default(false) @map("price_on_request")
+  condition        VehicleCondition @default(SEMINOVO)
+  status           VehicleStatus    @default(AVAILABLE)
+  hasWarranty      Boolean          @default(false) @map("has_warranty")
+  warrantyDetails  String?          @map("warranty_details") @db.VarChar(255)
+  canonicalUrl     String?          @map("canonical_url") @db.VarChar(2000)
+
+  // Mídia & Opcionais
+  heroImageUrl String @map("hero_image_url") @db.VarChar(2000)
+  images       Json // Array de VehicleImage [{ url, fullUrl, order, isPrimary }]
+  features     Json // Array de strings ["AR_CONDICIONADO", "COURO", ...]
+
+  // Descrições
+  description String  @db.Text
+  notes       String? @db.Text
+
+  // Metadados de Ingestão & Diff Engine
+  rawPayloadHash     String  @map("raw_payload_hash") @db.VarChar(64)
+  eligibleForMetaAds Boolean @default(true) @map("eligible_for_meta_ads")
+  validationWarnings Json?   @map("validation_warnings")
+
+  // Relacionamentos
+  workspace  Workspace   @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  feedConfig FeedConfig  @relation(fields: [feedConfigId], references: [id], onDelete: Cascade)
+  dealership Dealership? @relation(fields: [dealershipId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Índices Compostos Multi-Tenant
+  @@unique([workspaceId, externalId], name: "uq_workspace_vehicle_external_id")
+  @@index([workspaceId, vin])
+  @@index([workspaceId, status])
+  @@index([workspaceId, eligibleForMetaAds])
+  @@index([workspaceId, updatedAt(sort: Desc)])
+  @@map("vehicles")
+}
+
+// ------------------------------------------------------------------------------
+// CATÁLOGO META DAA & EXPORTAÇÕES
+// ------------------------------------------------------------------------------
+
+model MetaCatalog {
+  id                    String      @id @default(uuid()) @db.Uuid
+  workspaceId           String      @map("workspace_id") @db.Uuid
+  dealershipId          String?     @map("dealership_id") @db.Uuid
+  catalogName           String      @map("catalog_name") @db.VarChar(255)
+  metaCatalogId         String?     @map("meta_catalog_id") @db.VarChar(100)
+  feedFormat            String      @default("XML_DAA") @map("feed_format") @db.VarChar(50)
+  publicFeedUrl         String?     @map("public_feed_url") @db.VarChar(2000)
+  filterRules           Json?       @map("filter_rules")
+  totalVehiclesCount    Int         @default(0) @map("total_vehicles_count")
+  eligibleVehiclesCount Int         @default(0) @map("eligible_vehicles_count")
+  lastExportAt          DateTime?   @map("last_export_at")
+  lastExportStatus      SyncStatus? @map("last_export_status")
+
+  workspace  Workspace   @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  dealership Dealership? @relation(fields: [dealershipId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([workspaceId])
+  @@index([dealershipId])
+  @@map("meta_catalogs")
+}
+
+// ------------------------------------------------------------------------------
+// HISTÓRICO DE SINCRONIZAÇÃO E AUDITORIA
+// ------------------------------------------------------------------------------
+
+model SyncHistory {
+  id             String     @id @default(uuid()) @db.Uuid
+  workspaceId    String     @map("workspace_id") @db.Uuid
+  feedConfigId   String     @map("feed_config_id") @db.Uuid
+  status         SyncStatus
+  totalIngested  Int        @default(0) @map("total_ingested")
+  totalCreated   Int        @default(0) @map("total_created")
+  totalUpdated   Int        @default(0) @map("total_updated")
+  totalUnchanged Int        @default(0) @map("total_unchanged")
+  totalRemoved   Int        @default(0) @map("total_removed")
+  totalErrors    Int        @default(0) @map("total_errors")
+  durationMs     Int        @map("duration_ms")
+  errorMessage   String?    @map("error_message") @db.Text
+  details        Json?
+
+  workspace  Workspace  @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  feedConfig FeedConfig @relation(fields: [feedConfigId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([workspaceId, createdAt(sort: Desc)])
+  @@index([feedConfigId, createdAt(sort: Desc)])
+  @@map("sync_histories")
+}
+
+model AuditLog {
+  id          String  @id @default(uuid()) @db.Uuid
+  workspaceId String? @map("workspace_id") @db.Uuid
+  actorUserId String  @map("actor_user_id") @db.Uuid
+  actorEmail  String  @map("actor_email") @db.VarChar(255)
+  action      String  @db.VarChar(100)
+  entityName  String  @map("entity_name") @db.VarChar(100)
+  entityId    String? @map("entity_id") @db.VarChar(255)
+
+  // Rastreamento de Impersonation
+  impersonatedByUserId String? @map("impersonated_by_user_id") @db.Uuid
+  impersonationReason  String? @map("impersonation_reason") @db.VarChar(500)
+
+  ipAddress String? @map("ip_address") @db.VarChar(50)
+  userAgent String? @map("user_agent") @db.VarChar(500)
+  metadata  Json?
+
+  workspace Workspace? @relation(fields: [workspaceId], references: [id], onDelete: SetNull)
+  actorUser User       @relation("ActorAuditLogs", fields: [actorUserId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([workspaceId, createdAt(sort: Desc)])
+  @@index([actorUserId, createdAt(sort: Desc)])
+  @@index([action, createdAt(sort: Desc)])
+  @@map("audit_logs")
+}
+
+// ------------------------------------------------------------------------------
+// ASSINATURAS E PLANOS SAAS
+// ------------------------------------------------------------------------------
+
+model Subscription {
+  id               String   @id @default(uuid()) @db.Uuid
+  workspaceId      String   @unique @map("workspace_id") @db.Uuid
+  planTier         String   @map("plan_tier") @db.VarChar(50) // STARTER, PRO, ENTERPRISE
+  maxVehicles      Int      @default(100) @map("max_vehicles")
+  status           String   @db.VarChar(50) // ACTIVE, PAST_DUE, CANCELED
+  currentPeriodEnd DateTime @map("current_period_end")
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("subscriptions")
+}
+
+// ------------------------------------------------------------------------------
+// CONFIGURAÇÕES GLOBAIS DO SISTEMA (BACKOFFICE & ADMIN)
+// ------------------------------------------------------------------------------
+
+model AdminSetting {
+  id          String  @id @default(uuid()) @db.Uuid
+  key         String  @unique @db.VarChar(100)
+  value       String  @db.Text
+  valueType   String  @default("STRING") @map("value_type") @db.VarChar(20) // STRING, NUMBER, BOOLEAN, JSON
+  description String? @db.VarChar(255)
+  isPublic    Boolean @default(false) @map("is_public")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("admin_settings")
+}
