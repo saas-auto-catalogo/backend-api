@@ -13,7 +13,8 @@
     "prisma:validate": "prisma validate",
     "prisma:studio": "prisma studio",
     "typecheck": "tsc --noEmit",
-    "test:infra": "tsx src/infra/test-infra.ts"
+    "test:infra": "tsx src/infra/test-infra.ts",
+    "test:parser": "tsx src/modules/xml-ingestion/test-parser.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
@@ -33,10 +34,15 @@
     "@prisma/client": "^6.4.1",
     "bullmq": "^6.3.3",
     "dotenv": "^16.4.7",
-    "ioredis": "^6.0.0"
+    "iconv-lite": "^0.7.3",
+    "ioredis": "^6.0.0",
+    "sax": "^1.6.1",
+    "unzipper": "^0.12.5"
   },
   "devDependencies": {
     "@types/node": "^22.13.5",
+    "@types/sax": "^1.2.7",
+    "@types/unzipper": "^0.10.11",
     "prisma": "^6.4.1",
     "tsx": "^4.19.3",
     "typescript": "^5.7.3"
