@@ -16,7 +16,8 @@
     "test:infra": "tsx src/infra/test-infra.ts",
     "test:parser": "tsx src/modules/xml-ingestion/test-parser.ts",
     "test:normalization": "tsx src/modules/normalization/test-normalization.ts",
-    "test:diff": "tsx src/modules/stock-diff/test-diff.ts"
+    "test:diff": "tsx src/modules/stock-diff/test-diff.ts",
+    "test:meta-feed": "tsx src/modules/meta-feed/test-meta-feed.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
@@ -33,9 +34,12 @@
   "author": "SaaS Auto Catálogo",
   "license": "UNLICENSED",
   "dependencies": {
+    "@fastify/compress": "^9.2.0",
+    "@fastify/cors": "^11.3.0",
     "@prisma/client": "^6.4.1",
     "bullmq": "^6.3.3",
     "dotenv": "^16.4.7",
+    "fastify": "^5.12.1",
     "iconv-lite": "^0.7.3",
     "ioredis": "^6.0.0",
     "sax": "^1.6.1",
