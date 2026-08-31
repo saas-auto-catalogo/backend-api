@@ -15,7 +15,8 @@
     "typecheck": "tsc --noEmit",
     "test:infra": "tsx src/infra/test-infra.ts",
     "test:parser": "tsx src/modules/xml-ingestion/test-parser.ts",
-    "test:normalization": "tsx src/modules/normalization/test-normalization.ts"
+    "test:normalization": "tsx src/modules/normalization/test-normalization.ts",
+    "test:diff": "tsx src/modules/stock-diff/test-diff.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
