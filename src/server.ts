@@ -2,6 +2,11 @@ import Fastify, { FastifyInstance } from 'fastify';
 import cors from '@fastify/cors';
 import compress from '@fastify/compress';
 import { getMetaVehiclesFeedHandler } from './modules/meta-feed/meta-feed.controller.js';
+import {
+  getMetaAuthUrlHandler,
+  postMetaCallbackHandler,
+  getMetaDiagnosticsHandler
+} from './modules/meta-connector/meta-connector.controller.js';
 
 export async function buildServer(): Promise<FastifyInstance> {
   const server = Fastify({
@@ -32,6 +37,11 @@ export async function buildServer(): Promise<FastifyInstance> {
 
   // Rota Pública de Feed XML Meta Automotive Inventory Ads (DAA)
   server.get('/api/v1/feeds/:token/meta-vehicles.xml', getMetaVehiclesFeedHandler);
+
+  // Rotas de Integração OAuth & Diagnósticos Meta Graph API
+  server.get('/api/v1/integrations/meta/auth-url', getMetaAuthUrlHandler);
+  server.post('/api/v1/integrations/meta/callback', postMetaCallbackHandler);
+  server.get('/api/v1/workspaces/:workspaceId/meta-catalogs/:catalogId/diagnostics', getMetaDiagnosticsHandler);
 
   return server;
 }
