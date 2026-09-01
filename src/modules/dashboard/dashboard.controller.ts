@@ -58,3 +58,12 @@ export async function listAuditLogsHandler(
   const result = await dashboardService.listAuditLogs(workspaceId, request.query);
   reply.status(200).send(result);
 }
+
+export async function listDashboardIssuesHandler(
+  request: FastifyRequest<{ Params: { workspaceId: string } }>,
+  reply: FastifyReply,
+): Promise<void> {
+  const { workspaceId } = request.params;
+  const items = await dashboardService.listDashboardIssues(workspaceId);
+  reply.status(200).send({ items });
+}

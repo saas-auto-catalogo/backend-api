@@ -1,5 +1,8 @@
 import { buildServer } from '../server.js';
 import { AuthUser } from '../modules/auth/auth.middleware.js';
+import { prisma } from '../lib/prisma.js';
+import { closeAllQueues } from '../infra/queues/queue-manager.js';
+import { redisClient } from '../infra/redis/redis-client.js';
 
 let totalTests = 0;
 let passedTests = 0;
@@ -148,8 +151,49 @@ async function runDashboardApiTests() {
     const auditPayload = JSON.parse(resAuditManager.payload);
     assert(Array.isArray(auditPayload.items), 'Audit logs retorna items');
 
+    section('5. Dashboard Issues');
+
+    const resIssuesNoAuth = await app.inject({
+      method: 'GET',
+      url: `/api/v1/workspaces/${workspaceA}/dashboard/issues`,
+    });
+    assert(resIssuesNoAuth.statusCode === 401, 'Issues sem token retorna 401');
+
+    const resIssuesTenantB = await app.inject({
+      method: 'GET',
+      url: `/api/v1/workspaces/${workspaceA}/dashboard/issues`,
+      headers: { authorization: `Bearer ${tokenOwnerB}` },
+    });
+    assert(resIssuesTenantB.statusCode === 403, 'Tenant B bloqueado ao acessar issues do Tenant A');
+
+    const resIssuesViewer = await app.inject({
+      method: 'GET',
+      url: `/api/v1/workspaces/${workspaceA}/dashboard/issues`,
+      headers: { authorization: `Bearer ${tokenViewerA}` },
+    });
+    assert(resIssuesViewer.statusCode === 200, 'Viewer acessa dashboard issues (200)');
+    const issuesPayload = JSON.parse(resIssuesViewer.payload);
+    assert(Array.isArray(issuesPayload.items), 'Issues retorna array items');
+
+    const validIssueTypes = ['MISSING_IMAGES', 'PRICE_ZERO', 'INVALID_VIN', 'YEAR_INVALID'];
+    const validSeverities = ['BLOCKING', 'WARNING'];
+
+    for (const item of issuesPayload.items) {
+      assert(typeof item.id === 'string', 'Issue item contém id');
+      assert(typeof item.vehicleId === 'string', 'Issue item contém vehicleId');
+      assert(typeof item.make === 'string', 'Issue item contém make');
+      assert(typeof item.model === 'string', 'Issue item contém model');
+      assert(typeof item.description === 'string', 'Issue item contém description');
+      assert(typeof item.detectedAt === 'string', 'Issue item contém detectedAt');
+      assert(validIssueTypes.includes(item.issueType), `Issue item issueType válido: ${item.issueType}`);
+      assert(validSeverities.includes(item.severity), `Issue item severity válido: ${item.severity}`);
+    }
+
   } finally {
     await app.close();
+    await closeAllQueues().catch(() => undefined);
+    redisClient.disconnect();
+    await prisma.$disconnect();
   }
 
   console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
@@ -159,6 +203,8 @@ async function runDashboardApiTests() {
     failures.forEach((failure) => console.log(` - ${failure}`));
     process.exit(1);
   }
+
+  process.exit(0);
 }
 
 runDashboardApiTests().catch((error) => {
