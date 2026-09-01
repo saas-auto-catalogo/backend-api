@@ -1,122 +1,113 @@
-# ⚙️ SaaS Auto Catálogo — Backend API
+# SaaS Auto Catálogo — Backend API
 
-Core da plataforma SaaS multi-tenant responsável pela ingestão de inventário automotivo em lote/streaming, cálculo de diffs de estoque em tempo real e distribuição de feeds XML de alta performance para o **Meta Automotive Inventory Ads (DAA)**.
+Core da plataforma SaaS multi-tenant: ingestão de inventário automotivo, diffs de estoque, feeds XML Meta DAA, autenticação JWT, dashboard workspace-scoped e billing Stripe.
 
----
-
-## 🛠️ Stack Tecnológica
-
-- **Runtime & Linguagem**: Node.js 22 LTS / TypeScript 5.7+ (NodeNext)
-- **Servidor HTTP**: Fastify v5 com compressão GZIP/Deflate em tempo real (`@fastify/compress`) e CORS
-- **ORM & Banco de Dados**: Prisma ORM v6 + PostgreSQL Multi-tenant (Shared Database / Shared Schema)
-- **Filas & Mensageria**: BullMQ v6 + Redis
-- **Cache & Rate Limiting**: IORedis (Sliding Window Log & Concorrência por Host DMS)
-- **Streaming Parser**: SAX Stream, iconv-lite, unzipper e Circuit Breaker
-- **Integrações de Catálogo**: Meta Graph API v21.0 & Feeds XML Atom/Google Base DAA
+**Wiki:** [backend-api](https://github.com/saas-auto-catalogo/.github/blob/main/docs/wiki/backend-api.md) · [Roadmap](https://github.com/saas-auto-catalogo/.github/blob/main/docs/wiki/roadmap.md)
 
 ---
 
-## 🏛️ Estrutura Arquitetural do Projeto
+## Stack
+
+- **Runtime:** Node.js 22 LTS / TypeScript 5.7+ (NodeNext)
+- **HTTP:** Fastify 5 — compressão GZIP, CORS com credentials, cookies httpOnly
+- **ORM:** Prisma 6 + PostgreSQL (multi-tenant shared schema)
+- **Filas:** BullMQ 6 + Redis
+- **Auth:** JWT access token + refresh token em cookie httpOnly
+- **Integrações:** Meta Graph API v21, Stripe, Resend (email)
+
+---
+
+## Módulos
 
 ```
-backend-api/
-├── prisma/
-│   ├── schema.prisma              # Modelos, enums, relacionamentos e índices compostos
-│   ├── seed.ts                    # Script de seeds de desenvolvimento com dados realistas
-│   └── migrations/                # Histórico de migrações DDL em PostgreSQL
-├── src/
-│   ├── infra/
-│   │   ├── redis/                 # Conexão singleton e pool IORedis
-│   │   ├── queues/                # Filas BullMQ (xml-ingestion, meta-sync, ai-blog)
-│   │   ├── cache/                 # FeedCacheService (TTL 15m e invalidação sob demanda)
-│   │   ├── security/              # RateLimiterService (Sliding Window & Slot de Host DMS)
-│   │   └── index.ts               # Barrel export do módulo de infraestrutura
-│   ├── lib/
-│   │   ├── prisma.ts              # Instância singleton do PrismaClient
-│   │   └── tenant-prisma.ts       # Extensão Multi-Tenant com escopo automático
-│   ├── modules/
-│   │   ├── xml-ingestion/         # Streaming Parser SAX, Circuit Breaker e Retry com Jitter
-│   │   ├── normalization/         # Auto-Matching Engine, normalizadores de marcas, anos e preços
-│   │   ├── stock-diff/            # Motor de Diffs (CREATE, UPDATE, SOLD, UNCHANGED) e SyncService
-│   │   ├── meta-feed/             # Gerador XML Atom Meta DAA e Controller de Feed Público
-│   │   └── meta-connector/        # OAuth 2.0 (Login for Business) e Cliente Graph API v21.0
-│   ├── types/
-│   │   └── database.ts            # Tipagens canônicas JSON (imagens, opcionais, filtros)
-│   └── server.ts                  # Servidor HTTP Fastify com rotas de API
-├── .env.example                   # Modelo de variáveis de ambiente
-├── package.json                   # Dependências e scripts de execução
-└── tsconfig.json                  # Configurações do compilador TypeScript
+src/modules/
+├── auth/           # Login, register, refresh, logout, forgot/reset, /me
+├── feeds/          # CRUD feeds + sync manual (BullMQ SYNC_FEED)
+├── dashboard/      # Stats, vehicles, meta-catalogs, issues, activity, audit-logs
+├── billing/        # Plano, limites, Stripe Customer Portal
+├── meta-feed/      # XML público Meta DAA
+├── meta-connector/ # OAuth Meta
+├── xml-ingestion/  # Parser SAX streaming
+├── stock-diff/     # Motor de diffs (CREATE, UPDATE, SOLD)
+└── normalization/  # Auto-matching de marcas, anos, preços
 ```
 
 ---
 
-## 🌐 Rotas HTTP Principais
+## Rotas principais
 
-| Método | Rota | Descrição |
-|---|---|---|
-| `GET` | `/health` | Health check de integridade do serviço |
-| `GET` | `/api/v1/feeds/:token/meta-vehicles.xml` | Feed XML público Meta DAA com GZIP, ETag e Cache Redis (15m) |
-| `GET` | `/api/v1/integrations/meta/auth-url` | Gera URL de autorização OAuth do Facebook Login for Business |
-| `POST` | `/api/v1/integrations/meta/callback` | Troca de tokens temporários por tokens de longa duração (60 dias) |
-| `GET` | `/api/v1/workspaces/:wsId/meta-catalogs/:catId/diagnostics` | Consulta de rejeições e conformidade na Meta Graph API |
+| Área | Exemplos |
+|------|----------|
+| Público | `GET /health`, `GET /api/v1/feeds/:token/meta-vehicles.xml` |
+| Auth | `POST /auth/login`, `/register`, `/refresh`, `/logout`, `GET /auth/me` |
+| Dashboard | `GET /workspaces/:id/dashboard/stats`, `/issues`, `/activity` |
+| Estoque | `GET /workspaces/:id/vehicles`, `/vehicles/:vehicleId` |
+| Feeds | `GET/POST/PUT/DELETE /workspaces/:id/feeds`, `POST .../sync` |
+| Auditoria | `GET /workspaces/:id/audit-logs` (MANAGER+) |
+| Billing | `GET /workspaces/:id/billing`, `POST /billing/portal` |
+| Meta | `GET /integrations/meta/auth-url`, `POST /integrations/meta/callback` |
+
+Lista completa e RBAC na [wiki](https://github.com/saas-auto-catalogo/.github/blob/main/docs/wiki/backend-api.md).
 
 ---
 
-## 🚀 Como Executar Localmente
+## Execução local
 
-### 1. Pré-requisitos
-- Node.js `>= 22.0.0`
+### Pré-requisitos
+
+- Node.js >= 22
 - PostgreSQL 15+
 - Redis 7+
 
-### 2. Configuração de Variáveis de Ambiente
-```bash
-cp .env.example .env
-```
+### Setup
 
-### 3. Instalação de Dependências
 ```bash
 npm install
-```
+cp .env.example .env   # ajustar DATABASE_URL, REDIS_URL, JWT_SECRET, FRONTEND_URL
 
-### 4. Prisma ORM: Migrations, Tipos e Carga de Seeds
-
-#### Ambiente de Desenvolvimento Local
-```bash
-# Validar schema e gerar o Prisma Client
 npm run prisma:validate
 npm run prisma:generate
-
-# Aplicar migrações em modo de desenvolvimento
 npx prisma migrate dev
-
-# Executar seeds de desenvolvimento (Super Admin + 2 Workspaces com 20 veículos)
 npm run prisma:seed
+npm start              # http://localhost:3333
 ```
 
-#### Ambiente de Produção (Railway, Render, AWS, etc.)
+Worker de sync (terminal separado):
+
 ```bash
-# Aplicar todas as migrações pendentes sem prompt interativo
-npx prisma migrate deploy
-
-# (Opcional) Executar carga inicial de dados/seeds se banco virgem
-npx prisma db seed
+npm run worker:sync-feed
 ```
 
-### 5. Iniciar o Servidor Fastify
-```bash
-npm start
-```
+### Variáveis importantes
+
+| Variável | Descrição |
+|----------|-----------|
+| `DATABASE_URL` | PostgreSQL |
+| `REDIS_URL` | Redis para BullMQ e cache |
+| `JWT_SECRET` | Assinatura dos access tokens |
+| `FRONTEND_URL` | Origem CORS (ex.: `http://localhost:3000`) |
+| `PORT` | Padrão `3333` no código |
 
 ---
 
-## 🧪 Bateria de Testes Automatizados
+## Testes
 
-| Comando | Escopo do Teste |
-|---|---|
-| `npm run test:infra` | Smoke test de filas BullMQ, cache Redis e rate limiting |
-| `npm run test:parser` | Teste do SAX Streaming Parser com 6 fixtures reais XML (AutoCerto, Altimus, Sisvag, BomControle, Webmotors) |
-| `npm run test:normalization` | Teste de Auto-Matching e normalização com feeds reais JSON (4Boss, JRCA) e XML |
-| `npm run test:diff` | Teste dos 4 cenários do motor de Diffs (Inserção, Inalterado, Preço/Km e Vendidos) |
-| `npm run test:meta-feed` | Teste da geração de XML Atom Meta DAA, ETag (304 Not Modified) e latência em cache |
-| `npm run test:meta-connector` | Teste de autenticação OAuth 2.0 (Anti-CSRF), Graph API e diagnósticos |
+| Comando | Escopo |
+|---------|--------|
+| `npm run test:auth` | Register + cookie refresh |
+| `npm run test:rbac` | Permissões por role |
+| `npm run test:feeds` | CRUD e sync |
+| `npm run test:dashboard` | Stats, vehicles, audit-logs, issues, activity |
+| `npm run test:subscription` | Stripe lifecycle e billing |
+| `npm run test:parser` | SAX streaming com fixtures reais |
+| `npm run test:meta-feed` | XML Meta DAA, ETag, cache |
+| `npm run test:all` | Suite agregada |
+
+---
+
+## Credenciais de desenvolvimento
+
+Após o seed:
+
+- **Email:** `carlos.silva@autoelitemotors.com.br`
+- **Senha:** `Teste123!`
