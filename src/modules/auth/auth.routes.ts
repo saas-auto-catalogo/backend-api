@@ -1,6 +1,7 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import {
   loginHandler,
+  registerHandler,
   refreshHandler,
   logoutHandler,
   forgotPasswordHandler,
@@ -11,6 +12,7 @@ import { authenticate } from './auth.middleware.js';
 import { validate } from '../../middleware/validation.js';
 import {
   loginSchema,
+  registerSchema,
   refreshTokenSchema,
   logoutSchema,
   forgotPasswordSchema,
@@ -45,6 +47,12 @@ export async function registerAuthRoutes(server: FastifyInstance): Promise<void>
     '/api/v1/auth/login',
     { preHandler: [loginRateLimit, validate(loginSchema, 'body')] },
     loginHandler,
+  );
+
+  server.post(
+    '/api/v1/auth/register',
+    { preHandler: [loginRateLimit, validate(registerSchema, 'body')] },
+    registerHandler,
   );
 
   server.post(
