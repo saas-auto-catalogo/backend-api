@@ -55,7 +55,7 @@
     "resend": "^6.25.0",
     "sax": "^1.6.1",
     "unzipper": "^0.12.5",
-    "zod": "^4.30.0"
+    "zod": "^3.21.4"
   },
   "devDependencies": {
     "@types/node": "^22.13.5",
