@@ -14,6 +14,10 @@ import {
   stripeWebhookHandler
 } from './modules/checkout/checkout.controller.js';
 import {
+  createStripePortalSessionHandler,
+  getWorkspaceBillingDetailsHandler
+} from './modules/billing/billing.controller.js';
+import {
   authenticate,
   requireRole,
   requireWorkspace,
@@ -76,6 +80,20 @@ export async function buildServer(): Promise<FastifyInstance> {
         user: request.user
       };
     }
+  );
+
+  // Rota do Stripe Customer Portal (Gerenciar Cartão, Faturas e Cancelamento)
+  server.post(
+    '/api/v1/billing/portal',
+    { preHandler: [authenticate] },
+    async (req, reply) => createStripePortalSessionHandler(req as any, reply)
+  );
+
+  // Rota de Detalhes de Faturamento do Workspace
+  server.get(
+    '/api/v1/workspaces/:workspaceId/billing',
+    { preHandler: [authenticate, requireWorkspace, requireRole(['SUPER_ADMIN', 'OWNER'])] },
+    async (req, reply) => getWorkspaceBillingDetailsHandler(req as any, reply)
   );
 
   // Rotas de Integração OAuth Meta Graph API (Exigem OWNER ou SUPER_ADMIN)

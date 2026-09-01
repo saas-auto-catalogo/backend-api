@@ -25,7 +25,8 @@
     "test:db": "tsx src/tests/db-validation.test.ts",
     "test:rbac": "tsx src/tests/auth-rbac.test.ts",
     "test:email": "tsx src/tests/email.test.ts",
-    "test:all": "npm run test:qa && npm run test:vehicles && npm run test:db && npm run test:rbac && npm run test:email"
+    "test:subscription": "tsx src/tests/stripe-lifecycle.test.ts",
+    "test:all": "npm run test:qa && npm run test:vehicles && npm run test:db && npm run test:rbac && npm run test:email && npm run test:subscription"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
