@@ -35,5 +35,10 @@ export const auditLogsQuerySchema = paginationQuerySchema.extend({
   to: z.string().datetime({ offset: true }).optional(),
 });
 
+export const activityQuerySchema = z.object({
+  limit: z.coerce.number().int().min(1).max(50).default(20),
+});
+
 export type VehiclesListQuery = z.infer<typeof vehiclesListQuerySchema>;
 export type AuditLogsQuery = z.infer<typeof auditLogsQuerySchema>;
+export type ActivityQuery = z.infer<typeof activityQuerySchema>;

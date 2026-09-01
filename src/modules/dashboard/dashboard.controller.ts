@@ -1,6 +1,6 @@
 import { FastifyReply, FastifyRequest } from 'fastify';
 import { dashboardService } from './dashboard.service.js';
-import type { AuditLogsQuery, VehiclesListQuery } from '../../schemas/dashboard.js';
+import type { ActivityQuery, AuditLogsQuery, VehiclesListQuery } from '../../schemas/dashboard.js';
 
 export async function getDashboardStatsHandler(
   request: FastifyRequest<{ Params: { workspaceId: string } }>,
@@ -66,4 +66,13 @@ export async function listDashboardIssuesHandler(
   const { workspaceId } = request.params;
   const items = await dashboardService.listDashboardIssues(workspaceId);
   reply.status(200).send({ items });
+}
+
+export async function listDashboardActivityHandler(
+  request: FastifyRequest<{ Params: { workspaceId: string }; Querystring: ActivityQuery }>,
+  reply: FastifyReply,
+): Promise<void> {
+  const { workspaceId } = request.params;
+  const events = await dashboardService.listDashboardActivity(workspaceId, request.query);
+  reply.status(200).send({ events });
 }

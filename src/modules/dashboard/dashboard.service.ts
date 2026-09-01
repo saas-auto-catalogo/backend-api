@@ -1,6 +1,6 @@
 import { Prisma, SyncStatus, Vehicle, VehicleStatus } from '@prisma/client';
 import { prisma } from '../../lib/prisma.js';
-import type { AuditLogsQuery, VehiclesListQuery } from '../../schemas/dashboard.js';
+import type { AuditLogsQuery, ActivityQuery, VehiclesListQuery } from '../../schemas/dashboard.js';
 
 export interface DashboardStats {
   totalVehicles: number;
@@ -102,6 +102,20 @@ export interface CatalogIssueItem {
   imageUrl?: string;
 }
 
+export interface ActivityEventDTO {
+  id: string;
+  type: string;
+  title: string;
+  description: string;
+  occurredAt: string;
+}
+
+const EXCLUDED_AUDIT_ACTIONS = [
+  'SUPER_ADMIN_INITIALIZED',
+  'WORKSPACE_INITIALIZED',
+  'FEED_SYNC_COMPLETED',
+] as const;
+
 const ISSUE_RECOMMENDATIONS: Record<CatalogIssueType, string> = {
   MISSING_IMAGES: 'Adicione pelo menos 1 foto HD no seu gestor DMS.',
   PRICE_ZERO: 'Informe o valor de tabela no DMS para liberar no Meta Ads.',
@@ -118,6 +132,87 @@ function buildPagination(total: number, page: number, limit: number): Pagination
     totalPages,
     hasNextPage: page < totalPages,
     hasPrevPage: page > 1,
+  };
+}
+
+function formatFeedSourceLabel(sourceType: string): string {
+  const labels: Record<string, string> = {
+    AUTOCERTO: 'AutoCerto',
+    ALTIMUS: 'Altimus',
+    SISVAG: 'SisVag',
+    BOMCONTROLE: 'Bom Controle',
+    WEBMOTORS: 'Webmotors',
+    BASE44: 'Base44',
+    SPICE_DIGITAL: 'Spice Digital',
+    GENERIC_XML: 'XML Genérico',
+    GENERIC_JSON: 'JSON Genérico',
+    CUSTOM_API: 'API Customizada',
+  };
+
+  return labels[sourceType] ?? sourceType;
+}
+
+function getMetadataMessage(metadata: unknown): string | null {
+  if (metadata && typeof metadata === 'object' && 'message' in metadata) {
+    const message = (metadata as { message?: unknown }).message;
+    return typeof message === 'string' ? message : null;
+  }
+
+  return null;
+}
+
+type SyncHistoryActivityRow = {
+  id: string;
+  status: SyncStatus;
+  totalIngested: number;
+  durationMs: number;
+  errorMessage: string | null;
+  createdAt: Date;
+  feedConfig: { sourceType: string };
+};
+
+type AuditLogActivityRow = {
+  id: string;
+  action: string;
+  metadata: unknown;
+  createdAt: Date;
+};
+
+function mapSyncHistoryToActivity(sync: SyncHistoryActivityRow): ActivityEventDTO {
+  const sourceLabel = formatFeedSourceLabel(sync.feedConfig.sourceType);
+  const isSuccess =
+    sync.status === SyncStatus.SUCCESS || sync.status === SyncStatus.PARTIAL_SUCCESS;
+  const durationSec = (sync.durationMs / 1000).toFixed(1);
+
+  return {
+    id: `sync:${sync.id}`,
+    type: isSuccess ? 'SYNC_DMS' : 'SYNC_FAILED',
+    title: `Ingestão de Feed DMS ${sourceLabel}`,
+    description: isSuccess
+      ? `${sync.totalIngested} veículos processados em ${durationSec}s`
+      : sync.errorMessage ?? 'Falha na sincronização do feed DMS',
+    occurredAt: sync.createdAt.toISOString(),
+  };
+}
+
+function mapAuditLogToActivity(log: AuditLogActivityRow): ActivityEventDTO | null {
+  if (log.action.startsWith('FEED_SYNC_')) {
+    return null;
+  }
+
+  const titles: Record<string, string> = {
+    PRICE_CHANGED: 'Alteração de Preço Promocional',
+    VEHICLE_UPDATED: 'Veículo Atualizado',
+  };
+
+  const metadataMessage = getMetadataMessage(log.metadata);
+
+  return {
+    id: `audit:${log.id}`,
+    type: log.action,
+    title: titles[log.action] ?? log.action.replace(/_/g, ' '),
+    description: metadataMessage ?? `Ação registrada: ${log.action}`,
+    occurredAt: log.createdAt.toISOString(),
   };
 }
 
@@ -553,6 +648,55 @@ export class DashboardService {
     }
 
     return items;
+  }
+
+  async listDashboardActivity(
+    workspaceId: string,
+    query: ActivityQuery,
+  ): Promise<ActivityEventDTO[]> {
+    const { limit } = query;
+
+    const [syncHistories, auditLogs] = await Promise.all([
+      prisma.syncHistory.findMany({
+        where: { workspaceId },
+        select: {
+          id: true,
+          status: true,
+          totalIngested: true,
+          durationMs: true,
+          errorMessage: true,
+          createdAt: true,
+          feedConfig: { select: { sourceType: true } },
+        },
+        orderBy: { createdAt: 'desc' },
+        take: limit,
+      }),
+      prisma.auditLog.findMany({
+        where: {
+          workspaceId,
+          action: { notIn: [...EXCLUDED_AUDIT_ACTIONS] },
+        },
+        select: {
+          id: true,
+          action: true,
+          metadata: true,
+          createdAt: true,
+        },
+        orderBy: { createdAt: 'desc' },
+        take: limit,
+      }),
+    ]);
+
+    const syncEvents = syncHistories.map(mapSyncHistoryToActivity);
+    const auditEvents = auditLogs
+      .map(mapAuditLogToActivity)
+      .filter((event): event is ActivityEventDTO => event !== null);
+
+    return [...syncEvents, ...auditEvents]
+      .sort(
+        (a, b) => new Date(b.occurredAt).getTime() - new Date(a.occurredAt).getTime(),
+      )
+      .slice(0, limit);
   }
 }
 
