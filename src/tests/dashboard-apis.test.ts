@@ -1,5 +1,8 @@
 import { buildServer } from '../server.js';
 import { AuthUser } from '../modules/auth/auth.middleware.js';
+import { prisma } from '../lib/prisma.js';
+import { closeAllQueues } from '../infra/queues/queue-manager.js';
+import { redisClient } from '../infra/redis/redis-client.js';
 
 let totalTests = 0;
 let passedTests = 0;
@@ -188,6 +191,9 @@ async function runDashboardApiTests() {
 
   } finally {
     await app.close();
+    await closeAllQueues().catch(() => undefined);
+    redisClient.disconnect();
+    await prisma.$disconnect();
   }
 
   console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
@@ -197,6 +203,8 @@ async function runDashboardApiTests() {
     failures.forEach((failure) => console.log(` - ${failure}`));
     process.exit(1);
   }
+
+  process.exit(0);
 }
 
 runDashboardApiTests().catch((error) => {
