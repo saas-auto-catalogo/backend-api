@@ -5,11 +5,11 @@ import { AutoMatchingEngine } from './index.js';
 async function runNormalizationTests() {
   console.log('🧪 Iniciando Bateria de Testes do Motor de Normalização e Auto-Matching...\n');
 
-  const fixturesDir = resolve(process.cwd(), '../.github/docs/fixtures');
+  const fixturesDir = resolve(process.cwd(), 'src/tests/fixtures');
 
   // 1. Teste com Feed Real 4Boss / Base44 (JSON REST)
   console.log('🏎️ 1. Teste com Fixture Real 4Boss / Base44 (Superesportivos):');
-  const raw4Boss = JSON.parse(readFileSync(resolve(fixturesDir, 'real-feed-4boss-sample.json'), 'utf-8'));
+  const raw4Boss = JSON.parse(readFileSync(resolve(fixturesDir, 'vehicles-4boss.json'), 'utf-8'));
   const first4BossVehicle = raw4Boss.vehicles[0];
 
   const norm4Boss = AutoMatchingEngine.normalize(first4BossVehicle, {
@@ -30,7 +30,7 @@ async function runNormalizationTests() {
 
   // 2. Teste com Feed Real JRCA / Spice Digital (JSON REST)
   console.log('\n🔋 2. Teste com Fixture Real JRCA / Spice Digital (Eletrificados & Seminovos):');
-  const rawJrca = JSON.parse(readFileSync(resolve(fixturesDir, 'real-feed-jrca-sample.json'), 'utf-8'));
+  const rawJrca = JSON.parse(readFileSync(resolve(fixturesDir, 'vehicles-jrcaseminovos.json'), 'utf-8'));
   const firstJrcaVehicle = rawJrca.vehicles[0];
 
   const normJrca = AutoMatchingEngine.normalize(firstJrcaVehicle, {
