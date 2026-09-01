@@ -22,6 +22,7 @@ import {
   requireRole,
   requireWorkspace,
 } from './modules/auth/index.js';
+import { registerAuthRoutes } from './modules/auth/auth.routes.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { validate } from './middleware/validation.js';
 import { feedParamsSchema } from './schemas/feeds.js';
@@ -34,7 +35,6 @@ export async function buildServer(): Promise<FastifyInstance> {
     logger: process.env.NODE_ENV !== 'test'
   });
 
-  // Plugins de Performance e Segurança
   await server.register(cors, {
     origin: '*',
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
@@ -42,11 +42,10 @@ export async function buildServer(): Promise<FastifyInstance> {
 
   await server.register(compress, {
     global: true,
-    threshold: 1024, // Comprime payloads maiores que 1KB
+    threshold: 1024,
     encodings: ['gzip', 'deflate']
   });
 
-  // Registro do Plugin JWT
   const jwtSecret = process.env.JWT_SECRET || 'super-secret-jwt-signing-key-for-auth-minimum-32-chars';
   await server.register(fastifyJwt, {
     secret: jwtSecret,
@@ -55,12 +54,10 @@ export async function buildServer(): Promise<FastifyInstance> {
     }
   });
 
-  // Global error handler to map exceptions to RFC 7807 Problem Details
   server.setErrorHandler(errorHandler);
 
-  // ─── ROTAS PÚBLICAS ────────────────────────────────────────────────────────
+  // --- ROTAS PUBLICAS ---
 
-  // Rota de Health Check
   server.get('/health', async () => {
     return {
       status: 'ok',
@@ -70,42 +67,29 @@ export async function buildServer(): Promise<FastifyInstance> {
     };
   });
 
-  // Rota Pública de Feed XML Meta Automotive Inventory Ads (DAA) - Autenticada via HMAC
   server.get('/api/v1/feeds/:token/meta-vehicles.xml', { preHandler: [validate(feedParamsSchema, 'params')] }, getMetaVehiclesFeedHandler);
 
-  // Rotas de Checkout Stripe Transparente (Pix e Cartão) e Webhooks
   server.post('/api/v1/checkout/stripe/pix', { preHandler: [validate(createStripePixSchema, 'body')] }, createStripePixHandler);
   server.post('/api/v1/checkout/stripe/card', { preHandler: [validate(createStripeCardSchema, 'body')] }, createStripeCardHandler);
   server.post('/api/v1/webhooks/stripe', stripeWebhookHandler);
 
-  // ─── ROTAS PRIVADAS AUTENTICADAS (JWT + RBAC + Multi-Tenant) ───────────────
+  // --- ROTAS DE AUTENTICACAO (Issue #12) ---
+  await registerAuthRoutes(server);
 
-  // Rota de Perfil do Usuário Autenticado
-  server.get(
-    '/api/v1/auth/me',
-    { preHandler: [authenticate] },
-    async (request) => {
-      return {
-        user: request.user
-      };
-    }
-  );
+  // --- ROTAS PRIVADAS AUTENTICADAS (JWT + RBAC + Multi-Tenant) ---
 
-  // Rota do Stripe Customer Portal (Gerenciar Cartão, Faturas e Cancelamento)
   server.post(
     '/api/v1/billing/portal',
     { preHandler: [authenticate, validate(portalSessionSchema, 'body')] },
     async (req, reply) => createStripePortalSessionHandler(req as any, reply)
   );
 
-  // Rota de Detalhes de Faturamento do Workspace
   server.get(
     '/api/v1/workspaces/:workspaceId/billing',
     { preHandler: [authenticate, requireWorkspace, requireRole(['SUPER_ADMIN', 'OWNER']), validate(diagnosticsParamsSchema, 'params')] },
     async (req, reply) => getWorkspaceBillingDetailsHandler(req as any, reply)
   );
 
-  // Rotas de Integração OAuth Meta Graph API (Exigem OWNER ou SUPER_ADMIN)
   server.get(
     '/api/v1/integrations/meta/auth-url',
     { preHandler: [authenticate, requireRole(['SUPER_ADMIN', 'OWNER']), validate(getAuthUrlQuerySchema, 'query')] },
@@ -118,7 +102,6 @@ export async function buildServer(): Promise<FastifyInstance> {
     async (req, reply) => postMetaCallbackHandler(req as any, reply)
   );
 
-  // Rota de Diagnósticos Meta Graph API (Exige acesso ao workspace e role MANAGER+)
   server.get(
     '/api/v1/workspaces/:workspaceId/meta-catalogs/:catalogId/diagnostics',
     { preHandler: [authenticate, requireWorkspace, requireRole(['SUPER_ADMIN', 'OWNER', 'MANAGER'])] },
@@ -133,7 +116,7 @@ export async function startServer(port: number = 3333, host: string = '0.0.0.0')
 
   try {
     const address = await server.listen({ port, host });
-    console.log(`🚀 SaaS Auto Catálogo Backend API rodando em ${address}`);
+    console.log(`SaaS Auto Catalogo Backend API rodando em ${address}`);
     return server;
   } catch (err) {
     server.log.error(err);
@@ -141,7 +124,6 @@ export async function startServer(port: number = 3333, host: string = '0.0.0.0')
   }
 }
 
-// Inicialização se executado como script principal
 if (process.env.NODE_ENV !== 'test' && typeof require !== 'undefined' && require.main === module) {
   const port = parseInt(process.env.PORT || '3333', 10);
   startServer(port);
