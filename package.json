@@ -24,7 +24,8 @@
     "test:stripe": "tsx src/tests/stripe/stripePayment.test.ts",
     "test:db": "tsx src/tests/db-validation.test.ts",
     "test:rbac": "tsx src/tests/auth-rbac.test.ts",
-    "test:all": "npm run test:qa && npm run test:vehicles && npm run test:db && npm run test:rbac"
+    "test:email": "tsx src/tests/email.test.ts",
+    "test:all": "npm run test:qa && npm run test:vehicles && npm run test:db && npm run test:rbac && npm run test:email"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
@@ -50,6 +51,7 @@
     "fastify": "^5.12.1",
     "iconv-lite": "^0.7.3",
     "ioredis": "^6.0.0",
+    "resend": "^6.25.0",
     "sax": "^1.6.1",
     "unzipper": "^0.12.5"
   },
