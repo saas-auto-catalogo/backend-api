@@ -44,13 +44,13 @@ export async function registerAuthRoutes(server: FastifyInstance): Promise<void>
   server.post(
     '/api/v1/auth/login',
     { preHandler: [loginRateLimit, validate(loginSchema, 'body')] },
-    loginHandler,
+    async (req, reply) => loginHandler(req as any, reply),
   );
 
   server.post(
     '/api/v1/auth/register',
     { preHandler: [loginRateLimit, validate(registerSchema, 'body')] },
-    registerHandler,
+    async (req, reply) => registerHandler(req as any, reply),
   );
 
   server.post(
@@ -67,13 +67,13 @@ export async function registerAuthRoutes(server: FastifyInstance): Promise<void>
   server.post(
     '/api/v1/auth/forgot-password',
     { preHandler: [loginRateLimit, validate(forgotPasswordSchema, 'body')] },
-    forgotPasswordHandler,
+    async (req, reply) => forgotPasswordHandler(req as any, reply),
   );
 
   server.post(
     '/api/v1/auth/reset-password',
     { preHandler: [validate(resetPasswordSchema, 'body')] },
-    resetPasswordHandler,
+    async (req, reply) => resetPasswordHandler(req as any, reply),
   );
 
   server.get(

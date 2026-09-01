@@ -85,7 +85,11 @@ async function runAuthRegisterTestSuite() {
     assert(resRegister.statusCode === 201, `Cadastro válido retorna 201 (got ${resRegister.statusCode})`);
 
     const registerData = JSON.parse(resRegister.payload);
-    const setCookieHeader = resRegister.headers['set-cookie'] || '';
+    const setCookieHeader = String(
+      Array.isArray(resRegister.headers['set-cookie'])
+        ? resRegister.headers['set-cookie'].join('; ')
+        : (resRegister.headers['set-cookie'] || '')
+    );
     assert(!!registerData.accessToken, 'Resposta contém accessToken');
     assert(!registerData.refreshToken, 'Resposta NÃO contém refreshToken no JSON');
     assert(setCookieHeader.includes('refreshToken'), 'Set-Cookie contém refreshToken');

@@ -73,10 +73,10 @@ export async function buildServer(): Promise<FastifyInstance> {
     };
   });
 
-  server.get('/api/v1/feeds/:token/meta-vehicles.xml', { preHandler: [validate(feedParamsSchema, 'params')] }, getMetaVehiclesFeedHandler);
+  server.get('/api/v1/feeds/:token/meta-vehicles.xml', { preHandler: [validate(feedParamsSchema, 'params')] }, async (req, reply) => getMetaVehiclesFeedHandler(req as any, reply));
 
-  server.post('/api/v1/checkout/stripe/pix', { preHandler: [validate(createStripePixSchema, 'body')] }, createStripePixHandler);
-  server.post('/api/v1/checkout/stripe/card', { preHandler: [validate(createStripeCardSchema, 'body')] }, createStripeCardHandler);
+  server.post('/api/v1/checkout/stripe/pix', { preHandler: [validate(createStripePixSchema, 'body')] }, async (req, reply) => createStripePixHandler(req as any, reply));
+  server.post('/api/v1/checkout/stripe/card', { preHandler: [validate(createStripeCardSchema, 'body')] }, async (req, reply) => createStripeCardHandler(req as any, reply));
   server.post('/api/v1/webhooks/stripe', stripeWebhookHandler);
 
   // --- ROTAS DE AUTENTICACAO (Issue #12) ---
