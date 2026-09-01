@@ -22,6 +22,7 @@ import {
   requireRole,
   requireWorkspace,
 } from './modules/auth/index.js';
+import { errorHandler } from './middleware/errorHandler.js';
 
 export async function buildServer(): Promise<FastifyInstance> {
   const server = Fastify({
@@ -48,6 +49,9 @@ export async function buildServer(): Promise<FastifyInstance> {
       expiresIn: '15m'
     }
   });
+
+  // Global error handler to map exceptions to RFC 7807 Problem Details
+  server.setErrorHandler(errorHandler);
 
   // ─── ROTAS PÚBLICAS ────────────────────────────────────────────────────────
 
