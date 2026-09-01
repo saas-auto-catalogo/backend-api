@@ -85,8 +85,12 @@ async function runAuthRegisterTestSuite() {
     assert(resRegister.statusCode === 201, `Cadastro válido retorna 201 (got ${resRegister.statusCode})`);
 
     const registerData = JSON.parse(resRegister.payload);
+    const setCookieHeader = resRegister.headers['set-cookie'] || '';
     assert(!!registerData.accessToken, 'Resposta contém accessToken');
-    assert(!!registerData.refreshToken, 'Resposta contém refreshToken');
+    assert(!registerData.refreshToken, 'Resposta NÃO contém refreshToken no JSON');
+    assert(setCookieHeader.includes('refreshToken'), 'Set-Cookie contém refreshToken');
+    assert(setCookieHeader.toLowerCase().includes('httponly'), 'Cookie é HttpOnly');
+    assert(setCookieHeader.includes('Path=/api/v1/auth'), 'Cookie com Path=/api/v1/auth');
     assert(registerData.tokenType === 'Bearer', 'tokenType é Bearer');
     assert(!!registerData.user?.workspaceId, 'user.workspaceId preenchido');
     assert(registerData.user?.role === 'OWNER', 'user.role é OWNER');
@@ -119,7 +123,10 @@ async function runAuthRegisterTestSuite() {
     assert(resLogin.statusCode === 200, `Login após cadastro retorna 200 (got ${resLogin.statusCode})`);
 
     const loginData = JSON.parse(resLogin.payload);
+    const loginSetCookie = resLogin.headers['set-cookie'] || '';
     assert(!!loginData.accessToken, 'Login retorna accessToken');
+    assert(!loginData.refreshToken, 'Login NÃO retorna refreshToken no JSON');
+    assert(loginSetCookie.includes('refreshToken'), 'Login seta cookie refreshToken');
     assert(loginData.user?.workspaceId === registerData.user?.workspaceId, 'workspaceId coincide após login');
   } finally {
     await app.close();

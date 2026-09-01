@@ -13,7 +13,7 @@ export const registerSchema = z.object({
 });
 
 export const refreshTokenSchema = z.object({
-  refreshToken: z.string().min(20)
+  refreshToken: z.string().min(20).optional(),
 });
 
 export const forgotPasswordSchema = z.object({
@@ -26,7 +26,7 @@ export const resetPasswordSchema = z.object({
 });
 
 export const logoutSchema = z.object({
-  refreshToken: z.string().min(20)
+  refreshToken: z.string().min(20).optional(),
 });
 
 export type LoginDTO = z.infer<typeof loginSchema>;

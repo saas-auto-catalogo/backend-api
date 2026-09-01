@@ -1,14 +1,17 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
-import { authService } from './auth.service.js';
+import { authService, createAuthError } from './auth.service.js';
 import {
   LoginDTO,
   RegisterDTO,
-  RefreshTokenDTO,
   ForgotPasswordDTO,
   ResetPasswordDTO,
-  LogoutDTO,
 } from '../../schemas/auth.js';
 import { AuthUser } from './auth.middleware.js';
+import {
+  setRefreshTokenCookie,
+  clearRefreshTokenCookie,
+  getRefreshTokenFromRequest,
+} from './auth.cookie.js';
 
 export async function loginHandler(
   request: FastifyRequest<{ Body: LoginDTO }>,
@@ -20,9 +23,10 @@ export async function loginHandler(
 
   const result = await authService.login(request.server, email, password, ipAddress, userAgent);
 
+  setRefreshTokenCookie(reply, result.refreshToken);
+
   reply.status(200).send({
     accessToken: result.accessToken,
-    refreshToken: result.refreshToken,
     expiresIn: result.expiresIn,
     tokenType: 'Bearer',
     user: result.user,
@@ -47,9 +51,10 @@ export async function registerHandler(
     userAgent,
   );
 
+  setRefreshTokenCookie(reply, result.refreshToken);
+
   reply.status(201).send({
     accessToken: result.accessToken,
-    refreshToken: result.refreshToken,
     expiresIn: result.expiresIn,
     tokenType: 'Bearer',
     user: result.user,
@@ -57,10 +62,14 @@ export async function registerHandler(
 }
 
 export async function refreshHandler(
-  request: FastifyRequest<{ Body: RefreshTokenDTO }>,
+  request: FastifyRequest,
   reply: FastifyReply,
 ): Promise<void> {
-  const { refreshToken } = request.body;
+  const refreshToken = getRefreshTokenFromRequest(request);
+
+  if (!refreshToken) {
+    throw createAuthError('Refresh token ausente. Faca login novamente.', 401);
+  }
 
   const result = await authService.refresh(request.server, refreshToken);
 
@@ -72,12 +81,16 @@ export async function refreshHandler(
 }
 
 export async function logoutHandler(
-  request: FastifyRequest<{ Body: LogoutDTO }>,
+  request: FastifyRequest,
   reply: FastifyReply,
 ): Promise<void> {
-  const { refreshToken } = request.body;
+  const refreshToken = getRefreshTokenFromRequest(request);
 
-  await authService.logout(refreshToken);
+  if (refreshToken) {
+    await authService.logout(refreshToken);
+  }
+
+  clearRefreshTokenCookie(reply);
 
   reply.status(200).send({
     message: 'Logout realizado com sucesso. Refresh token revogado.',

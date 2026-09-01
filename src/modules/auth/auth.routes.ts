@@ -13,8 +13,6 @@ import { validate } from '../../middleware/validation.js';
 import {
   loginSchema,
   registerSchema,
-  refreshTokenSchema,
-  logoutSchema,
   forgotPasswordSchema,
   resetPasswordSchema,
 } from '../../schemas/auth.js';
@@ -57,13 +55,12 @@ export async function registerAuthRoutes(server: FastifyInstance): Promise<void>
 
   server.post(
     '/api/v1/auth/refresh',
-    { preHandler: [validate(refreshTokenSchema, 'body')] },
     refreshHandler,
   );
 
   server.post(
     '/api/v1/auth/logout',
-    { preHandler: [authenticate, validate(logoutSchema, 'body')] },
+    { preHandler: [authenticate] },
     logoutHandler,
   );
 
