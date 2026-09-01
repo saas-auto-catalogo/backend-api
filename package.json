@@ -29,6 +29,7 @@
     "test:subscription": "tsx src/tests/stripe-lifecycle.test.ts",
     "test:feeds": "tsx src/tests/feed-crud.test.ts",
     "test:dashboard": "tsx src/tests/dashboard-apis.test.ts",
+    "test:ci": "npm run test:auth && npm run test:rbac && npm run test:dashboard && npm run test:feeds && npm run test:db && npm run test:email",
     "worker:sync-feed": "tsx src/workers/start-sync-feed-worker.ts",
     "test:all": "npm run test:qa && npm run test:vehicles && npm run test:db && npm run test:rbac && npm run test:auth && npm run test:dashboard && npm run test:email && npm run test:subscription && npm run test:feeds"
   },

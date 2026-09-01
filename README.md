@@ -92,6 +92,7 @@ npm run worker:sync-feed
 
 ## Testes
 
+<<<<<<< Updated upstream
 | Comando | Escopo |
 |---------|--------|
 | `npm run test:auth` | Register + cookie refresh |
@@ -111,3 +112,36 @@ Após o seed:
 
 - **Email:** `carlos.silva@autoelitemotors.com.br`
 - **Senha:** `Teste123!`
+=======
+| Comando | Escopo do Teste |
+|---|---|
+| `npm run test:infra` | Smoke test de filas BullMQ, cache Redis e rate limiting |
+| `npm run test:parser` | Teste do SAX Streaming Parser com 6 fixtures reais XML (AutoCerto, Altimus, Sisvag, BomControle, Webmotors) |
+| `npm run test:normalization` | Teste de Auto-Matching e normalização com feeds reais JSON (4Boss, JRCA) e XML |
+| `npm run test:diff` | Teste dos 4 cenários do motor de Diffs (Inserção, Inalterado, Preço/Km e Vendidos) |
+| `npm run test:meta-feed` | Teste da geração de XML Atom Meta DAA, ETag (304 Not Modified) e latência em cache |
+| `npm run test:meta-connector` | Teste de autenticação OAuth 2.0 (Anti-CSRF), Graph API e diagnósticos |
+| `npm run test:auth` | Register + cookie refresh |
+| `npm run test:rbac` | Matriz de permissões e isolamento multi-tenant |
+| `npm run test:feeds` | CRUD e sync de feeds |
+| `npm run test:dashboard` | Stats, vehicles, audit-logs, issues, activity |
+| `npm run test:ci` | **Subset do CI** — auth, rbac, dashboard, feeds, db, email |
+| `npm run test:all` | Suite agregada completa |
+
+### CI (GitHub Actions)
+
+O workflow `.github/workflows/ci.yml` roda em PRs e pushes em `main`:
+
+- **Job `unit`:** prisma validate, typecheck, test:qa, parser, normalization, diff, meta-feed, meta-connector, vehicles
+- **Job `integration`:** Postgres + Redis, migrate deploy, seed, `npm run test:ci`
+
+Reproduzir integração localmente:
+
+```bash
+docker compose up -d
+export DATABASE_URL=postgresql://postgres:postgres@localhost:5432/auto_catalogo_db?schema=public
+export REDIS_URL=redis://localhost:6379
+npx prisma migrate deploy && npm run prisma:seed
+npm run test:ci
+```
+>>>>>>> Stashed changes
