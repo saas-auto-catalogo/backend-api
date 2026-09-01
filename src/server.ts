@@ -1,18 +1,23 @@
 import Fastify, { FastifyInstance } from 'fastify';
 import cors from '@fastify/cors';
 import compress from '@fastify/compress';
+import fastifyJwt from '@fastify/jwt';
 import { getMetaVehiclesFeedHandler } from './modules/meta-feed/meta-feed.controller.js';
 import {
   getMetaAuthUrlHandler,
   postMetaCallbackHandler,
   getMetaDiagnosticsHandler
 } from './modules/meta-connector/meta-connector.controller.js';
-
 import {
   createStripePixHandler,
   createStripeCardHandler,
   stripeWebhookHandler
 } from './modules/checkout/checkout.controller.js';
+import {
+  authenticate,
+  requireRole,
+  requireWorkspace,
+} from './modules/auth/index.js';
 
 export async function buildServer(): Promise<FastifyInstance> {
   const server = Fastify({
@@ -31,6 +36,17 @@ export async function buildServer(): Promise<FastifyInstance> {
     encodings: ['gzip', 'deflate']
   });
 
+  // Registro do Plugin JWT
+  const jwtSecret = process.env.JWT_SECRET || 'super-secret-jwt-signing-key-for-auth-minimum-32-chars';
+  await server.register(fastifyJwt, {
+    secret: jwtSecret,
+    sign: {
+      expiresIn: '15m'
+    }
+  });
+
+  // ─── ROTAS PÚBLICAS ────────────────────────────────────────────────────────
+
   // Rota de Health Check
   server.get('/health', async () => {
     return {
@@ -41,18 +57,46 @@ export async function buildServer(): Promise<FastifyInstance> {
     };
   });
 
-  // Rota Pública de Feed XML Meta Automotive Inventory Ads (DAA)
+  // Rota Pública de Feed XML Meta Automotive Inventory Ads (DAA) - Autenticada via HMAC
   server.get('/api/v1/feeds/:token/meta-vehicles.xml', getMetaVehiclesFeedHandler);
 
-  // Rotas de Integração OAuth & Diagnósticos Meta Graph API
-  server.get('/api/v1/integrations/meta/auth-url', getMetaAuthUrlHandler);
-  server.post('/api/v1/integrations/meta/callback', postMetaCallbackHandler);
-  server.get('/api/v1/workspaces/:workspaceId/meta-catalogs/:catalogId/diagnostics', getMetaDiagnosticsHandler);
-
-  // Rotas de Checkout Stripe Transparente (Pix e Cartão)
+  // Rotas de Checkout Stripe Transparente (Pix e Cartão) e Webhooks
   server.post('/api/v1/checkout/stripe/pix', createStripePixHandler);
   server.post('/api/v1/checkout/stripe/card', createStripeCardHandler);
   server.post('/api/v1/webhooks/stripe', stripeWebhookHandler);
+
+  // ─── ROTAS PRIVADAS AUTENTICADAS (JWT + RBAC + Multi-Tenant) ───────────────
+
+  // Rota de Perfil do Usuário Autenticado
+  server.get(
+    '/api/v1/auth/me',
+    { preHandler: [authenticate] },
+    async (request) => {
+      return {
+        user: request.user
+      };
+    }
+  );
+
+  // Rotas de Integração OAuth Meta Graph API (Exigem OWNER ou SUPER_ADMIN)
+  server.get(
+    '/api/v1/integrations/meta/auth-url',
+    { preHandler: [authenticate, requireRole(['SUPER_ADMIN', 'OWNER'])] },
+    async (req, reply) => getMetaAuthUrlHandler(req as any, reply)
+  );
+
+  server.post(
+    '/api/v1/integrations/meta/callback',
+    { preHandler: [authenticate, requireRole(['SUPER_ADMIN', 'OWNER'])] },
+    async (req, reply) => postMetaCallbackHandler(req as any, reply)
+  );
+
+  // Rota de Diagnósticos Meta Graph API (Exige acesso ao workspace e role MANAGER+)
+  server.get(
+    '/api/v1/workspaces/:workspaceId/meta-catalogs/:catalogId/diagnostics',
+    { preHandler: [authenticate, requireWorkspace, requireRole(['SUPER_ADMIN', 'OWNER', 'MANAGER'])] },
+    async (req, reply) => getMetaDiagnosticsHandler(req as any, reply)
+  );
 
   return server;
 }
@@ -71,7 +115,7 @@ export async function startServer(port: number = 3333, host: string = '0.0.0.0')
 }
 
 // Inicialização se executado como script principal
-if (process.env.NODE_ENV !== 'test' && require.main === module) {
+if (process.env.NODE_ENV !== 'test' && typeof require !== 'undefined' && require.main === module) {
   const port = parseInt(process.env.PORT || '3333', 10);
   startServer(port);
 }

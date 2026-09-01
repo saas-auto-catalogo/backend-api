@@ -23,7 +23,8 @@
     "test:vehicles": "tsx src/tests/integration/vehicleEndpoints.test.ts",
     "test:stripe": "tsx src/tests/stripe/stripePayment.test.ts",
     "test:db": "tsx src/tests/db-validation.test.ts",
-    "test:all": "npm run test:qa && npm run test:vehicles && npm run test:db"
+    "test:rbac": "tsx src/tests/auth-rbac.test.ts",
+    "test:all": "npm run test:qa && npm run test:vehicles && npm run test:db && npm run test:rbac"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
@@ -42,6 +43,7 @@
   "dependencies": {
     "@fastify/compress": "^9.2.0",
     "@fastify/cors": "^11.3.0",
+    "@fastify/jwt": "^10.2.2",
     "@prisma/client": "^6.4.1",
     "bullmq": "^6.3.3",
     "dotenv": "^16.4.7",
