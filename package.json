@@ -22,7 +22,8 @@
     "test:qa": "tsx src/tests/qa-suite.test.ts",
     "test:vehicles": "tsx src/tests/integration/vehicleEndpoints.test.ts",
     "test:stripe": "tsx src/tests/stripe/stripePayment.test.ts",
-    "test:all": "npm run test:qa && npm run test:vehicles"
+    "test:db": "tsx src/tests/db-validation.test.ts",
+    "test:all": "npm run test:qa && npm run test:vehicles && npm run test:db"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

@@ -79,14 +79,28 @@ cp .env.example .env
 npm install
 ```
 
-### 4. Prisma ORM: Gerar Tipos e Carga de Seeds
+### 4. Prisma ORM: Migrations, Tipos e Carga de Seeds
+
+#### Ambiente de Desenvolvimento Local
 ```bash
 # Validar schema e gerar o Prisma Client
 npm run prisma:validate
 npm run prisma:generate
 
-# Executar seeds de desenvolvimento
+# Aplicar migrações em modo de desenvolvimento
+npx prisma migrate dev
+
+# Executar seeds de desenvolvimento (Super Admin + 2 Workspaces com 20 veículos)
 npm run prisma:seed
+```
+
+#### Ambiente de Produção (Railway, Render, AWS, etc.)
+```bash
+# Aplicar todas as migrações pendentes sem prompt interativo
+npx prisma migrate deploy
+
+# (Opcional) Executar carga inicial de dados/seeds se banco virgem
+npx prisma db seed
 ```
 
 ### 5. Iniciar o Servidor Fastify
