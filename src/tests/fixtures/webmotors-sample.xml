@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<anuncios>
+  <cliente>
+    <cnpj>12.345.678/0001-90</cnpj>
+    <razao_social>Concessionaria Estrela Motors Ltda</razao_social>
+  </cliente>
+  <anuncio>
+    <codigo_anuncio>WM-981240</codigo_anuncio>
+    <placa>STU4H12</placa>
+    <chassi>9BRBL30E6PL123908</chassi>
+    <marca>Hyundai</marca>
+    <modelo>Creta</modelo>
+    <versao>Ultimate 2.0 16V Flex Aut.</versao>
+    <ano_fabricacao>2024</ano_fabricacao>
+    <ano_modelo>2024</ano_modelo>
+    <cor>Azul Sapphire</cor>
+    <combustivel>Gasolina/Álcool</combustivel>
+    <transmissao>Automática</transmissao>
+    <portas>4</portas>
+    <quilometragem>18300</quilometragem>
+    <preco>152900.00</preco>
+    <preco_promocional>149900.00</preco_promocional>
+    <blindado>NÃO</blindado>
+    <opcionais>
+      <opcional>Teto Solar Panorâmico</opcional>
+      <opcional>Câmeras 360 Graus com visão do ponto cego no painel</opcional>
+      <opcional>Ventilação no banco do motorista</opcional>
+      <opcional>Smart Cruise Control (Piloto automático adaptativo com Stop &amp; Go)</opcional>
+      <opcional>Frenagem autônoma de emergência</opcional>
+      <opcional>Carregador de celular sem fio</opcional>
+    </opcionais>
+    <fotos>
+      <foto principal="true" url="https://image.webmotors.com.br/_fotos/anunciousados/gigante/2024/202408/wm-981240_01.jpg" />
+      <foto principal="false" url="https://image.webmotors.com.br/_fotos/anunciousados/gigante/2024/202408/wm-981240_02.jpg" />
+      <foto principal="false" url="https://image.webmotors.com.br/_fotos/anunciousados/gigante/2024/202408/wm-981240_03.jpg" />
+    </fotos>
+    <descricao><![CDATA[Hyundai Creta Ultimate 2.0 topo de linha com teto solar panorâmico, sistema SmartSense completo e interior bi-color marrom e bege. Garantia de 5 anos Hyundai ativa.]]></descricao>
+    <url_anuncio>https://estrelamotors.com.br/veiculos/hyundai-creta-ultimate-2024-wm981240</url_anuncio>
+  </anuncio>
+</anuncios>
