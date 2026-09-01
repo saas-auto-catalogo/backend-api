@@ -2,6 +2,7 @@ import { Queue, QueueOptions, JobsOptions } from 'bullmq';
 import { createRedisConnection } from '../redis/redis-client.js';
 import {
   QUEUE_NAMES,
+  JOB_NAMES,
   QueueName,
   QueuePriority,
   XmlIngestionJobData,
@@ -61,18 +62,21 @@ export const queuesMap: Record<QueueName, Queue<any>> = {
 };
 
 /**
- * Despacha um job de ingestão de feed XML/JSON com prioridade configurável
+ * Despacha um job de sincronização de feed XML/JSON com prioridade configurável
  */
-export async function dispatchXmlIngestion(
+export async function dispatchSyncFeed(
   data: XmlIngestionJobData,
   priority: QueuePriority = QueuePriority.NORMAL
 ) {
-  const jobId = `xml-ingest-${data.workspaceId}-${data.feedConfigId}-${Date.now()}`;
-  return xmlIngestionQueue.add('INGEST_FEED_STREAM', data, {
+  const jobId = `sync-feed-${data.workspaceId}-${data.feedConfigId}-${Date.now()}`;
+  return xmlIngestionQueue.add(JOB_NAMES.SYNC_FEED, data, {
     jobId,
     priority
   });
 }
+
+/** @deprecated Use dispatchSyncFeed */
+export const dispatchXmlIngestion = dispatchSyncFeed;
 
 /**
  * Despacha um job de sincronização com o Meta Ads DAA
@@ -82,7 +86,7 @@ export async function dispatchMetaSync(
   priority: QueuePriority = QueuePriority.NORMAL
 ) {
   const jobId = `meta-sync-${data.workspaceId}-${data.syncType.toLowerCase()}-${Date.now()}`;
-  return metaSyncQueue.add('SYNC_META_CATALOG', data, {
+  return metaSyncQueue.add(JOB_NAMES.SYNC_META_CATALOG, data, {
     jobId,
     priority
   });
@@ -96,7 +100,7 @@ export async function dispatchAiBlog(
   priority: QueuePriority = QueuePriority.NORMAL
 ) {
   const jobId = `ai-blog-${Date.now()}`;
-  return aiBlogQueue.add('GENERATE_BLOG_POST', data, {
+  return aiBlogQueue.add(JOB_NAMES.GENERATE_BLOG_POST, data, {
     jobId,
     priority
   });

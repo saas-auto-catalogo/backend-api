@@ -17,6 +17,7 @@ import {
   createStripePortalSessionHandler,
   getWorkspaceBillingDetailsHandler
 } from './modules/billing/billing.controller.js';
+import { registerFeedRoutes } from './modules/feeds/feed.routes.js';
 import {
   authenticate,
   requireRole,
@@ -107,6 +108,9 @@ export async function buildServer(): Promise<FastifyInstance> {
     { preHandler: [authenticate, requireWorkspace, requireRole(['SUPER_ADMIN', 'OWNER', 'MANAGER'])] },
     async (req, reply) => getMetaDiagnosticsHandler(req as any, reply)
   );
+
+  // Registro das Rotas do Módulo de Feeds (CRUD, Sync Manual via BullMQ e Histórico)
+  await registerFeedRoutes(server);
 
   return server;
 }

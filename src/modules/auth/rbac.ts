@@ -34,7 +34,7 @@ export const PERMISSIONS = {
   FEEDS_CREATE: ['SUPER_ADMIN', 'OWNER', 'MANAGER'] as Role[],
   FEEDS_EDIT: ['SUPER_ADMIN', 'OWNER', 'MANAGER'] as Role[],
   FEEDS_DELETE: ['SUPER_ADMIN', 'OWNER'] as Role[],
-  FEEDS_SYNC_TRIGGER: ['SUPER_ADMIN', 'OWNER', 'MANAGER'] as Role[],
+  FEEDS_SYNC_TRIGGER: ['SUPER_ADMIN', 'OWNER'] as Role[],
   FEEDS_VIEW: ['SUPER_ADMIN', 'OWNER', 'MANAGER', 'VIEWER'] as Role[],
 
   // Visualização de Estoque e Catálogo

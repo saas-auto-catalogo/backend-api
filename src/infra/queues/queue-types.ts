@@ -10,6 +10,14 @@ export const QUEUE_NAMES = {
 
 export type QueueName = typeof QUEUE_NAMES[keyof typeof QUEUE_NAMES];
 
+export const JOB_NAMES = {
+  SYNC_FEED: 'SYNC_FEED',
+  SYNC_META_CATALOG: 'SYNC_META_CATALOG',
+  GENERATE_BLOG_POST: 'GENERATE_BLOG_POST',
+} as const;
+
+export type JobName = typeof JOB_NAMES[keyof typeof JOB_NAMES];
+
 export enum QueuePriority {
   HIGH = 1,    // Sincronização manual solicitada pelo lojista
   NORMAL = 2,  // Sincronização automática agendada (rotina)
