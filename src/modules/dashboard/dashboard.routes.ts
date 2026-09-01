@@ -6,6 +6,7 @@ import {
 } from '../auth/index.js';
 import { validate } from '../../middleware/validation.js';
 import {
+  activityQuerySchema,
   auditLogsQuerySchema,
   vehicleIdParamsSchema,
   vehiclesListQuerySchema,
@@ -15,6 +16,7 @@ import {
   getDashboardStatsHandler,
   getVehicleByIdHandler,
   listAuditLogsHandler,
+  listDashboardActivityHandler,
   listDashboardIssuesHandler,
   listMetaCatalogsHandler,
   listVehiclesHandler,
@@ -45,6 +47,20 @@ export async function registerDashboardRoutes(server: FastifyInstance): Promise<
       ],
     },
     async (req, reply) => listDashboardIssuesHandler(req as any, reply),
+  );
+
+  server.get(
+    '/api/v1/workspaces/:workspaceId/dashboard/activity',
+    {
+      preHandler: [
+        authenticate,
+        requireWorkspace,
+        requirePermission('DASHBOARD_STATS_VIEW'),
+        validate(workspaceParamsSchema, 'params'),
+        validate(activityQuerySchema, 'query'),
+      ],
+    },
+    async (req, reply) => listDashboardActivityHandler(req as any, reply),
   );
 
   server.get(

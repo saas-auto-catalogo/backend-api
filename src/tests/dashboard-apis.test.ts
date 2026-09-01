@@ -189,6 +189,44 @@ async function runDashboardApiTests() {
       assert(validSeverities.includes(item.severity), `Issue item severity válido: ${item.severity}`);
     }
 
+    section('6. Dashboard Activity');
+
+    const resActivityNoAuth = await app.inject({
+      method: 'GET',
+      url: `/api/v1/workspaces/${workspaceA}/dashboard/activity`,
+    });
+    assert(resActivityNoAuth.statusCode === 401, 'Activity sem token retorna 401');
+
+    const resActivityTenantB = await app.inject({
+      method: 'GET',
+      url: `/api/v1/workspaces/${workspaceA}/dashboard/activity`,
+      headers: { authorization: `Bearer ${tokenOwnerB}` },
+    });
+    assert(resActivityTenantB.statusCode === 403, 'Tenant B bloqueado ao acessar activity do Tenant A');
+
+    const resActivityViewer = await app.inject({
+      method: 'GET',
+      url: `/api/v1/workspaces/${workspaceA}/dashboard/activity`,
+      headers: { authorization: `Bearer ${tokenViewerA}` },
+    });
+    assert(resActivityViewer.statusCode === 200, 'Viewer acessa dashboard activity (200)');
+    const activityPayload = JSON.parse(resActivityViewer.payload);
+    assert(Array.isArray(activityPayload.events), 'Activity retorna array events');
+    assert(
+      !('ipAddress' in activityPayload) && !('actorEmail' in activityPayload),
+      'Activity response não expõe campos sensíveis no root',
+    );
+
+    for (const event of activityPayload.events) {
+      assert(typeof event.id === 'string', 'Activity event contém id');
+      assert(typeof event.type === 'string', 'Activity event contém type');
+      assert(typeof event.title === 'string', 'Activity event contém title');
+      assert(typeof event.description === 'string', 'Activity event contém description');
+      assert(typeof event.occurredAt === 'string', 'Activity event contém occurredAt');
+      assert(!('ipAddress' in event), 'Activity event não expõe ipAddress');
+      assert(!('actorEmail' in event), 'Activity event não expõe actorEmail');
+    }
+
   } finally {
     await app.close();
     await closeAllQueues().catch(() => undefined);
