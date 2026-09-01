@@ -15,6 +15,7 @@ import {
   getDashboardStatsHandler,
   getVehicleByIdHandler,
   listAuditLogsHandler,
+  listDashboardIssuesHandler,
   listMetaCatalogsHandler,
   listVehiclesHandler,
 } from './dashboard.controller.js';
@@ -31,6 +32,19 @@ export async function registerDashboardRoutes(server: FastifyInstance): Promise<
       ],
     },
     async (req, reply) => getDashboardStatsHandler(req as any, reply),
+  );
+
+  server.get(
+    '/api/v1/workspaces/:workspaceId/dashboard/issues',
+    {
+      preHandler: [
+        authenticate,
+        requireWorkspace,
+        requirePermission('DASHBOARD_STATS_VIEW'),
+        validate(workspaceParamsSchema, 'params'),
+      ],
+    },
+    async (req, reply) => listDashboardIssuesHandler(req as any, reply),
   );
 
   server.get(

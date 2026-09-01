@@ -85,6 +85,30 @@ export interface PaginationMeta {
   hasPrevPage: boolean;
 }
 
+export type CatalogIssueType = 'MISSING_IMAGES' | 'PRICE_ZERO' | 'INVALID_VIN' | 'YEAR_INVALID';
+export type CatalogIssueSeverity = 'BLOCKING' | 'WARNING';
+
+export interface CatalogIssueItem {
+  id: string;
+  vehicleId: string;
+  make: string;
+  model: string;
+  licensePlate: string;
+  issueType: CatalogIssueType;
+  severity: CatalogIssueSeverity;
+  description: string;
+  recommendation: string;
+  detectedAt: string;
+  imageUrl?: string;
+}
+
+const ISSUE_RECOMMENDATIONS: Record<CatalogIssueType, string> = {
+  MISSING_IMAGES: 'Adicione pelo menos 1 foto HD no seu gestor DMS.',
+  PRICE_ZERO: 'Informe o valor de tabela no DMS para liberar no Meta Ads.',
+  INVALID_VIN: 'Corrija o número do chassi no cadastro do DMS.',
+  YEAR_INVALID: 'Revise o ano/modelo no sistema de estoque.',
+};
+
 function buildPagination(total: number, page: number, limit: number): PaginationMeta {
   const totalPages = Math.max(1, Math.ceil(total / limit));
   return {
@@ -138,8 +162,123 @@ function isBlockingWarning(warning: string): boolean {
     normalized.includes('preco') ||
     normalized.includes('foto') ||
     normalized.includes('imagem') ||
+    normalized.includes('imagens') ||
     normalized.includes('essenciais ausentes')
   );
+}
+
+function classifyValidationWarning(warning: string): {
+  issueType: CatalogIssueType;
+  severity: CatalogIssueSeverity;
+} {
+  const normalized = warning.toLowerCase();
+
+  if (
+    normalized.includes('foto') ||
+    normalized.includes('imagem') ||
+    normalized.includes('imagens')
+  ) {
+    return { issueType: 'MISSING_IMAGES', severity: 'BLOCKING' };
+  }
+
+  if (
+    normalized.includes('preço') ||
+    normalized.includes('preco') ||
+    normalized.includes('consulta')
+  ) {
+    return { issueType: 'PRICE_ZERO', severity: 'BLOCKING' };
+  }
+
+  if (normalized.includes('chassi') || normalized.includes('vin')) {
+    return { issueType: 'INVALID_VIN', severity: 'WARNING' };
+  }
+
+  if (normalized.includes('ano') || normalized.includes('essenciais ausentes')) {
+    return { issueType: 'YEAR_INVALID', severity: 'WARNING' };
+  }
+
+  return { issueType: 'YEAR_INVALID', severity: 'WARNING' };
+}
+
+function resolveIssueSeverity(
+  warning: string,
+  classified: CatalogIssueSeverity,
+): CatalogIssueSeverity {
+  if (classified === 'BLOCKING' || isBlockingWarning(warning)) {
+    return 'BLOCKING';
+  }
+  return 'WARNING';
+}
+
+function parseValidationWarnings(
+  validationWarnings: Vehicle['validationWarnings'],
+): string[] {
+  if (Array.isArray(validationWarnings)) {
+    return validationWarnings as string[];
+  }
+  if (validationWarnings) {
+    return [String(validationWarnings)];
+  }
+  return [];
+}
+
+type IssueVehicleRow = Pick<
+  Vehicle,
+  | 'id'
+  | 'make'
+  | 'model'
+  | 'version'
+  | 'licensePlate'
+  | 'heroImageUrl'
+  | 'validationWarnings'
+  | 'eligibleForMetaAds'
+  | 'updatedAt'
+>;
+
+function mapVehicleToCatalogIssues(vehicle: IssueVehicleRow): CatalogIssueItem[] {
+  const warnings = parseValidationWarnings(vehicle.validationWarnings);
+  const displayModel = vehicle.version
+    ? `${vehicle.model} ${vehicle.version}`.trim()
+    : vehicle.model;
+  const imageUrl = vehicle.heroImageUrl || undefined;
+  const detectedAt = vehicle.updatedAt.toISOString();
+
+  if (warnings.length === 0 && !vehicle.eligibleForMetaAds) {
+    return [
+      {
+        id: `${vehicle.id}:PRICE_ZERO:0`,
+        vehicleId: vehicle.id,
+        make: vehicle.make,
+        model: displayModel,
+        licensePlate: vehicle.licensePlate || '',
+        issueType: 'PRICE_ZERO',
+        severity: 'BLOCKING',
+        description: 'Veículo inelegível para Meta Ads DAA.',
+        recommendation: 'Revise preço, fotos e dados obrigatórios no DMS.',
+        detectedAt,
+        imageUrl,
+      },
+    ];
+  }
+
+  return warnings.map((warning, index) => {
+    const classified = classifyValidationWarning(warning);
+    const severity = resolveIssueSeverity(warning, classified.severity);
+
+    return {
+      id: `${vehicle.id}:${classified.issueType}:${index}`,
+      vehicleId: vehicle.id,
+      make: vehicle.make,
+      model: displayModel,
+      licensePlate: vehicle.licensePlate || '',
+      issueType: classified.issueType,
+      severity,
+      description: warning,
+      recommendation: ISSUE_RECOMMENDATIONS[classified.issueType],
+      detectedAt,
+      imageUrl,
+    };
+  });
 }
 
 function countIssuesFromVehicles(
@@ -383,6 +522,37 @@ export class DashboardService {
       items,
       pagination: buildPagination(total, query.page, query.limit),
     };
+  }
+
+  async listDashboardIssues(workspaceId: string): Promise<CatalogIssueItem[]> {
+    const vehicles = await prisma.vehicle.findMany({
+      where: { workspaceId },
+      select: {
+        id: true,
+        make: true,
+        model: true,
+        version: true,
+        licensePlate: true,
+        heroImageUrl: true,
+        validationWarnings: true,
+        eligibleForMetaAds: true,
+        updatedAt: true,
+      },
+      orderBy: { updatedAt: 'desc' },
+    });
+
+    const items: CatalogIssueItem[] = [];
+
+    for (const vehicle of vehicles) {
+      const warnings = parseValidationWarnings(vehicle.validationWarnings);
+      const hasIssue = warnings.length > 0 || !vehicle.eligibleForMetaAds;
+
+      if (!hasIssue) continue;
+
+      items.push(...mapVehicleToCatalogIssues(vehicle));
+    }
+
+    return items;
   }
 }
 
