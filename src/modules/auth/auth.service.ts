@@ -160,6 +160,121 @@ export class AuthService {
     };
   }
 
+  async register(
+    server: FastifyInstance,
+    name: string,
+    email: string,
+    password: string,
+    workspaceName: string,
+    ipAddress?: string,
+    userAgentStr?: string,
+  ): Promise<LoginResult> {
+    const normalizedEmail = email.toLowerCase().trim();
+
+    const existingUser = await prisma.user.findUnique({
+      where: { email: normalizedEmail },
+    });
+
+    if (existingUser) {
+      throw createAuthError('Este email ja esta cadastrado. Faca login ou use outro email.', 409);
+    }
+
+    const passwordHash = await bcrypt.hash(password, BCRYPT_COST);
+    const slug = await generateUniqueSlug(workspaceName);
+
+    const { user, membership, dealership } = await prisma.$transaction(async (tx) => {
+      const createdUser = await tx.user.create({
+        data: {
+          email: normalizedEmail,
+          name: name.trim(),
+          passwordHash,
+        },
+      });
+
+      const workspace = await tx.workspace.create({
+        data: {
+          name: workspaceName.trim(),
+          slug,
+          status: 'ACTIVE',
+        },
+      });
+
+      const createdMembership = await tx.workspaceMember.create({
+        data: {
+          workspaceId: workspace.id,
+          userId: createdUser.id,
+          role: 'OWNER',
+        },
+        include: { workspace: true },
+      });
+
+      const createdDealership = await tx.dealership.create({
+        data: {
+          workspaceId: workspace.id,
+          tradeName: workspaceName.trim(),
+          email: normalizedEmail,
+        },
+      });
+
+      return {
+        user: createdUser,
+        membership: createdMembership,
+        dealership: createdDealership,
+      };
+    });
+
+    const payload: AuthUser = {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      isSuperAdmin: user.isSuperAdmin,
+      workspaceId: membership.workspaceId,
+      dealershipId: dealership.id,
+      role: membership.role,
+    };
+
+    const accessToken = server.jwt.sign(
+      { ...payload, sub: user.id },
+      { expiresIn: ACCESS_TOKEN_EXPIRY },
+    );
+
+    const refreshTokenValue = randomUUID();
+    const expiresAt = new Date(Date.now() + REFRESH_TOKEN_EXPIRY_DAYS * 24 * 60 * 60 * 1000);
+
+    await prisma.refreshToken.create({
+      data: {
+        userId: user.id,
+        token: refreshTokenValue,
+        expiresAt,
+        ipAddress: ipAddress || null,
+        userAgent: userAgentStr?.substring(0, 500) || null,
+      },
+    });
+
+    const loginUrl = `${process.env.FRONTEND_URL || 'https://app.autocatalogo.com.br'}/login`;
+    emailService.sendWelcomeEmail(user.email, {
+      userName: user.name,
+      workspaceName: membership.workspace.name,
+      loginUrl,
+    }).catch(() => {});
+
+    return {
+      accessToken,
+      refreshToken: refreshTokenValue,
+      expiresIn: 900,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        avatarUrl: user.avatarUrl,
+        isSuperAdmin: user.isSuperAdmin,
+        workspaceId: membership.workspaceId,
+        dealershipId: dealership.id,
+        role: membership.role,
+      },
+    };
+  }
+
   async refresh(server: FastifyInstance, refreshToken: string): Promise<RefreshResult> {
     const storedToken = await prisma.refreshToken.findUnique({
       where: { token: refreshToken },
@@ -321,6 +436,7 @@ function createAuthError(detail: string, status: number): Error & { problem: any
     400: 'bad-request',
     401: 'unauthorized',
     404: 'not-found',
+    409: 'conflict',
     423: 'account-locked',
     429: 'rate-limited',
   };
@@ -329,6 +445,7 @@ function createAuthError(detail: string, status: number): Error & { problem: any
     400: 'Requisicao Invalida',
     401: 'Nao Autorizado',
     404: 'Nao Encontrado',
+    409: 'Conflito',
     423: 'Conta Bloqueada',
     429: 'Limite de Requisicoes Excedido',
   };
@@ -342,6 +459,30 @@ function createAuthError(detail: string, status: number): Error & { problem: any
     detail,
   };
   return err;
+}
+
+function slugifyWorkspaceName(workspaceName: string): string {
+  return workspaceName
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .substring(0, 90) || 'workspace';
+}
+
+async function generateUniqueSlug(workspaceName: string): Promise<string> {
+  const baseSlug = slugifyWorkspaceName(workspaceName);
+  let candidate = baseSlug;
+  let suffix = 2;
+
+  while (await prisma.workspace.findUnique({ where: { slug: candidate } })) {
+    candidate = `${baseSlug}-${suffix}`;
+    suffix++;
+  }
+
+  return candidate;
 }
 
 export const authService = new AuthService();

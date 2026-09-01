@@ -2,6 +2,7 @@ import { FastifyRequest, FastifyReply } from 'fastify';
 import { authService } from './auth.service.js';
 import {
   LoginDTO,
+  RegisterDTO,
   RefreshTokenDTO,
   ForgotPasswordDTO,
   ResetPasswordDTO,
@@ -20,6 +21,33 @@ export async function loginHandler(
   const result = await authService.login(request.server, email, password, ipAddress, userAgent);
 
   reply.status(200).send({
+    accessToken: result.accessToken,
+    refreshToken: result.refreshToken,
+    expiresIn: result.expiresIn,
+    tokenType: 'Bearer',
+    user: result.user,
+  });
+}
+
+export async function registerHandler(
+  request: FastifyRequest<{ Body: RegisterDTO }>,
+  reply: FastifyReply,
+): Promise<void> {
+  const { name, email, password, workspaceName } = request.body;
+  const ipAddress = request.ip;
+  const userAgent = request.headers['user-agent'] || '';
+
+  const result = await authService.register(
+    request.server,
+    name,
+    email,
+    password,
+    workspaceName,
+    ipAddress,
+    userAgent,
+  );
+
+  reply.status(201).send({
     accessToken: result.accessToken,
     refreshToken: result.refreshToken,
     expiresIn: result.expiresIn,
