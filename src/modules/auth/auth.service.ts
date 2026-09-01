@@ -431,7 +431,7 @@ export class AuthService {
   }
 }
 
-function createAuthError(detail: string, status: number): Error & { problem: any; statusCode: number } {
+export function createAuthError(detail: string, status: number): Error & { problem: any; statusCode: number } {
   const typeMap: Record<number, string> = {
     400: 'bad-request',
     401: 'unauthorized',

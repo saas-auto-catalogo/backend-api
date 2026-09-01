@@ -24,7 +24,7 @@
     "test:stripe": "tsx src/tests/stripe/stripePayment.test.ts",
     "test:db": "tsx src/tests/db-validation.test.ts",
     "test:rbac": "tsx src/tests/auth-rbac.test.ts",
-    "test:auth": "tsx src/tests/auth-register.test.ts",
+    "test:auth": "tsx src/tests/auth-register.test.ts && tsx src/tests/auth-cookie.test.ts",
     "test:email": "tsx src/tests/email.test.ts",
     "test:subscription": "tsx src/tests/stripe-lifecycle.test.ts",
     "test:feeds": "tsx src/tests/feed-crud.test.ts",
@@ -47,6 +47,7 @@
   "license": "UNLICENSED",
   "dependencies": {
     "@fastify/compress": "^9.2.0",
+    "@fastify/cookie": "^11.1.2",
     "@fastify/cors": "^11.3.0",
     "@fastify/jwt": "^10.2.2",
     "@prisma/client": "^6.4.1",

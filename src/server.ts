@@ -1,6 +1,7 @@
 import Fastify, { FastifyInstance } from 'fastify';
 import cors from '@fastify/cors';
 import compress from '@fastify/compress';
+import cookie from '@fastify/cookie';
 import fastifyJwt from '@fastify/jwt';
 import { getMetaVehiclesFeedHandler } from './modules/meta-feed/meta-feed.controller.js';
 import {
@@ -37,9 +38,12 @@ export async function buildServer(): Promise<FastifyInstance> {
   });
 
   await server.register(cors, {
-    origin: '*',
+    origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+    credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
   });
+
+  await server.register(cookie);
 
   await server.register(compress, {
     global: true,
