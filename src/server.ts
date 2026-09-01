@@ -19,6 +19,7 @@ import {
   getWorkspaceBillingDetailsHandler
 } from './modules/billing/billing.controller.js';
 import { registerFeedRoutes } from './modules/feeds/feed.routes.js';
+import { registerDashboardRoutes } from './modules/dashboard/index.js';
 import {
   authenticate,
   requireRole,
@@ -115,6 +116,9 @@ export async function buildServer(): Promise<FastifyInstance> {
 
   // Registro das Rotas do Módulo de Feeds (CRUD, Sync Manual via BullMQ e Histórico)
   await registerFeedRoutes(server);
+
+  // Registro das Rotas do Dashboard (stats, vehicles, meta-catalogs, audit-logs)
+  await registerDashboardRoutes(server);
 
   return server;
 }

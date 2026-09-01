@@ -40,6 +40,9 @@ export const PERMISSIONS = {
   // Visualização de Estoque e Catálogo
   VEHICLES_VIEW: ['SUPER_ADMIN', 'OWNER', 'MANAGER', 'VIEWER'] as Role[],
   VEHICLES_EDIT: ['SUPER_ADMIN', 'OWNER', 'MANAGER'] as Role[],
+  DASHBOARD_STATS_VIEW: ['SUPER_ADMIN', 'OWNER', 'MANAGER', 'VIEWER'] as Role[],
+  META_CATALOGS_VIEW: ['SUPER_ADMIN', 'OWNER', 'MANAGER', 'VIEWER'] as Role[],
+  AUDIT_LOGS_VIEW: ['SUPER_ADMIN', 'OWNER', 'MANAGER'] as Role[],
 } as const;
 
 export type PermissionKey = keyof typeof PERMISSIONS;
