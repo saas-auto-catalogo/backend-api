@@ -92,39 +92,22 @@ npm run worker:sync-feed
 
 ## Testes
 
-<<<<<<< Updated upstream
 | Comando | Escopo |
 |---------|--------|
+| `npm run test:qa` | Suite QA (parser, validadores, benchmarks) |
+| `npm run test:parser` | SAX streaming com fixtures reais |
+| `npm run test:normalization` | Auto-matching e normalização |
+| `npm run test:diff` | Motor de diffs de estoque |
+| `npm run test:meta-feed` | XML Meta DAA, ETag, cache |
+| `npm run test:meta-connector` | OAuth Meta, anti-CSRF |
+| `npm run test:vehicles` | Validador de veículos (fixtures JSON) |
 | `npm run test:auth` | Register + cookie refresh |
 | `npm run test:rbac` | Permissões por role |
 | `npm run test:feeds` | CRUD e sync |
 | `npm run test:dashboard` | Stats, vehicles, audit-logs, issues, activity |
+| `npm run test:db` | Validação de schema, migrations e seed |
+| `npm run test:email` | Templates e envio sandbox |
 | `npm run test:subscription` | Stripe lifecycle e billing |
-| `npm run test:parser` | SAX streaming com fixtures reais |
-| `npm run test:meta-feed` | XML Meta DAA, ETag, cache |
-| `npm run test:all` | Suite agregada |
-
----
-
-## Credenciais de desenvolvimento
-
-Após o seed:
-
-- **Email:** `carlos.silva@autoelitemotors.com.br`
-- **Senha:** `Teste123!`
-=======
-| Comando | Escopo do Teste |
-|---|---|
-| `npm run test:infra` | Smoke test de filas BullMQ, cache Redis e rate limiting |
-| `npm run test:parser` | Teste do SAX Streaming Parser com 6 fixtures reais XML (AutoCerto, Altimus, Sisvag, BomControle, Webmotors) |
-| `npm run test:normalization` | Teste de Auto-Matching e normalização com feeds reais JSON (4Boss, JRCA) e XML |
-| `npm run test:diff` | Teste dos 4 cenários do motor de Diffs (Inserção, Inalterado, Preço/Km e Vendidos) |
-| `npm run test:meta-feed` | Teste da geração de XML Atom Meta DAA, ETag (304 Not Modified) e latência em cache |
-| `npm run test:meta-connector` | Teste de autenticação OAuth 2.0 (Anti-CSRF), Graph API e diagnósticos |
-| `npm run test:auth` | Register + cookie refresh |
-| `npm run test:rbac` | Matriz de permissões e isolamento multi-tenant |
-| `npm run test:feeds` | CRUD e sync de feeds |
-| `npm run test:dashboard` | Stats, vehicles, audit-logs, issues, activity |
 | `npm run test:ci` | **Subset do CI** — auth, rbac, dashboard, feeds, db, email |
 | `npm run test:all` | Suite agregada completa |
 
@@ -144,4 +127,12 @@ export REDIS_URL=redis://localhost:6379
 npx prisma migrate deploy && npm run prisma:seed
 npm run test:ci
 ```
->>>>>>> Stashed changes
+
+---
+
+## Credenciais de desenvolvimento
+
+Após o seed:
+
+- **Email:** `carlos.silva@autoelitemotors.com.br`
+- **Senha:** `Teste123!`
