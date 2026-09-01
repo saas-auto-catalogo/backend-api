@@ -18,7 +18,11 @@
     "test:normalization": "tsx src/modules/normalization/test-normalization.ts",
     "test:diff": "tsx src/modules/stock-diff/test-diff.ts",
     "test:meta-feed": "tsx src/modules/meta-feed/test-meta-feed.ts",
-    "test:meta-connector": "tsx src/modules/meta-connector/test-meta-connector.ts"
+    "test:meta-connector": "tsx src/modules/meta-connector/test-meta-connector.ts",
+    "test:qa": "tsx src/tests/qa-suite.test.ts",
+    "test:vehicles": "tsx src/tests/integration/vehicleEndpoints.test.ts",
+    "test:stripe": "tsx src/tests/stripe/stripePayment.test.ts",
+    "test:all": "npm run test:qa && npm run test:vehicles"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

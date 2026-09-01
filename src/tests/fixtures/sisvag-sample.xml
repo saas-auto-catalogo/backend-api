@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<SisvagFeed versao="2.1" exportado="2024-02-01T10:00:00">
+  <estoque_item codigo="SVG-10034" situacao="disponivel">
+    <dados_basicos>
+      <marca>Jeep</marca>
+      <modelo>Commander</modelo>
+      <versao>Longitude 1.3 T270 Flex Aut.</versao>
+      <anofabricacao>2022</anofabricacao>
+      <anomodelo>2023</anomodelo>
+      <cor_nome>Cinza Granite</cor_nome>
+      <tipo_combustivel>Flex</tipo_combustivel>
+      <tipo_cambio>Automático</tipo_cambio>
+      <qtd_portas>5</qtd_portas>
+      <km_rodados>31500</km_rodados>
+    </dados_basicos>
+    <precificacao>
+      <preco_anuncio>234900.00</preco_anuncio>
+      <preco_fipe>228000.00</preco_fipe>
+    </precificacao>
+    <midias>
+      <foto principal="true">https://cdn.sisvag.com.br/fotos/10034/principal.webp</foto>
+      <foto>https://cdn.sisvag.com.br/fotos/10034/img2.webp</foto>
+      <foto>https://cdn.sisvag.com.br/fotos/10034/img3.webp</foto>
+    </midias>
+    <acessorios>
+      <acessorio>Sensores Dianteiros e Traseiros</acessorio>
+      <acessorio>Rodas 18" Liga Leve</acessorio>
+      <acessorio>Câmera 360°</acessorio>
+    </acessorios>
+  </estoque_item>
+  <estoque_item codigo="SVG-10091" situacao="baixado">
+    <dados_basicos>
+      <marca>Fiat</marca>
+      <modelo>Pulse</modelo>
+      <versao>Drive 1.3 Flex CVT</versao>
+      <anofabricacao>2023</anofabricacao>
+      <anomodelo>2023</anomodelo>
+      <cor_nome>Vermelho Colorado</cor_nome>
+      <tipo_combustivel>Flex</tipo_combustivel>
+      <tipo_cambio>CVT</tipo_cambio>
+      <qtd_portas>4</qtd_portas>
+      <km_rodados>0</km_rodados>
+    </dados_basicos>
+    <precificacao>
+      <preco_anuncio>98500.00</preco_anuncio>
+    </precificacao>
+    <midias>
+      <foto principal="true">https://cdn.sisvag.com.br/fotos/10091/principal.webp</foto>
+    </midias>
+    <acessorios/>
+  </estoque_item>
+</SisvagFeed>

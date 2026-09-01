@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<BomControle xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <anuncio ref="BC-20198">
+    <veiculo>
+      <MARCA>Chevrolet</MARCA>
+      <MODELO>Onix Plus</MODELO>
+      <VERSAO>Premier 1.0 Turbo Aut.</VERSAO>
+      <ANO_FABR>2022</ANO_FABR>
+      <ANO_MOD>2023</ANO_MOD>
+      <COR>Azul Nightfall</COR>
+      <COMB>Flex</COMB>
+      <CAMBIO>Automático</CAMBIO>
+      <PORTAS>4</PORTAS>
+      <KM>18900</KM>
+      <PRECO>97500.00</PRECO>
+      <BLINDADO>N</BLINDADO>
+    </veiculo>
+    <imagens>
+      <imagem posicao="0" principal="S">https://fotos.bomcontrole.com.br/20198/0.jpg</imagem>
+      <imagem posicao="1">https://fotos.bomcontrole.com.br/20198/1.jpg</imagem>
+      <imagem posicao="2">https://fotos.bomcontrole.com.br/20198/2.jpg</imagem>
+    </imagens>
+    <itens_opcionais>
+      <item>Chave Presencial Keyless</item>
+      <item>MyLink com Tela 8"</item>
+      <item>Wireless Charging</item>
+    </itens_opcionais>
+    <status_estoque>ATIVO</status_estoque>
+  </anuncio>
+  <anuncio ref="BC-20340">
+    <veiculo>
+      <MARCA>Renault</MARCA>
+      <MODELO>Duster</MODELO>
+      <VERSAO>Iconic 1.3 TCe Aut.</VERSAO>
+      <ANO_FABR>2023</ANO_FABR>
+      <ANO_MOD>2024</ANO_MOD>
+      <COR>Branco Glacial</COR>
+      <COMB>Gasolina</COMB>
+      <CAMBIO>Automático</CAMBIO>
+      <PORTAS>5</PORTAS>
+      <KM>5400</KM>
+      <PRECO>129900.00</PRECO>
+      <BLINDADO>N</BLINDADO>
+    </veiculo>
+    <imagens>
+      <imagem posicao="0" principal="S">https://fotos.bomcontrole.com.br/20340/0.jpg</imagem>
+    </imagens>
+    <itens_opcionais>
+      <item>Câmera de Ré</item>
+    </itens_opcionais>
+    <status_estoque>ATIVO</status_estoque>
+  </anuncio>
+</BomControle>

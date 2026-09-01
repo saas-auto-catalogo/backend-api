@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<estoque>
+  <veiculo>
+    <codigo_veiculo>AC-84920</codigo_veiculo>
+    <placa>ABC1D23</placa>
+    <chassi>9BRBL48E9N2145892</chassi>
+    <marca>Toyota</marca>
+    <modelo>Corolla Cross</modelo>
+    <versao>XRE 2.0 16V Flex Aut.</versao>
+    <anofabricacao>2023</anofabricacao>
+    <anomodelo>2024</anomodelo>
+    <cor>Branco Pérola</cor>
+    <combustivel>Flex</combustivel>
+    <cambio>CVT</cambio>
+    <portas>4</portas>
+    <quilometragem>12500</quilometragem>
+    <valor_venda>168900.00</valor_venda>
+    <valor_promocional>164900.00</valor_promocional>
+    <blindado>nao</blindado>
+    <status>disponivel</status>
+    <fotos>
+      <foto_destaque>https://img.autocerto.com/veiculos/ac84920/foto1.jpg</foto_destaque>
+      <foto>https://img.autocerto.com/veiculos/ac84920/foto2.jpg</foto>
+      <foto>https://img.autocerto.com/veiculos/ac84920/foto3.jpg</foto>
+    </fotos>
+    <opcionais>
+      <opcional>Ar Condicionado Digital</opcional>
+      <opcional>Bancos de Couro</opcional>
+      <opcional>Teto Solar Elétrico</opcional>
+      <opcional>Câmera de Ré</opcional>
+    </opcionais>
+    <observacoes>Veículo em estado impecável &amp; revisões na concessionária.</observacoes>
+  </veiculo>
+  <veiculo>
+    <codigo_veiculo>AC-92011</codigo_veiculo>
+    <placa>DEF4G56</placa>
+    <chassi>9BWZZZ377VT004251</chassi>
+    <marca>Volkswagen</marca>
+    <modelo>Tiguan</modelo>
+    <versao>Allspace 1.4 250TSI Comfortline DSG</versao>
+    <anofabricacao>2022</anofabricacao>
+    <anomodelo>2023</anomodelo>
+    <cor>Prata Reflex</cor>
+    <combustivel>Gasolina</combustivel>
+    <cambio>Automático</cambio>
+    <portas>5</portas>
+    <quilometragem>28700</quilometragem>
+    <valor_venda>189900.00</valor_venda>
+    <status>disponivel</status>
+    <fotos>
+      <foto_destaque>https://img.autocerto.com/veiculos/ac92011/foto1.jpg</foto_destaque>
+      <foto>https://img.autocerto.com/veiculos/ac92011/foto2.jpg</foto>
+    </fotos>
+    <opcionais>
+      <opcional>Multimídia Discover Pro</opcional>
+      <opcional>Sensor de Estacionamento</opcional>
+    </opcionais>
+  </veiculo>
+</estoque>

@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<veiculos>
+  <veiculo id="ALT-5521">
+    <marca>Honda</marca>
+    <modelo>HR-V</modelo>
+    <versao>EXL 1.5 Turbo CVT</versao>
+    <anofab>2023</anofab>
+    <anomod>2024</anomod>
+    <cor>Branco Platinium</cor>
+    <combustivel>Gasolina</combustivel>
+    <cambio>CVT</cambio>
+    <portas>5</portas>
+    <km>9800</km>
+    <preco>159900.00</preco>
+    <status>em_estoque</status>
+    <fotos>
+      <capa>https://hub.altimus.com.br/fotos/5521/0.jpg</capa>
+      <foto ordem="2">https://hub.altimus.com.br/fotos/5521/1.jpg</foto>
+      <foto ordem="3">https://hub.altimus.com.br/fotos/5521/2.jpg</foto>
+    </fotos>
+    <opcionais>
+      <item>Piloto Automático Adaptativo</item>
+      <item>Frenagem Automática de Emergência</item>
+      <item>CarPlay e Android Auto</item>
+    </opcionais>
+  </veiculo>
+  <veiculo id="ALT-5899">
+    <marca>Hyundai</marca>
+    <modelo>Tucson</modelo>
+    <versao>Platinum 1.6 T-GDI Aut.</versao>
+    <anofab>2021</anofab>
+    <anomod>2022</anomod>
+    <cor>Preto Phantom</cor>
+    <combustivel>Gasolina</combustivel>
+    <cambio>Automático</cambio>
+    <portas>5</portas>
+    <km>47200</km>
+    <preco>145000.00</preco>
+    <status>em_estoque</status>
+    <fotos>
+      <capa>https://hub.altimus.com.br/fotos/5899/0.jpg</capa>
+      <foto ordem="2">https://hub.altimus.com.br/fotos/5899/1.jpg</foto>
+    </fotos>
+    <opcionais>
+      <item>Teto Solar Panorâmico</item>
+      <item>Bancos Elétricos com Memória</item>
+    </opcionais>
+  </veiculo>
+</veiculos>

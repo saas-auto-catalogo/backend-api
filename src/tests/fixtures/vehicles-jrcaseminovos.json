@@ -1,0 +1,107 @@
+{
+  "source": "jrcaseminovos",
+  "url": "https://www.jrcaseminovos.com.br/api/vehicles?perPage=12&page=1&order=a-z&situation=in_stock",
+  "capturedAt": "2026-08-31",
+  "total": 136,
+  "pages": 12,
+  "page": 1,
+  "perPage": 12,
+  "vehicles": [
+    {
+      "id": 104380,
+      "title": "Audi Q5 Performance 2.0 TFSIe S.Tr. Qt Híbrido",
+      "slug": "audi-q5-performance-2-0-tfsie-s-tr-qt-hibrido/104380",
+      "brand": "Audi",
+      "model": "Q5",
+      "version": "Performance 2.0 TFSIe S.Tr. Qt Híbrido",
+      "year": { "one": 2023, "two": 2024 },
+      "km": 17881,
+      "fuel": "Híbrido plug-in",
+      "exchange": "Automático",
+      "price": 289990,
+      "priceOnRequest": false,
+      "armored": false,
+      "warranty": false,
+      "highlight": false,
+      "galleryMedium": [
+        {
+          "url": "https://cdn.spicedigital.com.br/vehicles/36/images/104380/spice-jrca-veiculos-d890ffe5-871239.png",
+          "full": "https://cdn.spicedigital.com.br/vehicles/36/images/104380/spice-jrca-veiculos-d890ffe5-871239.png",
+          "alt": "Imagem - Spice Digital"
+        }
+      ]
+    },
+    {
+      "id": 104692,
+      "title": "BYD Dolphin EV GS Elétrico",
+      "slug": "byd-dolphin-ev-gs-eletrico/104692",
+      "brand": "BYD",
+      "model": "Dolphin",
+      "version": "EV GS Elétrico",
+      "year": { "one": 2026, "two": 2027 },
+      "km": 20,
+      "fuel": "Elétrico",
+      "exchange": "Automático",
+      "price": 149990,
+      "priceOnRequest": false,
+      "armored": false,
+      "warranty": true,
+      "highlight": false,
+      "galleryMedium": [
+        {
+          "url": "https://cdn.spicedigital.com.br/vehicles/36/images/104692/spice-jrca-veiculos-382d7f58-ac80a3.png",
+          "full": "https://cdn.spicedigital.com.br/vehicles/36/images/104692/spice-jrca-veiculos-382d7f58-ac80a3.png",
+          "alt": "Imagem - Spice Digital"
+        }
+      ]
+    },
+    {
+      "id": 105846,
+      "title": "BYD King GS 1.5 16V Aut. Híbrido",
+      "slug": "byd-king-gs-1-5-16v-aut-hibrido/105846",
+      "brand": "BYD",
+      "model": "King",
+      "version": "GS 1.5 16V Aut. Híbrido",
+      "year": { "one": 2025, "two": 2026 },
+      "km": 5722,
+      "fuel": "Híbrido",
+      "exchange": "Automático",
+      "price": 154990,
+      "priceOnRequest": false,
+      "armored": false,
+      "warranty": true,
+      "highlight": false,
+      "galleryMedium": [
+        {
+          "url": "https://cdn.spicedigital.com.br/vehicles/36/images/105846/spice-jrca-veiculos-154d97c9-ceece9.png",
+          "full": "https://cdn.spicedigital.com.br/vehicles/36/images/105846/spice-jrca-veiculos-154d97c9-ceece9.png",
+          "alt": "Imagem - Spice Digital"
+        }
+      ]
+    },
+    {
+      "id": 103577,
+      "title": "BYD Song Plus 1.5 16V Aut. Híbrido",
+      "slug": "byd-song-plus-1-5-16v-aut-hibrido/103577",
+      "brand": "BYD",
+      "model": "Song Plus",
+      "version": "1.5 16V Aut. Híbrido",
+      "year": { "one": 2024, "two": 2025 },
+      "km": 92354,
+      "fuel": "Híbrido",
+      "exchange": "Automático",
+      "price": 172990,
+      "priceOnRequest": false,
+      "armored": false,
+      "warranty": true,
+      "highlight": true,
+      "galleryMedium": [
+        {
+          "url": "https://cdn.spicedigital.com.br/vehicles/36/images/103577/spice-jrca-veiculos-73ad183f-c5d7f6.png",
+          "full": "https://cdn.spicedigital.com.br/vehicles/36/images/103577/spice-jrca-veiculos-73ad183f-c5d7f6.png",
+          "alt": "Imagem - Spice Digital"
+        }
+      ]
+    }
+  ]
+}
