@@ -22,6 +22,12 @@ import {
   requireRole,
   requireWorkspace,
 } from './modules/auth/index.js';
+import { errorHandler } from './middleware/errorHandler.js';
+import { validate } from './middleware/validation.js';
+import { feedParamsSchema } from './schemas/feeds.js';
+import { createStripePixSchema, createStripeCardSchema } from './schemas/billing.js';
+import { portalSessionSchema } from './schemas/billing.js';
+import { getAuthUrlQuerySchema, postCallbackBodySchema, diagnosticsParamsSchema } from './schemas/metaConnector.js';
 
 export async function buildServer(): Promise<FastifyInstance> {
   const server = Fastify({
@@ -49,6 +55,9 @@ export async function buildServer(): Promise<FastifyInstance> {
     }
   });
 
+  // Global error handler to map exceptions to RFC 7807 Problem Details
+  server.setErrorHandler(errorHandler);
+
   // ─── ROTAS PÚBLICAS ────────────────────────────────────────────────────────
 
   // Rota de Health Check
@@ -62,11 +71,11 @@ export async function buildServer(): Promise<FastifyInstance> {
   });
 
   // Rota Pública de Feed XML Meta Automotive Inventory Ads (DAA) - Autenticada via HMAC
-  server.get('/api/v1/feeds/:token/meta-vehicles.xml', getMetaVehiclesFeedHandler);
+  server.get('/api/v1/feeds/:token/meta-vehicles.xml', { preHandler: [validate(feedParamsSchema, 'params')] }, getMetaVehiclesFeedHandler);
 
   // Rotas de Checkout Stripe Transparente (Pix e Cartão) e Webhooks
-  server.post('/api/v1/checkout/stripe/pix', createStripePixHandler);
-  server.post('/api/v1/checkout/stripe/card', createStripeCardHandler);
+  server.post('/api/v1/checkout/stripe/pix', { preHandler: [validate(createStripePixSchema, 'body')] }, createStripePixHandler);
+  server.post('/api/v1/checkout/stripe/card', { preHandler: [validate(createStripeCardSchema, 'body')] }, createStripeCardHandler);
   server.post('/api/v1/webhooks/stripe', stripeWebhookHandler);
 
   // ─── ROTAS PRIVADAS AUTENTICADAS (JWT + RBAC + Multi-Tenant) ───────────────
@@ -85,27 +94,27 @@ export async function buildServer(): Promise<FastifyInstance> {
   // Rota do Stripe Customer Portal (Gerenciar Cartão, Faturas e Cancelamento)
   server.post(
     '/api/v1/billing/portal',
-    { preHandler: [authenticate] },
+    { preHandler: [authenticate, validate(portalSessionSchema, 'body')] },
     async (req, reply) => createStripePortalSessionHandler(req as any, reply)
   );
 
   // Rota de Detalhes de Faturamento do Workspace
   server.get(
     '/api/v1/workspaces/:workspaceId/billing',
-    { preHandler: [authenticate, requireWorkspace, requireRole(['SUPER_ADMIN', 'OWNER'])] },
+    { preHandler: [authenticate, requireWorkspace, requireRole(['SUPER_ADMIN', 'OWNER']), validate(diagnosticsParamsSchema, 'params')] },
     async (req, reply) => getWorkspaceBillingDetailsHandler(req as any, reply)
   );
 
   // Rotas de Integração OAuth Meta Graph API (Exigem OWNER ou SUPER_ADMIN)
   server.get(
     '/api/v1/integrations/meta/auth-url',
-    { preHandler: [authenticate, requireRole(['SUPER_ADMIN', 'OWNER'])] },
+    { preHandler: [authenticate, requireRole(['SUPER_ADMIN', 'OWNER']), validate(getAuthUrlQuerySchema, 'query')] },
     async (req, reply) => getMetaAuthUrlHandler(req as any, reply)
   );
 
   server.post(
     '/api/v1/integrations/meta/callback',
-    { preHandler: [authenticate, requireRole(['SUPER_ADMIN', 'OWNER'])] },
+    { preHandler: [authenticate, requireRole(['SUPER_ADMIN', 'OWNER']), validate(postCallbackBodySchema, 'body')] },
     async (req, reply) => postMetaCallbackHandler(req as any, reply)
   );
 
