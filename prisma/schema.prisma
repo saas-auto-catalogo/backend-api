@@ -115,7 +115,6 @@ model Workspace {
   state  String?         @db.VarChar(2)
   status WorkspaceStatus @default(ACTIVE)
 
-  // Relacionamentos Multi-Tenant
   dealerships  Dealership[]
   members      WorkspaceMember[]
   feedConfigs  FeedConfig[]
@@ -134,8 +133,8 @@ model Workspace {
 model Dealership {
   id             String  @id @default(uuid()) @db.Uuid
   workspaceId    String  @map("workspace_id") @db.Uuid
-  tradeName      String  @map("trade_name") @db.VarChar(255) // Nome Fantasia
-  legalName      String? @map("legal_name") @db.VarChar(255) // Razão Social
+  tradeName      String  @map("trade_name") @db.VarChar(255)
+  legalName      String? @map("legal_name") @db.VarChar(255)
   cnpj           String? @db.VarChar(20)
   phone          String? @db.VarChar(30)
   email          String? @db.VarChar(255)
@@ -149,7 +148,6 @@ model Dealership {
   metaCatalogId  String? @map("meta_catalog_id") @db.VarChar(100)
   isActive       Boolean @default(true) @map("is_active")
 
-  // Relacionamentos
   workspace    Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   feedConfigs  FeedConfig[]
   vehicles     Vehicle[]
@@ -173,9 +171,13 @@ model User {
   mfaSecret    String? @map("mfa_secret") @db.VarChar(255)
   avatarUrl    String? @map("avatar_url") @db.VarChar(1000)
 
-  // Relacionamentos
-  memberships WorkspaceMember[]
-  auditLogs   AuditLog[]        @relation("ActorAuditLogs")
+  // Campos de Seguranca de Login (Issue #12)
+  failedLoginAttempts Int       @default(0) @map("failed_login_attempts")
+  lockedUntil         DateTime? @map("locked_until")
+
+  memberships   WorkspaceMember[]
+  auditLogs     AuditLog[]        @relation("ActorAuditLogs")
+  refreshTokens RefreshToken[]
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -189,7 +191,6 @@ model WorkspaceMember {
   userId      String @map("user_id") @db.Uuid
   role        Role   @default(MANAGER)
 
-  // Relacionamentos
   workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -202,7 +203,30 @@ model WorkspaceMember {
 }
 
 // ------------------------------------------------------------------------------
-// MODELOS DE CONFIGURAÇÃO DE FEED & SEGURANÇA DE TOKENS
+// REFRESH TOKENS (Issue #12)
+// ------------------------------------------------------------------------------
+
+model RefreshToken {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  token     String    @unique @db.VarChar(255)
+  expiresAt DateTime  @map("expires_at")
+  revoked   Boolean   @default(false)
+  revokedAt DateTime? @map("revoked_at")
+  ipAddress String?   @map("ip_address") @db.VarChar(50)
+  userAgent String?   @map("user_agent") @db.VarChar(500)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([userId, revoked])
+  @@index([expiresAt])
+  @@map("refresh_tokens")
+}
+
+// ------------------------------------------------------------------------------
+// MODELOS DE CONFIGURACAO DE FEED & SEGURANCA DE TOKENS
 // ------------------------------------------------------------------------------
 
 model FeedConfig {
@@ -214,7 +238,6 @@ model FeedConfig {
   syncIntervalMinutes Int            @default(60) @map("sync_interval_minutes")
   isActive            Boolean        @default(true) @map("is_active")
 
-  // Segurança de Token Público do Feed Meta DAA (HMAC-SHA256)
   activeTokenHash     String    @map("active_token_hash") @db.VarChar(128)
   tokenSalt           String    @map("token_salt") @db.VarChar(64)
   previousTokenHash   String?   @map("previous_token_hash") @db.VarChar(128)
@@ -224,7 +247,6 @@ model FeedConfig {
   lastSyncStatus  SyncStatus? @map("last_sync_status")
   lastSyncMessage String?     @map("last_sync_message") @db.Text
 
-  // Relacionamentos
   workspace   Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   dealership  Dealership?   @relation(fields: [dealershipId], references: [id], onDelete: SetNull)
   vehicles    Vehicle[]
@@ -239,23 +261,17 @@ model FeedConfig {
   @@map("feed_configs")
 }
 
-// ------------------------------------------------------------------------------
-// MODELO CANÔNICO DE VEÍCULOS
-// ------------------------------------------------------------------------------
-
 model Vehicle {
   id           String  @id @default(uuid()) @db.Uuid
   workspaceId  String  @map("workspace_id") @db.Uuid
   feedConfigId String  @map("feed_config_id") @db.Uuid
   dealershipId String? @map("dealership_id") @db.Uuid
 
-  // Identificadores de Estoque
   externalId   String  @map("external_id") @db.VarChar(255)
   vin          String? @db.VarChar(50)
   licensePlate String? @map("license_plate") @db.VarChar(20)
   stockNumber  String? @map("stock_number") @db.VarChar(100)
 
-  // Dados Principais
   make            String    @db.VarChar(100)
   model           String    @db.VarChar(100)
   version         String    @db.VarChar(255)
@@ -268,14 +284,12 @@ model Vehicle {
   interiorColor   String?   @map("interior_color") @db.VarChar(100)
   mileage         Int       @default(0)
 
-  // Mecânica & Trem de Força
   fuelType     FuelType         @map("fuel_type")
   transmission TransmissionType
   engineSize   String?          @map("engine_size") @db.VarChar(50)
   drivetrain   String?          @db.VarChar(50)
   armored      Boolean          @default(false)
 
-  // Comercial
   price            Decimal          @db.Decimal(12, 2)
   promotionalPrice Decimal?         @map("promotional_price") @db.Decimal(12, 2)
   currency         String           @default("BRL") @db.VarChar(3)
@@ -286,21 +300,17 @@ model Vehicle {
   warrantyDetails  String?          @map("warranty_details") @db.VarChar(255)
   canonicalUrl     String?          @map("canonical_url") @db.VarChar(2000)
 
-  // Mídia & Opcionais
   heroImageUrl String @map("hero_image_url") @db.VarChar(2000)
-  images       Json // Array de VehicleImage [{ url, fullUrl, order, isPrimary }]
-  features     Json // Array de strings ["AR_CONDICIONADO", "COURO", ...]
+  images       Json
+  features     Json
 
-  // Descrições
   description String  @db.Text
   notes       String? @db.Text
 
-  // Metadados de Ingestão & Diff Engine
   rawPayloadHash     String  @map("raw_payload_hash") @db.VarChar(64)
   eligibleForMetaAds Boolean @default(true) @map("eligible_for_meta_ads")
   validationWarnings Json?   @map("validation_warnings")
 
-  // Relacionamentos
   workspace  Workspace   @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   feedConfig FeedConfig  @relation(fields: [feedConfigId], references: [id], onDelete: Cascade)
   dealership Dealership? @relation(fields: [dealershipId], references: [id], onDelete: SetNull)
@@ -308,7 +318,6 @@ model Vehicle {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  // Índices Compostos Multi-Tenant
   @@unique([workspaceId, externalId], name: "uq_workspace_vehicle_external_id")
   @@index([workspaceId, vin])
   @@index([workspaceId, status])
@@ -316,10 +325,6 @@ model Vehicle {
   @@index([workspaceId, updatedAt(sort: Desc)])
   @@map("vehicles")
 }
-
-// ------------------------------------------------------------------------------
-// CATÁLOGO META DAA & EXPORTAÇÕES
-// ------------------------------------------------------------------------------
 
 model MetaCatalog {
   id                    String      @id @default(uuid()) @db.Uuid
@@ -345,10 +350,6 @@ model MetaCatalog {
   @@index([dealershipId])
   @@map("meta_catalogs")
 }
-
-// ------------------------------------------------------------------------------
-// HISTÓRICO DE SINCRONIZAÇÃO E AUDITORIA
-// ------------------------------------------------------------------------------
 
 model SyncHistory {
   id             String     @id @default(uuid()) @db.Uuid
@@ -384,7 +385,6 @@ model AuditLog {
   entityName  String  @map("entity_name") @db.VarChar(100)
   entityId    String? @map("entity_id") @db.VarChar(255)
 
-  // Rastreamento de Impersonation
   impersonatedByUserId String? @map("impersonated_by_user_id") @db.Uuid
   impersonationReason  String? @map("impersonation_reason") @db.VarChar(500)
 
@@ -403,16 +403,12 @@ model AuditLog {
   @@map("audit_logs")
 }
 
-// ------------------------------------------------------------------------------
-// ASSINATURAS E PLANOS SAAS
-// ------------------------------------------------------------------------------
-
 model Subscription {
   id               String   @id @default(uuid()) @db.Uuid
   workspaceId      String   @unique @map("workspace_id") @db.Uuid
-  planTier         String   @map("plan_tier") @db.VarChar(50) // STARTER, PRO, ENTERPRISE
+  planTier         String   @map("plan_tier") @db.VarChar(50)
   maxVehicles      Int      @default(100) @map("max_vehicles")
-  status           String   @db.VarChar(50) // ACTIVE, PAST_DUE, CANCELED
+  status           String   @db.VarChar(50)
   currentPeriodEnd DateTime @map("current_period_end")
 
   workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
@@ -423,15 +419,11 @@ model Subscription {
   @@map("subscriptions")
 }
 
-// ------------------------------------------------------------------------------
-// CONFIGURAÇÕES GLOBAIS DO SISTEMA (BACKOFFICE & ADMIN)
-// ------------------------------------------------------------------------------
-
 model AdminSetting {
   id          String  @id @default(uuid()) @db.Uuid
   key         String  @unique @db.VarChar(100)
   value       String  @db.Text
-  valueType   String  @default("STRING") @map("value_type") @db.VarChar(20) // STRING, NUMBER, BOOLEAN, JSON
+  valueType   String  @default("STRING") @map("value_type") @db.VarChar(20)
   description String? @db.VarChar(255)
   isPublic    Boolean @default(false) @map("is_public")
 
