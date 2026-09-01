@@ -7,13 +7,19 @@ import {
   deleteFeedHandler,
   triggerFeedSyncHandler,
   getFeedSyncJobStatusHandler,
-  getFeedHistoryHandler
+  getFeedHistoryHandler,
+  validateFeedUrlHandler,
 } from './feed.controller.js';
 import {
   authenticate,
   requireRole,
   requireWorkspace,
+  requirePermission,
 } from '../auth/index.js';
+import { validate } from '../../middleware/validation.js';
+import { validateFeedUrlBodySchema } from '../../schemas/feeds.js';
+import { workspaceParamsSchema } from '../../schemas/workspaces.js';
+import { workspaceRateLimit } from '../../infra/security/workspace-rate-limit.middleware.js';
 
 export async function registerFeedRoutes(server: FastifyInstance) {
   // Listar feeds do workspace (VIEWER+)
@@ -28,6 +34,22 @@ export async function registerFeedRoutes(server: FastifyInstance) {
     '/api/v1/workspaces/:workspaceId/feeds',
     { preHandler: [authenticate, requireWorkspace, requireRole(['SUPER_ADMIN', 'OWNER', 'MANAGER'])] },
     async (req, reply) => createFeedHandler(req as any, reply)
+  );
+
+  // Validar URL de feed sem persistir (MANAGER+)
+  server.post(
+    '/api/v1/workspaces/:workspaceId/feeds/validate-url',
+    {
+      preHandler: [
+        authenticate,
+        requireWorkspace,
+        workspaceRateLimit('feeds:validate-url', { windowSeconds: 60, maxRequests: 20 }),
+        requirePermission('FEEDS_CREATE'),
+        validate(workspaceParamsSchema, 'params'),
+        validate(validateFeedUrlBodySchema, 'body'),
+      ],
+    },
+    async (req, reply) => validateFeedUrlHandler(req as any, reply)
   );
 
   // Detalhes de um feed (VIEWER+)

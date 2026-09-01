@@ -1,5 +1,7 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
 import { feedService, CreateFeedDTO, UpdateFeedDTO, FeedNotFoundError, SyncJobNotFoundError } from './feed.service.js';
+import { feedUrlValidationService } from './feed-url-validation.service.js';
+import { ValidateFeedUrlBody } from '../../schemas/feeds.js';
 
 export async function listFeedsHandler(
   request: FastifyRequest<{ Params: { workspaceId: string } }>,
@@ -148,4 +150,13 @@ export async function getFeedHistoryHandler(
 
   const history = await feedService.getFeedHistory(workspaceId, feedId, limit);
   return reply.send({ history });
+}
+
+export async function validateFeedUrlHandler(
+  request: FastifyRequest<{ Params: { workspaceId: string }; Body: ValidateFeedUrlBody }>,
+  reply: FastifyReply
+) {
+  const { url } = request.body;
+  const result = await feedUrlValidationService.validate(url);
+  return reply.send(result);
 }
