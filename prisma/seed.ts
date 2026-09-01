@@ -585,7 +585,8 @@ async function main() {
       description: 'Versão topo de linha Premier com teto panorâmico.',
       notes: null,
       rawPayloadHash: 'hash_chevy_tracker_2023_009',
-      eligibleForMetaAds: true
+      eligibleForMetaAds: false,
+      validationWarnings: ['Preço inválido, ausente ou sob consulta (inelegível para Meta DAA).']
     },
     {
       workspaceId: workspace1.id,
@@ -620,13 +621,14 @@ async function main() {
       hasWarranty: true,
       warrantyDetails: 'Garantia Hyundai 5 anos',
       canonicalUrl: 'https://autoelitemotors.com.br/veiculos/hyundai-creta-ultimate-2024',
-      heroImageUrl: 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?w=800',
-      images: [{ url: 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?w=800', fullUrl: 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?w=1600', order: 0, isPrimary: true }],
+      heroImageUrl: '',
+      images: [],
       features: ['CAMERAS_360', 'VENTILACAO_BANCO_MOTORISTA', 'SMARTSENSE_PILOTO_ADAPTATIVO'],
       description: 'Creta Ultimate com acabamento refinado e motor 2.0 aspirado.',
-      notes: null,
+      notes: 'Sem foto principal no DMS',
       rawPayloadHash: 'hash_hyundai_creta_2024_010',
-      eligibleForMetaAds: true
+      eligibleForMetaAds: false,
+      validationWarnings: ['Veículo sem foto principal cadastrada no XML do integrador.']
     }
   ];
 
@@ -644,7 +646,7 @@ async function main() {
       publicFeedUrl: `http://localhost:3000/api/v1/feeds/${rawToken1}/meta-vehicles.xml`,
       filterRules: { onlyAvailable: true, minImagesCount: 1 },
       totalVehiclesCount: 10,
-      eligibleVehiclesCount: 10,
+      eligibleVehiclesCount: 8,
       lastExportAt: new Date(),
       lastExportStatus: SyncStatus.SUCCESS
     }
@@ -1225,6 +1227,39 @@ async function main() {
         ipAddress: '189.44.12.90',
         userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
         metadata: { message: 'Setup inicial do workspace JR Casa Seminovos (STARTER)' }
+      },
+      {
+        workspaceId: workspace1.id,
+        actorUserId: owner1.id,
+        actorEmail: owner1.email,
+        action: 'FEED_SYNC_COMPLETED',
+        entityName: 'FeedConfig',
+        entityId: feedConfig1.id,
+        ipAddress: '177.18.23.45',
+        userAgent: 'AutoCatalogo Sync Worker',
+        metadata: { message: 'Sincronização DMS concluída com 10 veículos ingestados', durationMs: 1650 }
+      },
+      {
+        workspaceId: workspace1.id,
+        actorUserId: manager1.id,
+        actorEmail: manager1.email,
+        action: 'VEHICLE_UPDATED',
+        entityName: 'Vehicle',
+        entityId: null,
+        ipAddress: '177.18.23.45',
+        userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+        metadata: { message: 'Preço promocional atualizado no Mercedes GLC 300' }
+      },
+      {
+        workspaceId: workspace1.id,
+        actorUserId: owner1.id,
+        actorEmail: owner1.email,
+        action: 'PRICE_CHANGED',
+        entityName: 'Vehicle',
+        entityId: null,
+        ipAddress: '177.18.23.45',
+        userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+        metadata: { message: 'Mercedes GLC 300: R$ 489.700 → R$ 479.900' }
       }
     ]
   });
