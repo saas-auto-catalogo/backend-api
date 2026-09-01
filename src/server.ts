@@ -8,6 +8,12 @@ import {
   getMetaDiagnosticsHandler
 } from './modules/meta-connector/meta-connector.controller.js';
 
+import {
+  createStripePixHandler,
+  createStripeCardHandler,
+  stripeWebhookHandler
+} from './modules/checkout/checkout.controller.js';
+
 export async function buildServer(): Promise<FastifyInstance> {
   const server = Fastify({
     logger: process.env.NODE_ENV !== 'test'
@@ -42,6 +48,11 @@ export async function buildServer(): Promise<FastifyInstance> {
   server.get('/api/v1/integrations/meta/auth-url', getMetaAuthUrlHandler);
   server.post('/api/v1/integrations/meta/callback', postMetaCallbackHandler);
   server.get('/api/v1/workspaces/:workspaceId/meta-catalogs/:catalogId/diagnostics', getMetaDiagnosticsHandler);
+
+  // Rotas de Checkout Stripe Transparente (Pix e Cartão)
+  server.post('/api/v1/checkout/stripe/pix', createStripePixHandler);
+  server.post('/api/v1/checkout/stripe/card', createStripeCardHandler);
+  server.post('/api/v1/webhooks/stripe', stripeWebhookHandler);
 
   return server;
 }
