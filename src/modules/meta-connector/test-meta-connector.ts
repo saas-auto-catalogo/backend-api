@@ -1,6 +1,8 @@
 import { MetaOAuthService } from './meta-oauth.service.js';
 import { MetaGraphApiClient } from './meta-graph.client.js';
 import { buildServer } from '../../server.js';
+import { AuthUser } from '../auth/auth.middleware.js';
+import { redisClient } from '../../infra/redis/redis-client.js';
 
 async function runMetaConnectorTests() {
   console.log('🧪 Iniciando Bateria de Testes do Conector Meta Graph API e OAuth 2.0...\n');
@@ -23,14 +25,12 @@ async function runMetaConnectorTests() {
   console.log(`  ✅ URL de Login gerada: ${url.substring(0, 60)}...`);
   console.log(`  ✅ State gerado (base64url): ${state.substring(0, 30)}...`);
 
-  // Validação do state legítimo
   const verifiedValid = oauth.verifyState(state);
   console.log(`  ✅ Validação de State legítimo: ${verifiedValid.isValid} | WorkspaceId: ${verifiedValid.workspaceId}`);
   if (!verifiedValid.isValid || verifiedValid.workspaceId !== workspaceId) {
     throw new Error('Falha na validação do state legítimo.');
   }
 
-  // Validação de state corrompido / ataque CSRF
   const tamperedState = state.substring(0, state.length - 5) + 'AAAAA';
   const verifiedTampered = oauth.verifyState(tamperedState);
   console.log(`  ✅ Validação de State adulterado: ${verifiedTampered.isValid} (Esperado: false)`);
@@ -60,36 +60,67 @@ async function runMetaConnectorTests() {
 
   const server = await buildServer();
 
-  // Teste de GET /api/v1/integrations/meta/auth-url
+  const ownerUser: AuthUser = {
+    id: 'usr-owner-meta',
+    email: 'owner@autoelite.com.br',
+    name: 'Carlos Owner',
+    isSuperAdmin: false,
+    workspaceId,
+    role: 'OWNER',
+  };
+
+  const managerUser: AuthUser = {
+    id: 'usr-manager-meta',
+    email: 'manager@autoelite.com.br',
+    name: 'Marcos Manager',
+    isSuperAdmin: false,
+    workspaceId,
+    role: 'MANAGER',
+  };
+
+  const ownerToken = server.jwt.sign(ownerUser);
+  const managerToken = server.jwt.sign(managerUser);
+
   const authUrlRes = await server.inject({
     method: 'GET',
-    url: `/api/v1/integrations/meta/auth-url?workspaceId=${workspaceId}&redirectUri=${encodeURIComponent(redirectUri)}`
+    url: `/api/v1/integrations/meta/auth-url?workspaceId=${workspaceId}&redirectUri=${encodeURIComponent(redirectUri)}`,
+    headers: { authorization: `Bearer ${ownerToken}` },
   });
 
   console.log(`  ✅ [GET /api/v1/integrations/meta/auth-url] Status: ${authUrlRes.statusCode}`);
+  if (authUrlRes.statusCode !== 200) {
+    throw new Error(`Auth URL retornou ${authUrlRes.statusCode}: ${authUrlRes.payload}`);
+  }
+
   const authData = JSON.parse(authUrlRes.payload);
   console.log(`     - Auth URL retornada: ${authData.authUrl.substring(0, 50)}...`);
   if (!authData.authUrl.includes('facebook.com')) {
     throw new Error('Auth URL não aponta para o Facebook.');
   }
 
-  // Teste de GET /api/v1/workspaces/:workspaceId/meta-catalogs/:catalogId/diagnostics
   const diagRes = await server.inject({
     method: 'GET',
     url: `/api/v1/workspaces/${workspaceId}/meta-catalogs/mock-catalog-999/diagnostics`,
-    headers: {
-      Authorization: 'Bearer mock-valid-token'
-    }
+    headers: { authorization: `Bearer ${managerToken}` },
   });
 
   console.log(`  ✅ [GET /api/v1/workspaces/:ws/meta-catalogs/:cat/diagnostics] Status: ${diagRes.statusCode}`);
+  if (diagRes.statusCode !== 200) {
+    throw new Error(`Diagnostics retornou ${diagRes.statusCode}: ${diagRes.payload}`);
+  }
+
   const diagData = JSON.parse(diagRes.payload);
   console.log(`     - Report: Health Score = ${diagData.report.healthScorePercentage}%`);
 
+  await server.close();
+  redisClient.disconnect();
+
   console.log('\n🎉 Todos os testes do Conector Meta Graph API e OAuth 2.0 foram concluídos com 100% de sucesso!');
+  process.exit(0);
 }
 
 runMetaConnectorTests().catch((err) => {
   console.error('❌ Erro nos testes de Meta Connector:', err);
+  redisClient.disconnect();
   process.exit(1);
 });
