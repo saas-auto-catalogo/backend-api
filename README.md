@@ -22,6 +22,7 @@ Core da plataforma SaaS multi-tenant: ingestão de inventário automotivo, diffs
 ```
 src/modules/
 ├── auth/           # Login, register, refresh, logout, forgot/reset, /me
+├── profile/        # Perfil do usuário e workspace/dealership
 ├── feeds/          # CRUD feeds, validate-url, sync manual (BullMQ SYNC_FEED)
 ├── dashboard/      # Stats, vehicles, meta-catalogs, issues, activity, audit-logs
 ├── billing/        # Plano, limites, Stripe Customer Portal
@@ -39,7 +40,8 @@ src/modules/
 | Área | Exemplos |
 |------|----------|
 | Público | `GET /health`, `GET /api/v1/feeds/:token/meta-vehicles.xml` |
-| Auth | `POST /auth/login`, `/register`, `/refresh`, `/logout`, `GET /auth/me`, `PATCH /auth/me/onboarding` |
+| Auth | `POST /auth/login`, `/register`, `/refresh`, `/logout`, `GET /auth/me`, `PATCH /auth/me`, `PATCH /auth/me/onboarding` |
+| Perfil | `GET/PATCH /workspaces/:id/profile` |
 | Dashboard | `GET /workspaces/:id/dashboard/stats`, `/issues`, `/activity` |
 | Estoque | `GET /workspaces/:id/vehicles`, `/vehicles/:vehicleId` |
 | Feeds | `GET/POST/PUT/DELETE /workspaces/:id/feeds`, `POST .../feeds/validate-url`, `POST .../sync` |
@@ -64,6 +66,10 @@ Lista completa e RBAC na [wiki](https://github.com/saas-auto-catalogo/.github/bl
 ```bash
 npm install
 cp .env.example .env   # ajustar DATABASE_URL, REDIS_URL, JWT_SECRET, FRONTEND_URL
+
+# Infra local (PostgreSQL + Redis)
+docker compose up -d          # ou: npm run infra:up
+docker compose up -d redis    # só Redis: npm run infra:redis
 
 npm run prisma:validate
 npm run prisma:generate
@@ -103,13 +109,14 @@ npm run worker:sync-feed
 | `npm run test:vehicles` | Validador de veículos (fixtures JSON) |
 | `npm run test:auth` | Register + cookie refresh |
 | `npm run test:rbac` | Permissões por role |
+| `npm run test:profile` | Perfil de usuário e workspace/dealership |
 | `npm run test:feeds` | CRUD, validate-url e sync |
 | `npm run test:validate-url` | Validação de URL de feed (XML/JSON/timeout) |
 | `npm run test:dashboard` | Stats, vehicles, audit-logs, issues, activity |
 | `npm run test:db` | Validação de schema, migrations e seed |
 | `npm run test:email` | Templates e envio sandbox |
 | `npm run test:subscription` | Stripe lifecycle e billing |
-| `npm run test:ci` | **Subset do CI** — auth, rbac, dashboard, feeds, db, email |
+| `npm run test:ci` | **Subset do CI** — auth, rbac, profile, dashboard, feeds, db, email |
 | `npm run test:all` | Suite agregada completa |
 
 ### CI (GitHub Actions)
@@ -128,6 +135,8 @@ export REDIS_URL=redis://localhost:6379
 npx prisma migrate deploy && npm run prisma:seed
 npm run test:ci
 ```
+
+Os testes de integração definem `NODE_ENV=test` automaticamente.
 
 ---
 

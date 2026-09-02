@@ -38,6 +38,15 @@ export const updateOnboardingSchema = z
     message: 'Informe onboardingStep e/ou onboardingCompleted',
   });
 
+export const updateMeSchema = z
+  .object({
+    name: z.string().min(2, { message: 'Nome deve ter ao menos 2 caracteres' }).max(255).optional(),
+    avatarUrl: z.string().url({ message: 'URL de avatar invalida' }).max(1000).nullable().optional(),
+  })
+  .refine((data) => data.name !== undefined || data.avatarUrl !== undefined, {
+    message: 'Informe name e/ou avatarUrl',
+  });
+
 export type LoginDTO = z.infer<typeof loginSchema>;
 export type RegisterDTO = z.infer<typeof registerSchema>;
 export type RefreshTokenDTO = z.infer<typeof refreshTokenSchema>;
@@ -45,3 +54,4 @@ export type ForgotPasswordDTO = z.infer<typeof forgotPasswordSchema>;
 export type ResetPasswordDTO = z.infer<typeof resetPasswordSchema>;
 export type LogoutDTO = z.infer<typeof logoutSchema>;
 export type UpdateOnboardingDTO = z.infer<typeof updateOnboardingSchema>;
+export type UpdateMeDTO = z.infer<typeof updateMeSchema>;
