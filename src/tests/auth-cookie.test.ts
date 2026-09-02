@@ -1,5 +1,6 @@
 import { buildServer } from '../server.js';
 import { REFRESH_TOKEN_COOKIE } from '../modules/auth/auth.cookie.js';
+import { teardownIntegrationTest, resetAuthRateLimits } from './test-teardown.js';
 
 let totalTests = 0;
 let passedTests = 0;
@@ -35,6 +36,7 @@ async function runAuthCookieTestSuite() {
   console.log('╚══════════════════════════════════════════════════════════════╝');
 
   const app = await buildServer();
+  await resetAuthRateLimits();
   const startTime = Date.now();
   const uniqueEmail = `cookie-test-${Date.now()}@test.local`;
   const password = 'SenhaSegura123!';
@@ -121,6 +123,7 @@ async function runAuthCookieTestSuite() {
     }
   } finally {
     await app.close();
+    await teardownIntegrationTest();
   }
 
   const elapsed = Date.now() - startTime;
@@ -139,6 +142,7 @@ async function runAuthCookieTestSuite() {
   }
 
   console.log('\n🎉 Todos os testes de cookie passaram com 100% de sucesso!');
+  process.exit(0);
 }
 
 runAuthCookieTestSuite().catch((err) => {

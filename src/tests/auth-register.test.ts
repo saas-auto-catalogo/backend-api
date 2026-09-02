@@ -1,4 +1,5 @@
 import { buildServer } from '../server.js';
+import { teardownIntegrationTest, resetAuthRateLimits } from './test-teardown.js';
 
 let totalTests = 0;
 let passedTests = 0;
@@ -28,6 +29,7 @@ async function runAuthRegisterTestSuite() {
   console.log('╚══════════════════════════════════════════════════════════════╝');
 
   const app = await buildServer();
+  await resetAuthRateLimits();
   const startTime = Date.now();
   const uniqueEmail = `register-test-${Date.now()}@test.local`;
   const password = 'SenhaSegura123!';
@@ -85,7 +87,11 @@ async function runAuthRegisterTestSuite() {
     assert(resRegister.statusCode === 201, `Cadastro válido retorna 201 (got ${resRegister.statusCode})`);
 
     const registerData = JSON.parse(resRegister.payload);
-    const setCookieHeader = resRegister.headers['set-cookie'] || '';
+    const setCookieHeader = String(
+      Array.isArray(resRegister.headers['set-cookie'])
+        ? resRegister.headers['set-cookie'].join('; ')
+        : (resRegister.headers['set-cookie'] || '')
+    );
     assert(!!registerData.accessToken, 'Resposta contém accessToken');
     assert(!registerData.refreshToken, 'Resposta NÃO contém refreshToken no JSON');
     assert(setCookieHeader.includes('refreshToken'), 'Set-Cookie contém refreshToken');
@@ -123,13 +129,18 @@ async function runAuthRegisterTestSuite() {
     assert(resLogin.statusCode === 200, `Login após cadastro retorna 200 (got ${resLogin.statusCode})`);
 
     const loginData = JSON.parse(resLogin.payload);
-    const loginSetCookie = resLogin.headers['set-cookie'] || '';
+    const loginSetCookie = String(
+      Array.isArray(resLogin.headers['set-cookie'])
+        ? resLogin.headers['set-cookie'].join('; ')
+        : (resLogin.headers['set-cookie'] || '')
+    );
     assert(!!loginData.accessToken, 'Login retorna accessToken');
     assert(!loginData.refreshToken, 'Login NÃO retorna refreshToken no JSON');
     assert(loginSetCookie.includes('refreshToken'), 'Login seta cookie refreshToken');
     assert(loginData.user?.workspaceId === registerData.user?.workspaceId, 'workspaceId coincide após login');
   } finally {
     await app.close();
+    await teardownIntegrationTest();
   }
 
   const elapsed = Date.now() - startTime;
@@ -148,6 +159,7 @@ async function runAuthRegisterTestSuite() {
   }
 
   console.log('\n🎉 Todos os testes de cadastro passaram com 100% de sucesso!');
+  process.exit(0);
 }
 
 runAuthRegisterTestSuite().catch((err) => {

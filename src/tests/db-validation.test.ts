@@ -122,27 +122,28 @@ async function runDatabaseValidation() {
       const totalVehicles = await prisma.vehicle.count();
       assert(totalVehicles >= 20, `Total de 20 veículos de exemplo cadastrados (atual: ${totalVehicles})`);
     }
-
-    const elapsed = Date.now() - startTime;
-
-    console.log(`\n${'═'.repeat(60)}`);
-    console.log(`📊 RESULTADO FINAL`);
-    console.log('═'.repeat(60));
-    console.log(`  Total de verificações: ${totalTests}`);
-    console.log(`  ✅ Passou:              ${passedTests}`);
-    console.log(`  ❌ Falhou:              ${failures.length}`);
-    console.log(`  ⏱️  Tempo total:         ${elapsed}ms`);
-
-    if (failures.length > 0) {
-      console.log('\n🔴 Falhas encontradas:');
-      failures.forEach(f => console.log(`  - ${f}`));
-      process.exit(1);
-    } else {
-      console.log('\n🎉 Todas as validações estruturais e de banco passaram!');
-    }
   } finally {
     await prisma.$disconnect();
   }
+
+  const elapsed = Date.now() - startTime;
+
+  console.log(`\n${'═'.repeat(60)}`);
+  console.log(`📊 RESULTADO FINAL`);
+  console.log('═'.repeat(60));
+  console.log(`  Total de verificações: ${totalTests}`);
+  console.log(`  ✅ Passou:              ${passedTests}`);
+  console.log(`  ❌ Falhou:              ${failures.length}`);
+  console.log(`  ⏱️  Tempo total:         ${elapsed}ms`);
+
+  if (failures.length > 0) {
+    console.log('\n🔴 Falhas encontradas:');
+    failures.forEach(f => console.log(`  - ${f}`));
+    process.exit(1);
+  }
+
+  console.log('\n🎉 Todas as validações estruturais e de banco passaram!');
+  process.exit(0);
 }
 
 runDatabaseValidation().catch((err) => {

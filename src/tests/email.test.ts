@@ -225,28 +225,29 @@ async function runEmailTestSuite() {
       billingPortalUrl: 'https://billing.stripe.com',
     });
     assert(res6.success, 'Disparo de email de lembrete de renovação com sucesso');
-
-    const elapsed = Date.now() - startTime;
-
-    console.log(`\n${'═'.repeat(60)}`);
-    console.log(`📊 RESULTADO FINAL DOS TESTES DE EMAIL`);
-    console.log('═'.repeat(60));
-    console.log(`  Total de testes: ${totalTests}`);
-    console.log(`  ✅ Passou:        ${passedTests}`);
-    console.log(`  ❌ Falhou:        ${failures.length}`);
-    console.log(`  ⏱️  Tempo total:   ${elapsed}ms`);
-
-    if (failures.length > 0) {
-      console.log('\n🔴 Falhas encontradas:');
-      failures.forEach((f) => console.log(`  - ${f}`));
-      process.exit(1);
-    } else {
-      console.log('\n🎉 Todos os testes de templates e serviço de emails passaram com 100% de sucesso!');
-    }
   } catch (err) {
     console.error('Erro na execução dos testes de email:', err);
     process.exit(1);
   }
+
+  const elapsed = Date.now() - startTime;
+
+  console.log(`\n${'═'.repeat(60)}`);
+  console.log(`📊 RESULTADO FINAL DOS TESTES DE EMAIL`);
+  console.log('═'.repeat(60));
+  console.log(`  Total de testes: ${totalTests}`);
+  console.log(`  ✅ Passou:        ${passedTests}`);
+  console.log(`  ❌ Falhou:        ${failures.length}`);
+  console.log(`  ⏱️  Tempo total:   ${elapsed}ms`);
+
+  if (failures.length > 0) {
+    console.log('\n🔴 Falhas encontradas:');
+    failures.forEach((f) => console.log(`  - ${f}`));
+    process.exit(1);
+  }
+
+  console.log('\n🎉 Todos os testes de templates e serviço de emails passaram com 100% de sucesso!');
+  process.exit(0);
 }
 
 runEmailTestSuite().catch((err) => {

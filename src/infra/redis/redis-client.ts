@@ -9,11 +9,14 @@ const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379';
 export const defaultRedisOptions: RedisOptions = {
   maxRetriesPerRequest: null, // Obrigatório para BullMQ
   enableReadyCheck: false,
+  lazyConnect: process.env.NODE_ENV === 'test',
   retryStrategy(times: number) {
-    // Retry exponencial com limite máximo de 3 segundos entre tentativas
-    const delay = Math.min(times * 100, 3000);
-    return delay;
-  }
+    const maxAttempts = process.env.NODE_ENV === 'test' ? 10 : 50;
+    if (times >= maxAttempts) {
+      return null;
+    }
+    return Math.min(times * 100, 3000);
+  },
 };
 
 /**

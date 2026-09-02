@@ -13,7 +13,7 @@ import {
 async function runParserTests() {
   console.log('🧪 Iniciando Bateria de Testes do Streaming Parser XML e Resiliência...\n');
 
-  const fixturesDir = resolve(process.cwd(), '../.github/docs/fixtures');
+  const fixturesDir = resolve(process.cwd(), 'src/tests/fixtures');
 
   const fixtures = [
     { name: 'AutoCerto', file: 'autocerto-sample.xml' },

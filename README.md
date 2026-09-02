@@ -22,7 +22,7 @@ Core da plataforma SaaS multi-tenant: ingestão de inventário automotivo, diffs
 ```
 src/modules/
 ├── auth/           # Login, register, refresh, logout, forgot/reset, /me
-├── feeds/          # CRUD feeds + sync manual (BullMQ SYNC_FEED)
+├── feeds/          # CRUD feeds, validate-url, sync manual (BullMQ SYNC_FEED)
 ├── dashboard/      # Stats, vehicles, meta-catalogs, issues, activity, audit-logs
 ├── billing/        # Plano, limites, Stripe Customer Portal
 ├── meta-feed/      # XML público Meta DAA
@@ -42,7 +42,7 @@ src/modules/
 | Auth | `POST /auth/login`, `/register`, `/refresh`, `/logout`, `GET /auth/me` |
 | Dashboard | `GET /workspaces/:id/dashboard/stats`, `/issues`, `/activity` |
 | Estoque | `GET /workspaces/:id/vehicles`, `/vehicles/:vehicleId` |
-| Feeds | `GET/POST/PUT/DELETE /workspaces/:id/feeds`, `POST .../sync` |
+| Feeds | `GET/POST/PUT/DELETE /workspaces/:id/feeds`, `POST .../feeds/validate-url`, `POST .../sync` |
 | Auditoria | `GET /workspaces/:id/audit-logs` (MANAGER+) |
 | Billing | `GET /workspaces/:id/billing`, `POST /billing/portal` |
 | Meta | `GET /integrations/meta/auth-url`, `POST /integrations/meta/callback` |
@@ -103,7 +103,8 @@ npm run worker:sync-feed
 | `npm run test:vehicles` | Validador de veículos (fixtures JSON) |
 | `npm run test:auth` | Register + cookie refresh |
 | `npm run test:rbac` | Permissões por role |
-| `npm run test:feeds` | CRUD e sync |
+| `npm run test:feeds` | CRUD, validate-url e sync |
+| `npm run test:validate-url` | Validação de URL de feed (XML/JSON/timeout) |
 | `npm run test:dashboard` | Stats, vehicles, audit-logs, issues, activity |
 | `npm run test:db` | Validação de schema, migrations e seed |
 | `npm run test:email` | Templates e envio sandbox |

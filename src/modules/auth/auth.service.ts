@@ -126,7 +126,7 @@ export class AuthService {
     };
 
     const accessToken = server.jwt.sign(
-      { ...payload, sub: user.id },
+      { ...payload, sub: user.id } as AuthUser,
       { expiresIn: ACCESS_TOKEN_EXPIRY },
     );
 
@@ -234,7 +234,7 @@ export class AuthService {
     };
 
     const accessToken = server.jwt.sign(
-      { ...payload, sub: user.id },
+      { ...payload, sub: user.id } as AuthUser,
       { expiresIn: ACCESS_TOKEN_EXPIRY },
     );
 
@@ -319,7 +319,7 @@ export class AuthService {
     };
 
     const accessToken = server.jwt.sign(
-      { ...payload, sub: user.id },
+      { ...payload, sub: user.id } as AuthUser,
       { expiresIn: ACCESS_TOKEN_EXPIRY },
     );
 
@@ -365,7 +365,7 @@ export class AuthService {
     await emailService.sendPasswordResetEmail(user.email, {
       userName: user.name,
       resetUrl,
-      expirationMinutes: RESET_TOKEN_TTL_SECONDS / 60,
+      expiresInMinutes: RESET_TOKEN_TTL_SECONDS / 60,
     });
   }
 

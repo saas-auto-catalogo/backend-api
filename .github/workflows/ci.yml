@@ -10,6 +10,23 @@ jobs:
   unit:
     name: unit
     runs-on: ubuntu-latest
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    env:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/auto_catalogo_db?schema=public
+      REDIS_URL: redis://localhost:6379
+      JWT_SECRET: ci-jwt-secret-minimum-32-characters-long
+      FEED_TOKEN_SECRET: ci-feed-token-secret-minimum-32-chars
+      FRONTEND_URL: http://localhost:3000
     steps:
       - name: Checkout
         uses: actions/checkout@v4
