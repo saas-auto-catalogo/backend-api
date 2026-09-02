@@ -23,5 +23,11 @@ export const createStripeCardSchema = createStripeBaseSchema.extend({
   installments: z.number().int().min(1).max(12).optional()
 });
 
+export const createStripeCheckoutSessionSchema = createStripeBaseSchema.extend({
+  successUrl: z.string().url(),
+  cancelUrl: z.string().url(),
+});
+
 export type CreateStripePixDTO = z.infer<typeof createStripePixSchema>;
 export type CreateStripeCardDTO = z.infer<typeof createStripeCardSchema>;
+export type CreateStripeCheckoutSessionDTO = z.infer<typeof createStripeCheckoutSessionSchema>;

@@ -40,3 +40,16 @@ export interface StripeCardResponse {
   currentPeriodEnd: string;
   amount: number;
 }
+
+export interface CreateStripeCheckoutSessionRequest {
+  plan: PlanType;
+  billingInterval: BillingInterval;
+  customer: CheckoutCustomerData;
+  successUrl: string;
+  cancelUrl: string;
+}
+
+export interface StripeCheckoutSessionResponse {
+  sessionId: string;
+  url: string;
+}

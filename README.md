@@ -39,7 +39,7 @@ src/modules/
 
 | Área | Exemplos |
 |------|----------|
-| Público | `GET /health`, `GET /api/v1/feeds/:token/meta-vehicles.xml` |
+| Público | `GET /health`, `GET /api/v1/feeds/:token/meta-vehicles.xml`, `POST /api/v1/checkout/stripe/session` |
 | Auth | `POST /auth/login`, `/register`, `/refresh`, `/logout`, `GET /auth/me`, `PATCH /auth/me`, `PATCH /auth/me/onboarding` |
 | Perfil | `GET/PATCH /workspaces/:id/profile` |
 | Dashboard | `GET /workspaces/:id/dashboard/stats`, `/issues`, `/activity` |
@@ -93,6 +93,9 @@ npm run worker:sync-feed
 | `JWT_SECRET` | Assinatura dos access tokens |
 | `FRONTEND_URL` | Origem CORS (ex.: `http://localhost:3000`) |
 | `PORT` | Padrão `3333` no código |
+| `STRIPE_SECRET_KEY` | Chave secreta Stripe (Checkout Session real) |
+| `STRIPE_*_PRICE_ID` | Price IDs por plano/intervalo (ver `.env.example`) |
+| `STRIPE_MOCK` | Opcional — força mock mesmo com secret key |
 
 ---
 
