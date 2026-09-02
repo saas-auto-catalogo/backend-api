@@ -1,6 +1,10 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
-import { stripePaymentService } from '../../services/payments/stripePaymentService.js';
-import { CreateStripePixRequest, CreateStripeCardRequest } from '../../types/checkout.js';
+import { stripePaymentService, StripePriceConfigError } from '../../services/payments/stripePaymentService.js';
+import {
+  CreateStripePixRequest,
+  CreateStripeCardRequest,
+  CreateStripeCheckoutSessionRequest,
+} from '../../types/checkout.js';
 
 export async function createStripePixHandler(
   request: FastifyRequest<{ Body: CreateStripePixRequest }>,
@@ -36,6 +40,27 @@ export async function createStripeCardHandler(
 
   const cardResponse = await stripePaymentService.createCardSubscription(payload);
   reply.status(201).send(cardResponse);
+}
+
+export async function createStripeCheckoutSessionHandler(
+  request: FastifyRequest<{ Body: CreateStripeCheckoutSessionRequest }>,
+  reply: FastifyReply
+): Promise<void> {
+  try {
+    const session = await stripePaymentService.createCheckoutSession(request.body);
+    reply.status(201).send(session);
+  } catch (error) {
+    if (error instanceof StripePriceConfigError) {
+      reply.status(503).send({
+        type: 'https://autocatalogo.com.br/errors/stripe-config-error',
+        title: 'Stripe Configuration Error',
+        status: 503,
+        detail: error.message,
+      });
+      return;
+    }
+    throw error;
+  }
 }
 
 export async function stripeWebhookHandler(

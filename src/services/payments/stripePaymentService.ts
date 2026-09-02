@@ -1,12 +1,16 @@
 import {
   CreateStripePixRequest,
   CreateStripeCardRequest,
+  CreateStripeCheckoutSessionRequest,
   StripePixResponse,
   StripeCardResponse,
+  StripeCheckoutSessionResponse,
   PlanType,
 } from '../../types/checkout.js';
 import { PLAN_LIMITS } from '../../modules/billing/plan-limits.js';
 import { emailService } from '../email/emailService.js';
+import { getStripeClient, isStripeMockMode } from './stripe-client.js';
+import { resolveStripePriceId, StripePriceConfigError } from './stripe-price-config.js';
 
 export const PLAN_PRICING: Record<PlanType, { monthly: number; yearly: number; name: string }> = {
   STARTER: {
@@ -41,6 +45,48 @@ export interface StripePortalResponse {
 }
 
 export class StripePaymentService {
+  /**
+   * Cria uma Stripe Checkout Session (modo subscription) para contratação SaaS
+   */
+  public async createCheckoutSession(
+    data: CreateStripeCheckoutSessionRequest
+  ): Promise<StripeCheckoutSessionResponse> {
+    if (isStripeMockMode()) {
+      const sessionId = `cs_test_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+      return {
+        sessionId,
+        url: `https://checkout.stripe.com/c/pay/${sessionId}`,
+      };
+    }
+
+    const priceId = resolveStripePriceId(data.plan, data.billingInterval);
+    const stripe = getStripeClient();
+    const session = await stripe.checkout.sessions.create({
+      mode: 'subscription',
+      line_items: [{ price: priceId, quantity: 1 }],
+      success_url: data.successUrl,
+      cancel_url: data.cancelUrl,
+      customer_email: data.customer.email,
+      locale: 'pt-BR',
+      metadata: {
+        plan: data.plan,
+        billingInterval: data.billingInterval,
+        dealershipName: data.customer.dealershipName,
+        customerEmail: data.customer.email,
+        customerDocument: data.customer.document,
+      },
+    });
+
+    if (!session.url) {
+      throw new Error('Stripe Checkout Session created without URL');
+    }
+
+    return {
+      sessionId: session.id,
+      url: session.url,
+    };
+  }
+
   /**
    * Cria um PaymentIntent do Stripe com Pix para pagamento no Brasil
    */
@@ -223,3 +269,5 @@ export class StripePaymentService {
 }
 
 export const stripePaymentService = new StripePaymentService();
+
+export { StripePriceConfigError };
