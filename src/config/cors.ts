@@ -6,11 +6,13 @@ const DEV_ORIGINS = [
 ];
 
 type CorsOriginCallback = (
-  origin: string | undefined,
-  callback: (err: Error | null, origin?: boolean | string) => void
+  err: Error | null,
+  origin: string | boolean | RegExp | (string | boolean | RegExp)[]
 ) => void;
 
-export function getCorsOrigin(): string | string[] | CorsOriginCallback {
+type CorsOriginFunction = (origin: string | undefined, callback: CorsOriginCallback) => void;
+
+export function getCorsOrigin(): string[] | CorsOriginFunction {
   const configured = process.env.FRONTEND_URL?.trim();
   const isProduction = process.env.NODE_ENV === 'production';
 
