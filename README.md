@@ -98,12 +98,19 @@ npm run worker:sync-feed
 | `STRIPE_*_PRICE_ID` | Price IDs por plano/intervalo (ver `.env.example`) |
 | `STRIPE_MOCK` | Opcional — força mock mesmo com secret key |
 
+### Validação no boot
+
+Com `NODE_ENV=production`, o backend valida variáveis críticas **antes** de subir o servidor e encerra listando todas as faltantes de uma vez. Em **development**, defaults locais são aplicados com `console.warn` para variáveis ausentes. Em **test/CI**, o schema é relaxado.
+
+Variáveis **obrigatórias em production**: `DATABASE_URL`, `JWT_SECRET` (≥32 chars), `REDIS_URL`, `FEED_TOKEN_SECRET` (≥32 chars), `FRONTEND_URL`. Stripe (`STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, 6× `STRIPE_*_PRICE_ID`) só é exigido quando `STRIPE_MOCK` não está ativo. Ver matriz completa em [`.env.example`](.env.example).
+
 ---
 
 ## Testes
 
 | Comando | Escopo |
 |---------|--------|
+| `npm run test:env` | Validação de variáveis de ambiente (Zod) |
 | `npm run test:qa` | Suite QA (parser, validadores, benchmarks) |
 | `npm run test:parser` | SAX streaming com fixtures reais |
 | `npm run test:normalization` | Auto-matching e normalização |

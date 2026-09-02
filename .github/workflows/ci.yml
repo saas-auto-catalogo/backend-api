@@ -49,6 +49,9 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
+      - name: Env validation tests
+        run: npm run test:env
+
       - name: QA suite
         run: npm run test:qa
 
