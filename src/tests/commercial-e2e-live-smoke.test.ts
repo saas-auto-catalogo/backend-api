@@ -1,5 +1,6 @@
 /**
- * Smoke live cross-repo: backend-api (register-first → checkout autenticado → webhook)
+ * Smoke live cross-repo: register-first → checkout autenticado → webhook
+ * Épico .github#16 / issue .github#17
  * Requer backend rodando em PORT (default 3333) com .env carregado.
  */
 import 'dotenv/config';

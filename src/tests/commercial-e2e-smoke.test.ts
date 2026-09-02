@@ -1,12 +1,16 @@
 /**
- * Smoke test E2E comercial (Épico .github#13)
- * Simula: register → checkout autenticado → webhook → billing ACTIVE
- *         register sem pagamento → billing NONE (gate)
+ * Smoke test E2E comercial register-first (Épicos .github#16 / .github#17)
+ *
+ * Fluxo: register → checkout autenticado → webhook → billing ACTIVE → onboarding liberado
+ * Guardrails: JWT obrigatório, isolamento de workspace, webhook sem workspaceId ignorado,
+ * register pay-first descontinuado.
  */
 import { buildServer } from '../server.js';
+import { prisma } from '../lib/prisma.js';
 import { stripePaymentService } from '../services/payments/stripePaymentService.js';
 import { resetSystemUserCacheForTests } from '../lib/system-user.js';
 import { teardownIntegrationTest } from './test-teardown.js';
+import { loadIntegrationSeedContext } from './seed-test-context.js';
 
 let total = 0;
 let passed = 0;
@@ -23,13 +27,21 @@ function assert(ok: boolean, name: string, detail?: string) {
   }
 }
 
+const checkoutPayload = {
+  plan: 'STARTER' as const,
+  billingInterval: 'MONTHLY' as const,
+  successUrl: 'http://localhost:3000/dashboard?checkout=success',
+  cancelUrl: 'http://localhost:5175/checkout/cancel',
+};
+
 async function runCommercialE2ESmoke() {
   console.log('╔══════════════════════════════════════════════════════════════╗');
-  console.log('║   🛒 Smoke Test E2E Comercial — Épico #13                    ║');
+  console.log('║   🛒 Smoke E2E Comercial — register-first (#16 / #17)        ║');
   console.log('╚══════════════════════════════════════════════════════════════╝');
 
   resetSystemUserCacheForTests();
   const app = await buildServer();
+  const seed = await loadIntegrationSeedContext();
   const suffix = Date.now();
   const email = `smoke.e2e.${suffix}@example.com`;
   const password = 'SenhaSegura123!';
@@ -38,7 +50,8 @@ async function runCommercialE2ESmoke() {
   let workspaceId = '';
 
   try {
-    console.log('\n── 1. App → register com workspaceName ──');
+    console.log('\n── Happy path: register → pay → billing ACTIVE ──');
+
     const registerRes = await app.inject({
       method: 'POST',
       url: '/api/v1/auth/register',
@@ -56,25 +69,26 @@ async function runCommercialE2ESmoke() {
     assert(!!accessToken, 'accessToken retornado');
     assert(register.user?.role === 'OWNER', 'User é OWNER');
 
-    console.log('\n── 2. App → checkout autenticado ──');
+    const billingBefore = await app.inject({
+      method: 'GET',
+      url: `/api/v1/workspaces/${workspaceId}/billing`,
+      headers: { authorization: `Bearer ${accessToken}` },
+    });
+    assert(billingBefore.statusCode === 200, 'GET billing pós-register 200');
+    assert(JSON.parse(billingBefore.payload).status === 'NONE', 'Billing NONE antes do pagamento');
+
     const checkoutRes = await app.inject({
       method: 'POST',
       url: `/api/v1/workspaces/${workspaceId}/checkout/stripe/session`,
       headers: { authorization: `Bearer ${accessToken}` },
-      payload: {
-        plan: 'STARTER',
-        billingInterval: 'MONTHLY',
-        successUrl: 'http://localhost:3000/dashboard?checkout=success',
-        cancelUrl: 'http://localhost:5175/checkout/cancel',
-      },
+      payload: checkoutPayload,
     });
-    assert(checkoutRes.statusCode === 201, 'Checkout session criada (201)', `got ${checkoutRes.statusCode}`);
+    assert(checkoutRes.statusCode === 201, 'Checkout autenticado 201', `got ${checkoutRes.statusCode}`);
     const checkout = JSON.parse(checkoutRes.payload);
     sessionId = checkout.sessionId;
     assert(!!sessionId, 'sessionId retornado');
     assert(checkout.url?.includes('checkout.stripe.com'), 'URL Stripe Checkout retornada');
 
-    console.log('\n── 3. Stripe webhook → ativa subscription no workspace ──');
     const webhook = await stripePaymentService.handleWebhook({
       id: `evt_smoke_${suffix}`,
       type: 'checkout.session.completed',
@@ -94,21 +108,79 @@ async function runCommercialE2ESmoke() {
       },
     });
     assert(webhook.action === 'PROVISION_TENANT', 'Webhook ativa subscription');
-    assert(webhook.workspaceId === workspaceId, 'workspaceId correto');
+    assert(webhook.workspaceId === workspaceId, 'workspaceId correto no webhook');
 
-    console.log('\n── 4. Gate → billing ACTIVE (onboarding liberado) ──');
     const billingRes = await app.inject({
       method: 'GET',
       url: `/api/v1/workspaces/${workspaceId}/billing`,
       headers: { authorization: `Bearer ${accessToken}` },
     });
-    assert(billingRes.statusCode === 200, 'GET billing 200');
+    assert(billingRes.statusCode === 200, 'GET billing pós-webhook 200');
     const billing = JSON.parse(billingRes.payload);
     assert(billing.status === 'ACTIVE', 'Subscription ACTIVE', `got ${billing.status}`);
     assert(billing.planTier === 'STARTER', 'Plano STARTER refletido');
     assert(billing.limits?.maxVehicles === 100, 'Limites reais do STARTER');
 
-    console.log('\n── 5. Register sem pagamento → billing NONE (paywall) ──');
+    console.log('\n── Guardrails ──');
+
+    const noJwt = await app.inject({
+      method: 'POST',
+      url: `/api/v1/workspaces/${workspaceId}/checkout/stripe/session`,
+      payload: checkoutPayload,
+    });
+    assert(noJwt.statusCode === 401, 'Checkout sem JWT → 401', `got ${noJwt.statusCode}`);
+
+    const tokenOwnerB = app.jwt.sign(seed.ownerB);
+    const crossTenant = await app.inject({
+      method: 'POST',
+      url: `/api/v1/workspaces/${workspaceId}/checkout/stripe/session`,
+      headers: { authorization: `Bearer ${tokenOwnerB}` },
+      payload: checkoutPayload,
+    });
+    assert(crossTenant.statusCode === 403, 'Checkout workspace alheio → 403', `got ${crossTenant.statusCode}`);
+
+    const wsBefore = await prisma.workspace.count();
+    const hookOrphan = await stripePaymentService.handleWebhook({
+      id: `evt_orphan_${suffix}`,
+      type: 'checkout.session.completed',
+      data: {
+        object: {
+          id: `cs_orphan_${suffix}`,
+          customer: `cus_orphan_${suffix}`,
+          subscription: `sub_orphan_${suffix}`,
+          customer_email: `orphan.${suffix}@example.com`,
+          metadata: { plan: 'PRO', customerEmail: `orphan.${suffix}@example.com` },
+        },
+      },
+    });
+    const wsAfter = await prisma.workspace.count();
+    assert(hookOrphan.action === 'IGNORED', 'Webhook sem workspaceId → IGNORED');
+    assert(wsBefore === wsAfter, 'Webhook sem workspaceId não cria workspace órfão');
+
+    const payFirstRegister = await app.inject({
+      method: 'POST',
+      url: '/api/v1/auth/register',
+      payload: {
+        name: 'Pay First Legacy',
+        email: `legacy.${suffix}@example.com`,
+        password,
+        checkoutSessionId: sessionId,
+      },
+    });
+    assert(
+      payFirstRegister.statusCode === 422,
+      'Register pay-first (sem workspaceName) → 422',
+      `got ${payFirstRegister.statusCode}`,
+    );
+
+    const statusRes = await app.inject({
+      method: 'GET',
+      url: `/api/v1/checkout/stripe/session/${sessionId}/status`,
+    });
+    assert(statusRes.statusCode === 410, 'GET session status público → 410 Gone');
+
+    console.log('\n── Paywall: register sem pagamento ──');
+
     const freeEmail = `smoke.free.${suffix}@example.com`;
     const freeRegister = await app.inject({
       method: 'POST',
@@ -131,23 +203,16 @@ async function runCommercialE2ESmoke() {
     });
     assert(freeBilling.statusCode === 200, 'GET billing sem subscription 200');
     const freeBillingBody = JSON.parse(freeBilling.payload);
-    assert(freeBillingBody.status === 'NONE', 'Billing status NONE (não mock PRO)', `got ${freeBillingBody.status}`);
+    assert(freeBillingBody.status === 'NONE', 'Billing status NONE (paywall)', `got ${freeBillingBody.status}`);
     assert(freeBillingBody.planTier === null, 'planTier null sem subscription');
 
-    console.log('\n── 6. Session status público → 410 Gone ──');
-    const statusRes = await app.inject({
-      method: 'GET',
-      url: `/api/v1/checkout/stripe/session/${sessionId}/status`,
-    });
-    assert(statusRes.statusCode === 410, 'GET session status retorna 410');
-
     console.log('\n════════════════════════════════════════════════════════════');
-    console.log(`📊 Smoke E2E: ${passed}/${total} passou`);
+    console.log(`📊 Smoke E2E register-first: ${passed}/${total} passou`);
     if (failures.length) {
       failures.forEach((f) => console.log(`  - ${f}`));
       process.exit(1);
     }
-    console.log('🎉 Smoke test E2E comercial PASSOU — critérios do épico #13 validados');
+    console.log('🎉 Smoke test E2E comercial register-first PASSOU');
     process.exit(0);
   } finally {
     await app.close();
