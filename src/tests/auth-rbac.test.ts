@@ -147,6 +147,8 @@ async function runAuthRbacTests() {
         dataMe.user?.memberships?.some((membership: { workspaceId: string }) => membership.workspaceId === seed.workspaceAId),
         'WorkspaceId decodificado via memberships',
       );
+      assert(dataMe.user?.onboardingCompleted === true, 'Seed user com onboardingCompleted=true');
+      assert(dataMe.user?.onboardingStep === 4, 'Seed user com onboardingStep=4');
     } else {
       console.log('    ℹ️ Pulando asserções de /me com banco — seed não disponível');
     }

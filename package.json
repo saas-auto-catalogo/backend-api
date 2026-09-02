@@ -24,7 +24,7 @@
     "test:stripe": "tsx src/tests/stripe/stripePayment.test.ts",
     "test:db": "tsx src/tests/db-validation.test.ts",
     "test:rbac": "tsx src/tests/auth-rbac.test.ts",
-    "test:auth": "tsx src/tests/auth-register.test.ts && tsx src/tests/auth-cookie.test.ts",
+    "test:auth": "tsx src/tests/auth-register.test.ts && tsx src/tests/auth-cookie.test.ts && tsx src/tests/auth-onboarding.test.ts",
     "test:email": "tsx src/tests/email.test.ts",
     "test:subscription": "tsx src/tests/stripe-lifecycle.test.ts",
     "test:feeds": "tsx src/tests/feed-crud.test.ts && tsx src/tests/feed-validate-url.test.ts",

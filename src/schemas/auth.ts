@@ -29,9 +29,19 @@ export const logoutSchema = z.object({
   refreshToken: z.string().min(20).optional(),
 });
 
+export const updateOnboardingSchema = z
+  .object({
+    onboardingStep: z.number().int().min(1).max(4).optional(),
+    onboardingCompleted: z.boolean().optional(),
+  })
+  .refine((data) => data.onboardingStep !== undefined || data.onboardingCompleted !== undefined, {
+    message: 'Informe onboardingStep e/ou onboardingCompleted',
+  });
+
 export type LoginDTO = z.infer<typeof loginSchema>;
 export type RegisterDTO = z.infer<typeof registerSchema>;
 export type RefreshTokenDTO = z.infer<typeof refreshTokenSchema>;
 export type ForgotPasswordDTO = z.infer<typeof forgotPasswordSchema>;
 export type ResetPasswordDTO = z.infer<typeof resetPasswordSchema>;
 export type LogoutDTO = z.infer<typeof logoutSchema>;
+export type UpdateOnboardingDTO = z.infer<typeof updateOnboardingSchema>;

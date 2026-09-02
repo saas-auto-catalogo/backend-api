@@ -175,6 +175,10 @@ model User {
   failedLoginAttempts Int       @default(0) @map("failed_login_attempts")
   lockedUntil         DateTime? @map("locked_until")
 
+  // Onboarding do lojista (Issue #35)
+  onboardingCompleted Boolean @default(false) @map("onboarding_completed")
+  onboardingStep      Int     @default(1) @map("onboarding_step")
+
   memberships   WorkspaceMember[]
   auditLogs     AuditLog[]        @relation("ActorAuditLogs")
   refreshTokens RefreshToken[]
