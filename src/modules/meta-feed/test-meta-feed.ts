@@ -1,6 +1,7 @@
 import { MetaXmlFeedGenerator } from './meta-feed-generator.js';
 import { buildServer } from '../../server.js';
 import { feedCacheService } from '../../infra/cache/feed-cache.service.js';
+import { redisClient } from '../../infra/redis/redis-client.js';
 import { BodyStyle, FuelType, TransmissionType, VehicleCondition, VehicleStatus } from '@prisma/client';
 
 async function runMetaFeedTests() {
@@ -156,8 +157,11 @@ async function runMetaFeedTests() {
 
   // Limpa o cache de teste
   await feedCacheService.invalidateFeedXml(testToken);
+  await server.close();
+  redisClient.disconnect();
 
   console.log('\n🎉 Todos os testes do Motor Meta Ads DAA e Endpoint Fastify foram concluídos com 100% de sucesso!');
+  process.exit(0);
 }
 
 runMetaFeedTests().catch((err) => {

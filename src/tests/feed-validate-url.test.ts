@@ -4,6 +4,7 @@ import { resolve } from 'path';
 import { AddressInfo } from 'net';
 import { buildServer } from '../server.js';
 import { AuthUser } from '../modules/auth/auth.middleware.js';
+import { redisClient } from '../infra/redis/redis-client.js';
 
 let totalTests = 0;
 let passedTests = 0;
@@ -249,6 +250,7 @@ async function runFeedValidateUrlTestSuite() {
     assert(invalidBodyRes.statusCode === 422, 'URL inválida retorna 422');
   } finally {
     await app.close();
+    redisClient.disconnect();
   }
 
   const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
@@ -262,6 +264,7 @@ async function runFeedValidateUrlTestSuite() {
   }
 
   console.log('\n✅ Todos os testes de validate-url passaram!');
+  process.exit(0);
 }
 
 runFeedValidateUrlTestSuite().catch((err) => {
