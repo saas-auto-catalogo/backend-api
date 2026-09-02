@@ -1,4 +1,5 @@
 import { buildServer } from '../server.js';
+import { teardownIntegrationTest } from './test-teardown.js';
 
 let totalTests = 0;
 let passedTests = 0;
@@ -134,6 +135,7 @@ async function runAuthRegisterTestSuite() {
     assert(loginData.user?.workspaceId === registerData.user?.workspaceId, 'workspaceId coincide após login');
   } finally {
     await app.close();
+    await teardownIntegrationTest();
   }
 
   const elapsed = Date.now() - startTime;
@@ -152,6 +154,7 @@ async function runAuthRegisterTestSuite() {
   }
 
   console.log('\n🎉 Todos os testes de cadastro passaram com 100% de sucesso!');
+  process.exit(0);
 }
 
 runAuthRegisterTestSuite().catch((err) => {

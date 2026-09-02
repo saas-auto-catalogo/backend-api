@@ -1,4 +1,5 @@
 import { buildServer } from '../server.js';
+import { teardownIntegrationTest } from './test-teardown.js';
 import {
   PERMISSIONS,
   hasPermission,
@@ -278,27 +279,29 @@ async function runAuthRbacTests() {
       headers: { authorization: `Bearer ${superAdminToken}` }
     });
     assert(resAdminInB.statusCode === 200, 'Super Admin tem acesso global ao Tenant B');
-
-    const elapsed = Date.now() - startTime;
-
-    console.log(`\n${'═'.repeat(60)}`);
-    console.log(`📊 RESULTADO FINAL DOS TESTES DE AUTH & RBAC`);
-    console.log('═'.repeat(60));
-    console.log(`  Total de testes: ${totalTests}`);
-    console.log(`  ✅ Passou:        ${passedTests}`);
-    console.log(`  ❌ Falhou:        ${failures.length}`);
-    console.log(`  ⏱️  Tempo total:   ${elapsed}ms`);
-
-    if (failures.length > 0) {
-      console.log('\n🔴 Falhas encontradas:');
-      failures.forEach(f => console.log(`  - ${f}`));
-      process.exit(1);
-    } else {
-      console.log('\n🎉 Todos os testes de Autenticação JWT, RBAC e Isolamento Multi-Tenant passaram com 100% de sucesso!');
-    }
   } finally {
     await app.close();
+    await teardownIntegrationTest();
   }
+
+  const elapsed = Date.now() - startTime;
+
+  console.log(`\n${'═'.repeat(60)}`);
+  console.log(`📊 RESULTADO FINAL DOS TESTES DE AUTH & RBAC`);
+  console.log('═'.repeat(60));
+  console.log(`  Total de testes: ${totalTests}`);
+  console.log(`  ✅ Passou:        ${passedTests}`);
+  console.log(`  ❌ Falhou:        ${failures.length}`);
+  console.log(`  ⏱️  Tempo total:   ${elapsed}ms`);
+
+  if (failures.length > 0) {
+    console.log('\n🔴 Falhas encontradas:');
+    failures.forEach(f => console.log(`  - ${f}`));
+    process.exit(1);
+  }
+
+  console.log('\n🎉 Todos os testes de Autenticação JWT, RBAC e Isolamento Multi-Tenant passaram com 100% de sucesso!');
+  process.exit(0);
 }
 
 runAuthRbacTests().catch((err) => {
