@@ -23,6 +23,7 @@
     "test:diff": "tsx src/modules/stock-diff/test-diff.ts",
     "test:meta-feed": "tsx src/modules/meta-feed/test-meta-feed.ts",
     "test:meta-connector": "tsx src/modules/meta-connector/test-meta-connector.ts",
+    "test:env": "tsx --import ./src/tests/setup-env.ts src/tests/env-validation.test.ts",
     "test:qa": "tsx src/tests/qa-suite.test.ts",
     "test:vehicles": "tsx src/tests/integration/vehicleEndpoints.test.ts",
     "test:stripe": "tsx --import ./src/tests/setup-env.ts src/tests/stripe-checkout-session.test.ts",

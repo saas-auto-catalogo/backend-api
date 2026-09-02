@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import Fastify, { FastifyInstance } from 'fastify';
 import cors from '@fastify/cors';
 import compress from '@fastify/compress';
@@ -36,6 +37,7 @@ import { portalSessionSchema } from './schemas/billing.js';
 import { getAuthUrlQuerySchema, postCallbackBodySchema, diagnosticsParamsSchema } from './schemas/metaConnector.js';
 import { workspaceParamsSchema } from './schemas/workspaces.js';
 import { getCorsOrigin } from './config/cors.js';
+import { getEnv, validateEnv } from './config/env.js';
 
 export async function buildServer(): Promise<FastifyInstance> {
   const server = Fastify({
@@ -56,7 +58,7 @@ export async function buildServer(): Promise<FastifyInstance> {
     encodings: ['gzip', 'deflate']
   });
 
-  const jwtSecret = process.env.JWT_SECRET || 'super-secret-jwt-signing-key-for-auth-minimum-32-chars';
+  const jwtSecret = getEnv().JWT_SECRET;
   await server.register(fastifyJwt, {
     secret: jwtSecret,
     sign: {
@@ -147,6 +149,7 @@ export async function buildServer(): Promise<FastifyInstance> {
 }
 
 export async function startServer(port: number = 3333, host: string = '0.0.0.0') {
+  validateEnv();
   const server = await buildServer();
 
   try {

@@ -1,6 +1,9 @@
 import 'dotenv/config';
+import { validateEnv } from '../config/env.js';
 import { createSyncFeedWorker } from '../infra/queues/workers/sync-feed.worker.js';
 import { QUEUE_NAMES } from '../infra/queues/queue-types.js';
+
+validateEnv();
 
 const concurrency = parseInt(process.env.SYNC_FEED_WORKER_CONCURRENCY || '2', 10);
 

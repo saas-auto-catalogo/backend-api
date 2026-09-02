@@ -1,4 +1,5 @@
 import { buildServer } from '../server.js';
+import { resetEnvCache } from '../config/env.js';
 import { teardownIntegrationTest, resetAuthRateLimits } from './test-teardown.js';
 
 let totalTests = 0;
@@ -130,8 +131,20 @@ async function runCorsDevTestSuite() {
 
   const savedNodeEnv = process.env.NODE_ENV;
   const savedFrontendUrl = process.env.FRONTEND_URL;
+  const savedDatabaseUrl = process.env.DATABASE_URL;
+  const savedJwtSecret = process.env.JWT_SECRET;
+  const savedRedisUrl = process.env.REDIS_URL;
+  const savedFeedTokenSecret = process.env.FEED_TOKEN_SECRET;
+  const savedStripeMock = process.env.STRIPE_MOCK;
+
   process.env.NODE_ENV = 'production';
   process.env.FRONTEND_URL = 'http://app.example.com';
+  process.env.DATABASE_URL = 'postgresql://postgres:postgres@localhost:5432/auto_catalogo_db?schema=public';
+  process.env.JWT_SECRET = 'production-jwt-secret-minimum-32-characters';
+  process.env.REDIS_URL = 'redis://localhost:6379';
+  process.env.FEED_TOKEN_SECRET = 'production-feed-token-secret-minimum-32-chars';
+  process.env.STRIPE_MOCK = 'true';
+  resetEnvCache();
 
   const prodApp = await buildServer();
 
@@ -182,6 +195,32 @@ async function runCorsDevTestSuite() {
     } else {
       process.env.FRONTEND_URL = savedFrontendUrl;
     }
+    if (savedDatabaseUrl === undefined) {
+      delete process.env.DATABASE_URL;
+    } else {
+      process.env.DATABASE_URL = savedDatabaseUrl;
+    }
+    if (savedJwtSecret === undefined) {
+      delete process.env.JWT_SECRET;
+    } else {
+      process.env.JWT_SECRET = savedJwtSecret;
+    }
+    if (savedRedisUrl === undefined) {
+      delete process.env.REDIS_URL;
+    } else {
+      process.env.REDIS_URL = savedRedisUrl;
+    }
+    if (savedFeedTokenSecret === undefined) {
+      delete process.env.FEED_TOKEN_SECRET;
+    } else {
+      process.env.FEED_TOKEN_SECRET = savedFeedTokenSecret;
+    }
+    if (savedStripeMock === undefined) {
+      delete process.env.STRIPE_MOCK;
+    } else {
+      process.env.STRIPE_MOCK = savedStripeMock;
+    }
+    resetEnvCache();
   }
 
   const elapsed = Date.now() - startTime;
