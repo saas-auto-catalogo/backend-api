@@ -1,7 +1,7 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
 import { MetaOAuthService } from './meta-oauth.service.js';
 import { MetaGraphApiClient } from './meta-graph.client.js';
-import { prisma } from '../../lib/prisma.js';
+import { metaConnectorService, DealershipNotFoundError } from './meta-connector.service.js';
 
 const oauthService = new MetaOAuthService();
 const graphClient = new MetaGraphApiClient();
@@ -62,19 +62,22 @@ export async function postMetaCallbackHandler(
   }
 
   // 4. Cria ou vincula o MetaCatalog no banco de dados
-  const existingMetaCatalog = await prisma.metaCatalog.findFirst({
-    where: { workspaceId }
-  });
-
-  if (existingMetaCatalog) {
-    await prisma.metaCatalog.update({
-      where: { id: existingMetaCatalog.id },
-      data: {
-        metaCatalogId: catalogs[0]?.id || existingMetaCatalog.metaCatalogId,
-        catalogName: catalogName || catalogs[0]?.name || existingMetaCatalog.catalogName,
-        updatedAt: new Date()
-      }
+  try {
+    await metaConnectorService.upsertMetaCatalogFromOAuth({
+      workspaceId,
+      catalogName,
+      catalogs,
     });
+  } catch (err) {
+    if (err instanceof DealershipNotFoundError) {
+      return reply.status(404).send({
+        type: 'https://autocatalogo.com.br/errors/not-found',
+        title: 'Concessionaria Nao Encontrada',
+        status: 404,
+        detail: err.message,
+      });
+    }
+    throw err;
   }
 
   return reply.status(200).send({

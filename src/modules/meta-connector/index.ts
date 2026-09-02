@@ -4,4 +4,5 @@
 
 export * from './meta-oauth.service.js';
 export * from './meta-graph.client.js';
+export * from './meta-connector.service.js';
 export * from './meta-connector.controller.js';
