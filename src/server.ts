@@ -14,6 +14,7 @@ import {
   createStripePixHandler,
   createStripeCardHandler,
   createStripeCheckoutSessionHandler,
+  getStripeCheckoutSessionStatusHandler,
   stripeWebhookHandler
 } from './modules/checkout/checkout.controller.js';
 import {
@@ -32,7 +33,7 @@ import { registerAuthRoutes } from './modules/auth/auth.routes.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { validate } from './middleware/validation.js';
 import { feedParamsSchema } from './schemas/feeds.js';
-import { createStripePixSchema, createStripeCardSchema, createStripeCheckoutSessionSchema } from './schemas/billing.js';
+import { createStripePixSchema, createStripeCardSchema, createStripeCheckoutSessionSchema, checkoutSessionParamsSchema } from './schemas/billing.js';
 import { portalSessionSchema } from './schemas/billing.js';
 import { getAuthUrlQuerySchema, postCallbackBodySchema, diagnosticsParamsSchema } from './schemas/metaConnector.js';
 import { workspaceParamsSchema } from './schemas/workspaces.js';
@@ -99,6 +100,11 @@ export async function buildServer(): Promise<FastifyInstance> {
   server.post('/api/v1/checkout/stripe/pix', { preHandler: [validate(createStripePixSchema, 'body')] }, async (req, reply) => createStripePixHandler(req as any, reply));
   server.post('/api/v1/checkout/stripe/card', { preHandler: [validate(createStripeCardSchema, 'body')] }, async (req, reply) => createStripeCardHandler(req as any, reply));
   server.post('/api/v1/checkout/stripe/session', { preHandler: [validate(createStripeCheckoutSessionSchema, 'body')] }, async (req, reply) => createStripeCheckoutSessionHandler(req as any, reply));
+  server.get(
+    '/api/v1/checkout/stripe/session/:sessionId/status',
+    { preHandler: [validate(checkoutSessionParamsSchema, 'params')] },
+    async (req, reply) => getStripeCheckoutSessionStatusHandler(req as any, reply),
+  );
   server.post('/api/v1/webhooks/stripe', stripeWebhookHandler);
 
   // --- ROTAS DE AUTENTICACAO (Issue #12) ---

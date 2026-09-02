@@ -289,7 +289,11 @@ export class SubscriptionService {
   async getCheckoutProvision(stripeSessionId: string) {
     return prisma.checkoutProvision.findUnique({
       where: { stripeSessionId },
-      include: { workspace: true },
+      include: {
+        workspace: {
+          include: { subscription: true },
+        },
+      },
     });
   }
 

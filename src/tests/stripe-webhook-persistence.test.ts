@@ -191,7 +191,25 @@ async function runStripeWebhookPersistenceTests() {
     const canceledSub = await prisma.subscription.findUnique({ where: { stripeSubscriptionId: 'sub_seed_auto_elite' } });
     assert(canceledSub?.status === 'CANCELED', 'Status CANCELED');
 
-    section('6. Register com checkoutSessionId completa provisionamento');
+    section('6. GET /checkout/stripe/session/:sessionId/status');
+
+    const resStatusPending = await app.inject({
+      method: 'GET',
+      url: `/api/v1/checkout/stripe/session/${sessionId}/status`,
+    });
+    assert(resStatusPending.statusCode === 200, 'Status pending retorna 200');
+    const statusPending = JSON.parse(resStatusPending.payload);
+    assert(statusPending.customerEmail === newEmail, 'Status retorna customerEmail');
+    assert(statusPending.dealershipName === 'Nova Revenda Test', 'Status retorna dealershipName');
+    assert(statusPending.provisioned === true, 'Status provisioned true');
+
+    const resStatusMissing = await app.inject({
+      method: 'GET',
+      url: '/api/v1/checkout/stripe/session/cs_missing/status',
+    });
+    assert(resStatusMissing.statusCode === 404, 'Session inexistente retorna 404');
+
+    section('7. Register com checkoutSessionId completa provisionamento');
 
     const registerResult = await authService.register(
       app,
@@ -213,7 +231,13 @@ async function runStripeWebhookPersistenceTests() {
     });
     assert(member?.role === 'OWNER', 'User vinculado como OWNER');
 
-    section('7. Billing GET sem subscription retorna NONE');
+    const resStatusConsumed = await app.inject({
+      method: 'GET',
+      url: `/api/v1/checkout/stripe/session/${sessionId}/status`,
+    });
+    assert(resStatusConsumed.statusCode === 409, 'Session consumida retorna 409');
+
+    section('8. Billing GET sem subscription retorna NONE');
 
     const tempWorkspace = await prisma.workspace.create({
       data: { name: 'Sem Plano', slug: `sem-plano-${uniqueSuffix}`, status: 'ACTIVE' },

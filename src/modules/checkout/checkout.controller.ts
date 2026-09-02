@@ -1,6 +1,7 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
 import { stripePaymentService, StripePriceConfigError } from '../../services/payments/stripePaymentService.js';
 import { constructStripeWebhookEvent } from '../../services/payments/stripe-client.js';
+import { subscriptionService } from '../billing/subscription.service.js';
 import {
   CreateStripePixRequest,
   CreateStripeCardRequest,
@@ -66,6 +67,55 @@ export async function createStripeCheckoutSessionHandler(
     }
     throw error;
   }
+}
+
+export async function getStripeCheckoutSessionStatusHandler(
+  request: FastifyRequest<{ Params: { sessionId: string } }>,
+  reply: FastifyReply,
+): Promise<void> {
+  const { sessionId } = request.params;
+  const provision = await subscriptionService.getCheckoutProvision(sessionId);
+
+  if (!provision) {
+    reply.status(404).send({
+      type: 'https://autocatalogo.com.br/errors/checkout-session-not-found',
+      title: 'Sessão de checkout não encontrada',
+      status: 404,
+      detail: 'Sessão de checkout inválida ou não encontrada.',
+    });
+    return;
+  }
+
+  if (provision.status === 'COMPLETED') {
+    reply.status(409).send({
+      type: 'https://autocatalogo.com.br/errors/checkout-session-consumed',
+      title: 'Sessão de checkout já utilizada',
+      status: 409,
+      detail: 'Esta sessão de checkout já foi utilizada. Faça login para continuar.',
+    });
+    return;
+  }
+
+  if (provision.expiresAt <= new Date()) {
+    reply.status(410).send({
+      type: 'https://autocatalogo.com.br/errors/checkout-session-expired',
+      title: 'Sessão de checkout expirada',
+      status: 410,
+      detail: 'Sessão de checkout expirada. Realize um novo pagamento para continuar.',
+    });
+    return;
+  }
+
+  reply.status(200).send({
+    sessionId: provision.stripeSessionId,
+    status: provision.status,
+    customerEmail: provision.customerEmail,
+    dealershipName: provision.workspace.name,
+    planTier: provision.workspace.subscription?.planTier ?? null,
+    subscriptionStatus: provision.workspace.subscription?.status ?? null,
+    provisioned: provision.status === 'PENDING_REGISTRATION',
+    expiresAt: provision.expiresAt.toISOString(),
+  });
 }
 
 export async function stripeWebhookHandler(
