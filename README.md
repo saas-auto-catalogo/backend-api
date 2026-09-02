@@ -92,7 +92,7 @@ npm run worker:sync-feed
 | `DATABASE_URL` | PostgreSQL |
 | `REDIS_URL` | Redis para BullMQ e cache |
 | `JWT_SECRET` | Assinatura dos access tokens |
-| `FRONTEND_URL` | Origem CORS (ex.: `http://localhost:3000`) |
+| `FRONTEND_URL` | Origem CORS (ex.: `http://localhost:3000`). Em **development/test**, origens comuns (`localhost`/`127.0.0.1` nas portas 3000 e 5173) já são permitidas além desta URL. Em **production**, deve coincidir exatamente com a URL do frontend. |
 | `PORT` | Padrão `3333` no código |
 | `STRIPE_SECRET_KEY` | Chave secreta Stripe (Checkout Session real) |
 | `STRIPE_*_PRICE_ID` | Price IDs por plano/intervalo (ver `.env.example`) |
