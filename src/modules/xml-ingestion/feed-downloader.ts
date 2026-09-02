@@ -91,7 +91,6 @@ export async function downloadFeedStream(
 
           // 4. Detecção e Aplicação de Pipeline de Descompressão
           const isGzip =
-            contentEncoding.includes('gzip') ||
             contentType.includes('gzip') ||
             feedUrl.toLowerCase().endsWith('.gz') ||
             feedUrl.toLowerCase().endsWith('.gzip');

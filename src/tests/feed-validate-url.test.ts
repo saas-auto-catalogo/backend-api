@@ -2,6 +2,7 @@ import { createServer, Server } from 'http';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
 import { AddressInfo } from 'net';
+import { gzipSync } from 'zlib';
 import { buildServer } from '../server.js';
 import { AuthUser } from '../modules/auth/auth.middleware.js';
 import { teardownIntegrationTest } from './test-teardown.js';
@@ -248,6 +249,38 @@ async function runFeedValidateUrlTestSuite() {
       payload: { url: 'not-a-valid-url' },
     });
     assert(invalidBodyRes.statusCode === 422, 'URL inválida retorna 422');
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // 7. Gzip via fetch (sem double decompress)
+    // ─────────────────────────────────────────────────────────────────────────
+    section('7. Gzip via fetch (sem double decompress)');
+
+    const gzipJsonServer = await startFixtureServer((_req, res) => {
+      res.writeHead(200, {
+        'Content-Type': 'application/json; charset=utf-8',
+        'Content-Encoding': 'gzip',
+      });
+      res.end(gzipSync(jsonFixture));
+    });
+
+    const gzipJsonRes = await app.inject({
+      method: 'POST',
+      url: endpoint,
+      headers: { authorization: `Bearer ${tokenManagerA}` },
+      payload: { url: `${gzipJsonServer.baseUrl}/vehicles` },
+    });
+    const gzipJsonBody = JSON.parse(gzipJsonRes.payload);
+
+    assert(gzipJsonRes.statusCode === 200, 'Gzip-encoded JSON retorna 200 (não 500)');
+    assert(gzipJsonBody.valid === false, 'Gzip-encoded JSON: valid=false');
+    assert(gzipJsonBody.detectedFormat === 'json', 'Gzip-encoded JSON: detectedFormat=json');
+    assert(
+      gzipJsonBody.error === 'Formato não suportado — esperado XML',
+      'Gzip-encoded JSON: mensagem correta',
+      gzipJsonBody.error
+    );
+
+    await closeServer(gzipJsonServer.server);
   } finally {
     await app.close();
     await teardownIntegrationTest();
