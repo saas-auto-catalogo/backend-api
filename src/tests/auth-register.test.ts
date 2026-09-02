@@ -1,5 +1,5 @@
 import { buildServer } from '../server.js';
-import { teardownIntegrationTest } from './test-teardown.js';
+import { teardownIntegrationTest, resetAuthRateLimits } from './test-teardown.js';
 
 let totalTests = 0;
 let passedTests = 0;
@@ -29,6 +29,7 @@ async function runAuthRegisterTestSuite() {
   console.log('╚══════════════════════════════════════════════════════════════╝');
 
   const app = await buildServer();
+  await resetAuthRateLimits();
   const startTime = Date.now();
   const uniqueEmail = `register-test-${Date.now()}@test.local`;
   const password = 'SenhaSegura123!';
@@ -128,7 +129,11 @@ async function runAuthRegisterTestSuite() {
     assert(resLogin.statusCode === 200, `Login após cadastro retorna 200 (got ${resLogin.statusCode})`);
 
     const loginData = JSON.parse(resLogin.payload);
-    const loginSetCookie = resLogin.headers['set-cookie'] || '';
+    const loginSetCookie = String(
+      Array.isArray(resLogin.headers['set-cookie'])
+        ? resLogin.headers['set-cookie'].join('; ')
+        : (resLogin.headers['set-cookie'] || '')
+    );
     assert(!!loginData.accessToken, 'Login retorna accessToken');
     assert(!loginData.refreshToken, 'Login NÃO retorna refreshToken no JSON');
     assert(loginSetCookie.includes('refreshToken'), 'Login seta cookie refreshToken');
