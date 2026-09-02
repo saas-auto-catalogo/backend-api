@@ -1,10 +1,7 @@
 import { Subscription } from '@prisma/client';
 import { prisma } from '../../lib/prisma.js';
-import { generateUniqueWorkspaceSlug } from '../../lib/workspace-slug.js';
 import { PLAN_LIMITS } from './plan-limits.js';
 import { PlanType, BillingInterval } from '../../types/checkout.js';
-
-const PROVISION_TTL_DAYS = 7;
 
 export interface CheckoutSessionPayload {
   id: string;
@@ -89,20 +86,6 @@ export class SubscriptionService {
     return prisma.subscription.findUnique({ where: { stripeCustomerId } });
   }
 
-  async findOwnerWorkspaceIdByEmail(email: string): Promise<string | null> {
-    const user = await prisma.user.findUnique({
-      where: { email: email.toLowerCase().trim() },
-      include: {
-        memberships: {
-          where: { role: 'OWNER' },
-          orderBy: { createdAt: 'asc' },
-          take: 1,
-        },
-      },
-    });
-    return user?.memberships[0]?.workspaceId ?? null;
-  }
-
   async upsertForExistingUser(params: {
     workspaceId: string;
     session: CheckoutSessionPayload;
@@ -125,68 +108,6 @@ export class SubscriptionService {
         stripeCustomerId: params.session.customer,
         stripeSubscriptionId: params.session.subscription,
       }, currentPeriodEnd),
-    });
-  }
-
-  async provisionNewCustomer(params: {
-    session: CheckoutSessionPayload;
-  }): Promise<{ workspaceId: string; subscription: Subscription }> {
-    const session = params.session;
-    const metadata = session.metadata ?? {};
-    const planTier = resolvePlanTier(metadata);
-    const billingInterval = resolveBillingInterval(metadata);
-    const customerEmail = (
-      metadata.customerEmail ||
-      session.customer_email ||
-      session.customer_details?.email ||
-      ''
-    ).toLowerCase().trim();
-    const dealershipName = metadata.dealershipName || 'Nova Revenda';
-    const document = metadata.customerDocument || null;
-    const currentPeriodEnd = calculatePeriodEnd(billingInterval);
-    const slug = await generateUniqueWorkspaceSlug(dealershipName);
-    const expiresAt = new Date(Date.now() + PROVISION_TTL_DAYS * 24 * 60 * 60 * 1000);
-
-    return prisma.$transaction(async (tx) => {
-      const workspace = await tx.workspace.create({
-        data: {
-          name: dealershipName,
-          slug,
-          cnpj: document,
-          status: 'ACTIVE',
-        },
-      });
-
-      await tx.dealership.create({
-        data: {
-          workspaceId: workspace.id,
-          tradeName: dealershipName,
-          cnpj: document,
-          email: customerEmail,
-        },
-      });
-
-      const subscription = await tx.subscription.create({
-        data: {
-          workspaceId: workspace.id,
-          ...subscriptionDataFromPlan(planTier, billingInterval, {
-            stripeCustomerId: session.customer,
-            stripeSubscriptionId: session.subscription,
-          }, currentPeriodEnd),
-        },
-      });
-
-      await tx.checkoutProvision.create({
-        data: {
-          stripeSessionId: session.id,
-          workspaceId: workspace.id,
-          customerEmail,
-          status: 'PENDING_REGISTRATION',
-          expiresAt,
-        },
-      });
-
-      return { workspaceId: workspace.id, subscription };
     });
   }
 
@@ -283,24 +204,6 @@ export class SubscriptionService {
         cancelAtPeriodEnd: stripeSub.cancel_at_period_end ?? subscription.cancelAtPeriodEnd,
         stripePriceId,
       },
-    });
-  }
-
-  async getCheckoutProvision(stripeSessionId: string) {
-    return prisma.checkoutProvision.findUnique({
-      where: { stripeSessionId },
-      include: {
-        workspace: {
-          include: { subscription: true },
-        },
-      },
-    });
-  }
-
-  async completeCheckoutProvision(stripeSessionId: string): Promise<void> {
-    await prisma.checkoutProvision.update({
-      where: { stripeSessionId },
-      data: { status: 'COMPLETED' },
     });
   }
 }

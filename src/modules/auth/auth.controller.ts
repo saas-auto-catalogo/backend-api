@@ -39,7 +39,7 @@ export async function registerHandler(
   request: FastifyRequest<{ Body: RegisterDTO }>,
   reply: FastifyReply,
 ): Promise<void> {
-  const { name, email, password, workspaceName, checkoutSessionId } = request.body;
+  const { name, email, password, workspaceName } = request.body;
   const ipAddress = request.ip;
   const userAgent = request.headers['user-agent'] || '';
 
@@ -51,7 +51,6 @@ export async function registerHandler(
     workspaceName,
     ipAddress,
     userAgent,
-    checkoutSessionId,
   );
 
   setRefreshTokenCookie(reply, result.refreshToken);

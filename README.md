@@ -47,7 +47,7 @@ src/modules/
 | Feeds | `GET/POST/PUT/DELETE /workspaces/:id/feeds`, `POST .../feeds/validate-url`, `POST .../sync` |
 | Auditoria | `GET /workspaces/:id/audit-logs` (MANAGER+) |
 | Billing | `GET /workspaces/:id/billing`, `POST /billing/portal`, `POST /workspaces/:id/checkout/stripe/session` (OWNER+) |
-| Checkout | `POST /checkout/stripe/session` (deprecated — pay-first; use rota autenticada por workspace) |
+| Checkout | `POST /checkout/stripe/session` (deprecated — pay-first), `GET /checkout/stripe/session/:id/status` (**410 Gone** — use `GET /workspaces/:id/billing`) |
 | Meta | `GET /integrations/meta/auth-url`, `POST /integrations/meta/callback` |
 
 Lista completa e RBAC na [wiki](https://github.com/saas-auto-catalogo/.github/blob/main/docs/wiki/backend-api.md).
@@ -99,6 +99,8 @@ npm run worker:sync-feed
 | `STRIPE_MOCK` | Opcional — força mock mesmo com secret key |
 
 Checkout autenticado: `POST /workspaces/:id/checkout/stripe/session` (OWNER+) cria Stripe Session com `metadata.workspaceId`. Retorna **409** se o workspace já tiver subscription **ACTIVE**. A rota pública `POST /checkout/stripe/session` está **deprecated** (header `Deprecation: true`).
+
+**Fluxo comercial (register-first):** `POST /auth/register` (com `workspaceName`) → login → checkout autenticado → Stripe webhook `checkout.session.completed` com `metadata.workspaceId` → `GET /workspaces/:id/billing` retorna `ACTIVE`. O webhook **não** cria workspace novo; sessões sem `workspaceId` são ignoradas. `GET /checkout/stripe/session/:id/status` retorna **410 Gone** — a success page deve consultar billing autenticado. Email pós-pagamento aponta para `/dashboard`, não `/register`.
 
 ### Validação no boot
 
