@@ -102,6 +102,49 @@ function suggestPreset(hostname: string, detectedRootTag?: string): FeedSourceTy
   return 'GENERIC_XML';
 }
 
+function suggestJsonPreset(hostname: string): FeedSourceType {
+  const host = hostname.toLowerCase();
+  if (host.includes('4boss') || host.includes('base44')) return 'BASE44';
+  if (host.includes('jrcaseminovos') || host.includes('spicedigital')) return 'SPICE_DIGITAL';
+  return 'GENERIC_JSON';
+}
+
+async function streamToBuffer(stream: Readable): Promise<Buffer> {
+  const chunks: Buffer[] = [];
+  for await (const chunk of stream) {
+    chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+  }
+  return Buffer.concat(chunks);
+}
+
+type JsonFeedParseResult =
+  | { ok: true; vehicleCount: number }
+  | { ok: false; error: string };
+
+function parseJsonFeed(buffer: Buffer): JsonFeedParseResult {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(buffer.toString('utf-8'));
+  } catch {
+    return { ok: false, error: 'Formato não suportado — JSON inválido' };
+  }
+
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+    return { ok: false, error: 'Formato não suportado — JSON inválido' };
+  }
+
+  const vehicles = (parsed as { vehicles?: unknown }).vehicles;
+  if (!Array.isArray(vehicles)) {
+    return { ok: false, error: 'Formato não suportado — JSON inválido' };
+  }
+
+  if (vehicles.length === 0) {
+    return { ok: false, error: 'Formato não suportado — JSON inválido' };
+  }
+
+  return { ok: true, vehicleCount: vehicles.length };
+}
+
 function mapDownloadError(error: unknown): string {
   const message = error instanceof Error ? error.message : String(error);
   const cause = error instanceof Error && error.cause instanceof Error ? error.cause.message : '';
@@ -165,12 +208,34 @@ export class FeedUrlValidationService {
     const hostname = new URL(url).hostname;
 
     if (detectedFormat === 'json') {
-      return {
-        valid: false,
-        contentType,
-        detectedFormat: 'json',
-        error: 'Formato não suportado — esperado XML',
-      };
+      try {
+        const buffer = await streamToBuffer(combined);
+        const parsed = parseJsonFeed(buffer);
+
+        if (!parsed.ok) {
+          return {
+            valid: false,
+            contentType,
+            detectedFormat: 'json',
+            error: parsed.error,
+          };
+        }
+
+        return {
+          valid: true,
+          vehicleCount: parsed.vehicleCount,
+          contentType,
+          detectedFormat: 'json',
+          suggestedPresetId: suggestJsonPreset(hostname),
+        };
+      } catch {
+        return {
+          valid: false,
+          contentType,
+          detectedFormat: 'json',
+          error: 'Formato não suportado — JSON inválido',
+        };
+      }
     }
 
     try {

@@ -31,6 +31,7 @@ function section(title: string): void {
 const fixturesDir = resolve(process.cwd(), 'src/tests/fixtures');
 const xmlFixture = readFileSync(resolve(fixturesDir, 'autocerto-sample.xml'));
 const jsonFixture = readFileSync(resolve(fixturesDir, 'vehicles-4boss.json'));
+const spiceJsonFixture = readFileSync(resolve(fixturesDir, 'vehicles-jrcaseminovos.json'));
 
 function startFixtureServer(
   handler: (req: import('http').IncomingMessage, res: import('http').ServerResponse) => void
@@ -135,30 +136,32 @@ async function runFeedValidateUrlTestSuite() {
     await closeServer(xmlServer.server);
 
     // ─────────────────────────────────────────────────────────────────────────
-    // 3. JSON rejeitado
+    // 3. JSON válido (4boss / Base44)
     // ─────────────────────────────────────────────────────────────────────────
-    section('3. JSON rejeitado');
+    section('3. JSON válido (4boss / Base44)');
 
     const jsonServer = await startFixtureServer((_req, res) => {
       res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
       res.end(jsonFixture);
     });
+    const jsonServerPort = (jsonServer.server.address() as AddressInfo).port;
 
     const jsonRes = await app.inject({
       method: 'POST',
       url: endpoint,
       headers: { authorization: `Bearer ${tokenManagerA}` },
-      payload: { url: `${jsonServer.baseUrl}/vehicles` },
+      payload: { url: `http://www.4boss.localhost:${jsonServerPort}/vehicles` },
     });
     const jsonBody = JSON.parse(jsonRes.payload);
 
-    assert(jsonRes.statusCode === 200, 'JSON rejeitado retorna 200');
-    assert(jsonBody.valid === false, 'JSON rejeitado: valid=false');
-    assert(jsonBody.detectedFormat === 'json', 'JSON rejeitado: detectedFormat=json');
+    assert(jsonRes.statusCode === 200, 'JSON válido retorna 200');
+    assert(jsonBody.valid === true, 'JSON válido: valid=true', JSON.stringify(jsonBody));
+    assert(jsonBody.vehicleCount === 3, 'JSON válido: vehicleCount=3', String(jsonBody.vehicleCount));
+    assert(jsonBody.detectedFormat === 'json', 'JSON válido: detectedFormat=json', jsonBody.detectedFormat);
     assert(
-      jsonBody.error === 'Formato não suportado — esperado XML',
-      'JSON rejeitado: mensagem correta',
-      jsonBody.error
+      jsonBody.suggestedPresetId === 'BASE44',
+      'JSON válido: suggestedPresetId=BASE44',
+      jsonBody.suggestedPresetId
     );
 
     await closeServer(jsonServer.server);
@@ -262,25 +265,86 @@ async function runFeedValidateUrlTestSuite() {
       });
       res.end(gzipSync(jsonFixture));
     });
+    const gzipJsonServerPort = (gzipJsonServer.server.address() as AddressInfo).port;
 
     const gzipJsonRes = await app.inject({
       method: 'POST',
       url: endpoint,
       headers: { authorization: `Bearer ${tokenManagerA}` },
-      payload: { url: `${gzipJsonServer.baseUrl}/vehicles` },
+      payload: { url: `http://www.4boss.localhost:${gzipJsonServerPort}/vehicles` },
     });
     const gzipJsonBody = JSON.parse(gzipJsonRes.payload);
 
-    assert(gzipJsonRes.statusCode === 200, 'Gzip-encoded JSON retorna 200 (não 500)');
-    assert(gzipJsonBody.valid === false, 'Gzip-encoded JSON: valid=false');
+    assert(gzipJsonRes.statusCode === 200, 'Gzip-encoded JSON retorna 200');
+    assert(gzipJsonBody.valid === true, 'Gzip-encoded JSON: valid=true', JSON.stringify(gzipJsonBody));
+    assert(gzipJsonBody.vehicleCount === 3, 'Gzip-encoded JSON: vehicleCount=3', String(gzipJsonBody.vehicleCount));
     assert(gzipJsonBody.detectedFormat === 'json', 'Gzip-encoded JSON: detectedFormat=json');
     assert(
-      gzipJsonBody.error === 'Formato não suportado — esperado XML',
-      'Gzip-encoded JSON: mensagem correta',
-      gzipJsonBody.error
+      gzipJsonBody.suggestedPresetId === 'BASE44',
+      'Gzip-encoded JSON: suggestedPresetId=BASE44',
+      gzipJsonBody.suggestedPresetId
     );
 
     await closeServer(gzipJsonServer.server);
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // 8. JSON Spice Digital (jrcaseminovos)
+    // ─────────────────────────────────────────────────────────────────────────
+    section('8. JSON Spice Digital (jrcaseminovos)');
+
+    const spiceServer = await startFixtureServer((_req, res) => {
+      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(spiceJsonFixture);
+    });
+    const spiceServerPort = (spiceServer.server.address() as AddressInfo).port;
+
+    const spiceRes = await app.inject({
+      method: 'POST',
+      url: endpoint,
+      headers: { authorization: `Bearer ${tokenManagerA}` },
+      payload: { url: `http://www.jrcaseminovos.localhost:${spiceServerPort}/vehicles` },
+    });
+    const spiceBody = JSON.parse(spiceRes.payload);
+
+    assert(spiceRes.statusCode === 200, 'JSON Spice retorna 200');
+    assert(spiceBody.valid === true, 'JSON Spice: valid=true', JSON.stringify(spiceBody));
+    assert(spiceBody.vehicleCount === 4, 'JSON Spice: vehicleCount=4', String(spiceBody.vehicleCount));
+    assert(
+      spiceBody.suggestedPresetId === 'SPICE_DIGITAL',
+      'JSON Spice: suggestedPresetId=SPICE_DIGITAL',
+      spiceBody.suggestedPresetId
+    );
+
+    await closeServer(spiceServer.server);
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // 9. JSON genérico (GENERIC_JSON)
+    // ─────────────────────────────────────────────────────────────────────────
+    section('9. JSON genérico (GENERIC_JSON)');
+
+    const genericJsonServer = await startFixtureServer((_req, res) => {
+      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(jsonFixture);
+    });
+    const genericJsonServerPort = (genericJsonServer.server.address() as AddressInfo).port;
+
+    const genericJsonRes = await app.inject({
+      method: 'POST',
+      url: endpoint,
+      headers: { authorization: `Bearer ${tokenManagerA}` },
+      payload: { url: `http://feed.example.localhost:${genericJsonServerPort}/vehicles` },
+    });
+    const genericJsonBody = JSON.parse(genericJsonRes.payload);
+
+    assert(genericJsonRes.statusCode === 200, 'JSON genérico retorna 200');
+    assert(genericJsonBody.valid === true, 'JSON genérico: valid=true', JSON.stringify(genericJsonBody));
+    assert(
+      genericJsonBody.suggestedPresetId === 'GENERIC_JSON',
+      'JSON genérico: suggestedPresetId=GENERIC_JSON',
+      genericJsonBody.suggestedPresetId
+    );
+
+    await closeServer(genericJsonServer.server);
   } finally {
     await app.close();
     await teardownIntegrationTest();
