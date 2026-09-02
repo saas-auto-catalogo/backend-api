@@ -6,7 +6,9 @@ import {
   CreateStripePixRequest,
   CreateStripeCardRequest,
   CreateStripeCheckoutSessionRequest,
+  CreateWorkspaceStripeCheckoutSessionRequest,
 } from '../../types/checkout.js';
+import { prisma } from '../../lib/prisma.js';
 
 interface StripeWebhookRequest extends FastifyRequest {
   rawBody?: Buffer;
@@ -54,6 +56,67 @@ export async function createStripeCheckoutSessionHandler(
 ): Promise<void> {
   try {
     const session = await stripePaymentService.createCheckoutSession(request.body);
+    reply
+      .header('Deprecation', 'true')
+      .header(
+        'Link',
+        '</api/v1/workspaces/{workspaceId}/checkout/stripe/session>; rel="successor-version"'
+      )
+      .status(201)
+      .send(session);
+  } catch (error) {
+    if (error instanceof StripePriceConfigError) {
+      reply.status(503).send({
+        type: 'https://autocatalogo.com.br/errors/stripe-config-error',
+        title: 'Stripe Configuration Error',
+        status: 503,
+        detail: error.message,
+      });
+      return;
+    }
+    throw error;
+  }
+}
+
+export async function createWorkspaceStripeCheckoutSessionHandler(
+  request: FastifyRequest<{
+    Params: { workspaceId: string };
+    Body: CreateWorkspaceStripeCheckoutSessionRequest;
+  }>,
+  reply: FastifyReply
+): Promise<void> {
+  const user = request.user;
+  if (!user?.email) {
+    reply.status(401).send({
+      type: 'https://autocatalogo.com.br/errors/unauthorized',
+      title: 'Não Autorizado',
+      status: 401,
+      detail: 'Autenticação necessária para iniciar checkout.',
+    });
+    return;
+  }
+
+  const { workspaceId } = request.params;
+  const subscription = await prisma.subscription.findUnique({
+    where: { workspaceId },
+  });
+
+  if (subscription?.status === 'ACTIVE') {
+    reply.status(409).send({
+      type: 'https://autocatalogo.com.br/errors/subscription-already-active',
+      title: 'Assinatura já ativa',
+      status: 409,
+      detail: 'Este workspace já possui uma assinatura ativa. Use o portal de faturamento para gerenciar o plano.',
+    });
+    return;
+  }
+
+  try {
+    const session = await stripePaymentService.createCheckoutSessionForWorkspace({
+      workspaceId,
+      customerEmail: user.email,
+      data: request.body,
+    });
     reply.status(201).send(session);
   } catch (error) {
     if (error instanceof StripePriceConfigError) {

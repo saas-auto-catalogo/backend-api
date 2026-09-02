@@ -39,15 +39,15 @@ src/modules/
 
 | Área | Exemplos |
 |------|----------|
-| Público | `GET /health`, `GET /api/v1/feeds/:token/meta-vehicles.xml`, `POST /api/v1/checkout/stripe/session` |
+| Público | `GET /health`, `GET /api/v1/feeds/:token/meta-vehicles.xml`, `POST /api/v1/checkout/stripe/session` (deprecated) |
 | Auth | `POST /auth/login`, `/register`, `/refresh`, `/logout`, `GET /auth/me`, `PATCH /auth/me`, `PATCH /auth/me/onboarding` |
 | Perfil | `GET/PATCH /workspaces/:id/profile` |
 | Dashboard | `GET /workspaces/:id/dashboard/stats`, `/issues`, `/activity` |
 | Estoque | `GET /workspaces/:id/vehicles`, `/vehicles/:vehicleId` |
 | Feeds | `GET/POST/PUT/DELETE /workspaces/:id/feeds`, `POST .../feeds/validate-url`, `POST .../sync` |
 | Auditoria | `GET /workspaces/:id/audit-logs` (MANAGER+) |
-| Billing | `GET /workspaces/:id/billing`, `POST /billing/portal` |
-| Checkout | `POST /checkout/stripe/session` (Stripe Hosted Checkout) |
+| Billing | `GET /workspaces/:id/billing`, `POST /billing/portal`, `POST /workspaces/:id/checkout/stripe/session` (OWNER+) |
+| Checkout | `POST /checkout/stripe/session` (deprecated — pay-first; use rota autenticada por workspace) |
 | Meta | `GET /integrations/meta/auth-url`, `POST /integrations/meta/callback` |
 
 Lista completa e RBAC na [wiki](https://github.com/saas-auto-catalogo/.github/blob/main/docs/wiki/backend-api.md).
@@ -97,6 +97,8 @@ npm run worker:sync-feed
 | `STRIPE_SECRET_KEY` | Chave secreta Stripe (Checkout Session real) |
 | `STRIPE_*_PRICE_ID` | Price IDs por plano/intervalo (ver `.env.example`) |
 | `STRIPE_MOCK` | Opcional — força mock mesmo com secret key |
+
+Checkout autenticado: `POST /workspaces/:id/checkout/stripe/session` (OWNER+) cria Stripe Session com `metadata.workspaceId`. Retorna **409** se o workspace já tiver subscription **ACTIVE**. A rota pública `POST /checkout/stripe/session` está **deprecated** (header `Deprecation: true`).
 
 ### Validação no boot
 

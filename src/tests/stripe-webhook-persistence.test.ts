@@ -118,6 +118,57 @@ async function runStripeWebhookPersistenceTests() {
     });
     assert(existingSub?.stripeCustomerId === 'cus_seed_auto_elite', 'stripeCustomerId atualizado no workspace existente');
 
+    section('2b. checkout.session.completed — metadata.workspaceId vincula workspace existente');
+
+    const workspaceBoundSuffix = `${uniqueSuffix}_ws`;
+    const workspaceBound = await prisma.workspace.create({
+      data: {
+        name: 'Workspace Bound Checkout',
+        slug: `ws-bound-${workspaceBoundSuffix}`,
+        status: 'ACTIVE',
+      },
+    });
+    const workspaceBoundSessionId = `cs_test_workspace_bound_${workspaceBoundSuffix}`;
+
+    const hookWorkspaceBound = await stripePaymentService.handleWebhook({
+      id: `evt_checkout_workspace_bound_${workspaceBoundSuffix}`,
+      type: 'checkout.session.completed',
+      data: {
+        object: {
+          id: workspaceBoundSessionId,
+          customer: `cus_ws_bound_${workspaceBoundSuffix}`,
+          subscription: `sub_ws_bound_${workspaceBoundSuffix}`,
+          metadata: {
+            workspaceId: workspaceBound.id,
+            plan: 'STARTER',
+            billingInterval: 'MONTHLY',
+            customerEmail: 'workspace.bound@example.com',
+          },
+        },
+      },
+    });
+
+    assert(hookWorkspaceBound.action === 'PROVISION_TENANT', 'Webhook workspace-bound provisiona subscription');
+    assert(hookWorkspaceBound.workspaceId === workspaceBound.id, 'workspaceId retornado no webhook');
+    assert(
+      (hookWorkspaceBound.details as { mode?: string })?.mode === 'workspace_checkout',
+      'mode workspace_checkout'
+    );
+
+    const boundProvision = await prisma.checkoutProvision.findUnique({
+      where: { stripeSessionId: workspaceBoundSessionId },
+    });
+    assert(!boundProvision, 'CheckoutProvision não criada no fluxo workspace-bound');
+
+    const boundSubscription = await prisma.subscription.findUnique({
+      where: { workspaceId: workspaceBound.id },
+    });
+    assert(boundSubscription?.status === 'ACTIVE', 'Subscription ACTIVE no workspace existente');
+    assert(boundSubscription?.planTier === 'STARTER', 'Plano STARTER aplicado via metadata');
+
+    await prisma.subscription.deleteMany({ where: { workspaceId: workspaceBound.id } });
+    await prisma.workspace.delete({ where: { id: workspaceBound.id } });
+
     section('3. invoice.payment_succeeded — renova período');
 
     const renewEnd = Math.floor(Date.now() / 1000) + 86400 * 45;

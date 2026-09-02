@@ -2,6 +2,8 @@ import {
   CreateStripePixRequest,
   CreateStripeCardRequest,
   CreateStripeCheckoutSessionRequest,
+  CreateWorkspaceStripeCheckoutSessionRequest,
+  CreateWorkspaceStripeCheckoutSessionParams,
   StripePixResponse,
   StripeCardResponse,
   StripeCheckoutSessionResponse,
@@ -75,6 +77,46 @@ export class StripePaymentService {
         dealershipName: data.customer.dealershipName,
         customerEmail: data.customer.email,
         customerDocument: data.customer.document,
+      },
+    });
+
+    if (!session.url) {
+      throw new Error('Stripe Checkout Session created without URL');
+    }
+
+    return {
+      sessionId: session.id,
+      url: session.url,
+    };
+  }
+
+  public async createCheckoutSessionForWorkspace(
+    params: CreateWorkspaceStripeCheckoutSessionParams
+  ): Promise<StripeCheckoutSessionResponse> {
+    const { workspaceId, customerEmail, data } = params;
+
+    if (isStripeMockMode()) {
+      const sessionId = `cs_test_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+      return {
+        sessionId,
+        url: `https://checkout.stripe.com/c/pay/${sessionId}`,
+      };
+    }
+
+    const priceId = resolveStripePriceId(data.plan, data.billingInterval);
+    const stripe = getStripeClient();
+    const session = await stripe.checkout.sessions.create({
+      mode: 'subscription',
+      line_items: [{ price: priceId, quantity: 1 }],
+      success_url: data.successUrl,
+      cancel_url: data.cancelUrl,
+      customer_email: customerEmail,
+      locale: 'pt-BR',
+      metadata: {
+        workspaceId,
+        plan: data.plan,
+        billingInterval: data.billingInterval,
+        customerEmail,
       },
     });
 
