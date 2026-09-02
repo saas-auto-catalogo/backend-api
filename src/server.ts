@@ -14,6 +14,7 @@ import {
   createStripePixHandler,
   createStripeCardHandler,
   createStripeCheckoutSessionHandler,
+  createWorkspaceStripeCheckoutSessionHandler,
   getStripeCheckoutSessionStatusHandler,
   stripeWebhookHandler
 } from './modules/checkout/checkout.controller.js';
@@ -33,7 +34,7 @@ import { registerAuthRoutes } from './modules/auth/auth.routes.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { validate } from './middleware/validation.js';
 import { feedParamsSchema } from './schemas/feeds.js';
-import { createStripePixSchema, createStripeCardSchema, createStripeCheckoutSessionSchema, checkoutSessionParamsSchema } from './schemas/billing.js';
+import { createStripePixSchema, createStripeCardSchema, createStripeCheckoutSessionSchema, createWorkspaceStripeCheckoutSessionSchema, checkoutSessionParamsSchema } from './schemas/billing.js';
 import { portalSessionSchema } from './schemas/billing.js';
 import { getAuthUrlQuerySchema, postCallbackBodySchema, diagnosticsParamsSchema } from './schemas/metaConnector.js';
 import { workspaceParamsSchema } from './schemas/workspaces.js';
@@ -122,6 +123,20 @@ export async function buildServer(): Promise<FastifyInstance> {
     '/api/v1/workspaces/:workspaceId/billing',
     { preHandler: [authenticate, requireWorkspace, requireRole(['SUPER_ADMIN', 'OWNER', 'MANAGER', 'VIEWER']), validate(workspaceParamsSchema, 'params')] },
     async (req, reply) => getWorkspaceBillingDetailsHandler(req as any, reply)
+  );
+
+  server.post(
+    '/api/v1/workspaces/:workspaceId/checkout/stripe/session',
+    {
+      preHandler: [
+        authenticate,
+        requireWorkspace,
+        requireRole(['SUPER_ADMIN', 'OWNER']),
+        validate(workspaceParamsSchema, 'params'),
+        validate(createWorkspaceStripeCheckoutSessionSchema, 'body'),
+      ],
+    },
+    async (req, reply) => createWorkspaceStripeCheckoutSessionHandler(req as any, reply)
   );
 
   server.get(

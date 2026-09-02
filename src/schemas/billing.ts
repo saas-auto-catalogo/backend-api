@@ -28,6 +28,13 @@ export const createStripeCheckoutSessionSchema = createStripeBaseSchema.extend({
   cancelUrl: z.string().url(),
 });
 
+export const createWorkspaceStripeCheckoutSessionSchema = z.object({
+  plan: z.enum(['STARTER', 'PRO', 'ENTERPRISE'] as const),
+  billingInterval: z.enum(['MONTHLY', 'YEARLY'] as const),
+  successUrl: z.string().url(),
+  cancelUrl: z.string().url(),
+});
+
 export const checkoutSessionParamsSchema = z.object({
   sessionId: z.string().min(1, { message: 'sessionId é obrigatório' }),
 });
@@ -35,3 +42,4 @@ export const checkoutSessionParamsSchema = z.object({
 export type CreateStripePixDTO = z.infer<typeof createStripePixSchema>;
 export type CreateStripeCardDTO = z.infer<typeof createStripeCardSchema>;
 export type CreateStripeCheckoutSessionDTO = z.infer<typeof createStripeCheckoutSessionSchema>;
+export type CreateWorkspaceStripeCheckoutSessionDTO = z.infer<typeof createWorkspaceStripeCheckoutSessionSchema>;

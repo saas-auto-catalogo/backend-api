@@ -71,6 +71,7 @@ export class StripeWebhookService {
   private async handleCheckoutCompleted(event: Stripe.Event): Promise<StripeWebhookResult> {
     const session = event.data.object as CheckoutSessionPayload;
     const metadata = session.metadata ?? {};
+    const metadataWorkspaceId = metadata.workspaceId?.trim();
     const customerEmail = (
       metadata.customerEmail ||
       session.customer_email ||
@@ -78,6 +79,55 @@ export class StripeWebhookService {
       ''
     ).toLowerCase().trim();
     const plan = metadata.plan || 'PRO';
+
+    if (metadataWorkspaceId) {
+      const workspace = await prisma.workspace.findUnique({
+        where: { id: metadataWorkspaceId },
+      });
+
+      if (!workspace) {
+        return {
+          received: true,
+          action: 'IGNORED',
+          details: { reason: 'workspace_not_found', workspaceId: metadataWorkspaceId },
+        };
+      }
+
+      const subscription = await subscriptionService.upsertForExistingUser({
+        workspaceId: metadataWorkspaceId,
+        session,
+      });
+
+      await writeBillingAuditLog({
+        workspaceId: metadataWorkspaceId,
+        action: 'SUBSCRIPTION_PROVISIONED',
+        entityId: subscription.id,
+        metadata: {
+          stripeEventId: event.id,
+          plan,
+          customerEmail,
+          mode: 'workspace_checkout',
+        },
+      });
+
+      if (customerEmail) {
+        await emailService.sendPaymentApprovedEmail(customerEmail, {
+          userName: customerEmail.split('@')[0],
+          planName: `Plano ${plan}`,
+          amountFormatted: 'Assinatura ativa',
+          paymentMethod: 'Cartão de Crédito',
+          dashboardUrl: `${process.env.FRONTEND_URL || 'https://app.autocatalogo.com.br'}/dashboard`,
+        });
+      }
+
+      return {
+        received: true,
+        action: 'PROVISION_TENANT',
+        status: 'ACTIVE',
+        workspaceId: metadataWorkspaceId,
+        details: { email: customerEmail, plan, mode: 'workspace_checkout' },
+      };
+    }
 
     if (!customerEmail) {
       return {

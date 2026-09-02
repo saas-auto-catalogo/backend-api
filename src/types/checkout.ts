@@ -49,6 +49,19 @@ export interface CreateStripeCheckoutSessionRequest {
   cancelUrl: string;
 }
 
+export interface CreateWorkspaceStripeCheckoutSessionRequest {
+  plan: PlanType;
+  billingInterval: BillingInterval;
+  successUrl: string;
+  cancelUrl: string;
+}
+
+export interface CreateWorkspaceStripeCheckoutSessionParams {
+  workspaceId: string;
+  customerEmail: string;
+  data: CreateWorkspaceStripeCheckoutSessionRequest;
+}
+
 export interface StripeCheckoutSessionResponse {
   sessionId: string;
   url: string;
