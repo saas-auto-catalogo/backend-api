@@ -10,7 +10,6 @@ export const defaultRedisOptions: RedisOptions = {
   maxRetriesPerRequest: null, // Obrigatório para BullMQ
   enableReadyCheck: false,
   lazyConnect: process.env.NODE_ENV === 'test',
-  enableOfflineQueue: process.env.NODE_ENV !== 'test',
   retryStrategy(times: number) {
     if (process.env.NODE_ENV === 'test') {
       return null;
