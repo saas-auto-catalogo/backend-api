@@ -39,7 +39,7 @@ src/modules/
 | Área | Exemplos |
 |------|----------|
 | Público | `GET /health`, `GET /api/v1/feeds/:token/meta-vehicles.xml` |
-| Auth | `POST /auth/login`, `/register`, `/refresh`, `/logout`, `GET /auth/me` |
+| Auth | `POST /auth/login`, `/register`, `/refresh`, `/logout`, `GET /auth/me`, `PATCH /auth/me/onboarding` |
 | Dashboard | `GET /workspaces/:id/dashboard/stats`, `/issues`, `/activity` |
 | Estoque | `GET /workspaces/:id/vehicles`, `/vehicles/:vehicleId` |
 | Feeds | `GET/POST/PUT/DELETE /workspaces/:id/feeds`, `POST .../feeds/validate-url`, `POST .../sync` |

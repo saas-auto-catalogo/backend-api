@@ -70,7 +70,9 @@ async function main() {
       passwordHash: '$2b$10$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGga31lW',
       isSuperAdmin: true,
       mfaEnabled: true,
-      avatarUrl: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150'
+      avatarUrl: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150',
+      onboardingCompleted: true,
+      onboardingStep: 4,
     }
   });
 
@@ -82,7 +84,9 @@ async function main() {
       passwordHash: '$2b$10$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGga31lW',
       isSuperAdmin: false,
       mfaEnabled: false,
-      avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150'
+      avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150',
+      onboardingCompleted: true,
+      onboardingStep: 4,
     }
   });
 
@@ -93,7 +97,9 @@ async function main() {
       passwordHash: '$2b$10$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGga31lW',
       isSuperAdmin: false,
       mfaEnabled: false,
-      avatarUrl: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=150'
+      avatarUrl: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=150',
+      onboardingCompleted: true,
+      onboardingStep: 4,
     }
   });
 
@@ -104,7 +110,9 @@ async function main() {
       passwordHash: '$2b$10$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGga31lW',
       isSuperAdmin: false,
       mfaEnabled: false,
-      avatarUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150'
+      avatarUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150',
+      onboardingCompleted: true,
+      onboardingStep: 4,
     }
   });
 
@@ -116,7 +124,9 @@ async function main() {
       passwordHash: '$2b$10$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGga31lW',
       isSuperAdmin: false,
       mfaEnabled: false,
-      avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150'
+      avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150',
+      onboardingCompleted: true,
+      onboardingStep: 4,
     }
   });
 
@@ -127,7 +137,9 @@ async function main() {
       passwordHash: '$2b$10$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGga31lW',
       isSuperAdmin: false,
       mfaEnabled: false,
-      avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150'
+      avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
+      onboardingCompleted: true,
+      onboardingStep: 4,
     }
   });
 

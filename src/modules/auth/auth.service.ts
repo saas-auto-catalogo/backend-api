@@ -41,12 +41,24 @@ export interface MeResult {
   avatarUrl: string | null;
   isSuperAdmin: boolean;
   mfaEnabled: boolean;
+  onboardingCompleted: boolean;
+  onboardingStep: number;
   memberships: Array<{
     workspaceId: string;
     workspaceName: string;
     role: string;
   }>;
   createdAt: Date;
+}
+
+export interface UpdateOnboardingInput {
+  onboardingStep?: number;
+  onboardingCompleted?: boolean;
+}
+
+export interface UpdateOnboardingContext {
+  ipAddress?: string;
+  userAgent?: string;
 }
 
 export class AuthService {
@@ -421,6 +433,8 @@ export class AuthService {
       avatarUrl: user.avatarUrl,
       isSuperAdmin: user.isSuperAdmin,
       mfaEnabled: user.mfaEnabled,
+      onboardingCompleted: user.onboardingCompleted,
+      onboardingStep: user.onboardingStep,
       memberships: user.memberships.map((m) => ({
         workspaceId: m.workspaceId,
         workspaceName: m.workspace.name,
@@ -428,6 +442,64 @@ export class AuthService {
       })),
       createdAt: user.createdAt,
     };
+  }
+
+  async updateOnboarding(
+    userId: string,
+    data: UpdateOnboardingInput,
+    ctx?: UpdateOnboardingContext,
+  ): Promise<MeResult> {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        memberships: {
+          orderBy: { createdAt: 'desc' },
+          take: 1,
+        },
+      },
+    });
+
+    if (!user) {
+      throw createAuthError('Usuario nao encontrado.', 404);
+    }
+
+    if (user.onboardingCompleted && data.onboardingStep !== undefined) {
+      throw createAuthError('Onboarding ja foi concluido.', 400);
+    }
+
+    const updateData: { onboardingStep?: number; onboardingCompleted?: boolean } = {};
+
+    if (data.onboardingCompleted === true) {
+      updateData.onboardingCompleted = true;
+      updateData.onboardingStep = 4;
+    } else if (data.onboardingStep !== undefined) {
+      updateData.onboardingStep = data.onboardingStep;
+    }
+
+    const willComplete = data.onboardingCompleted === true && !user.onboardingCompleted;
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: updateData,
+    });
+
+    if (willComplete) {
+      await prisma.auditLog.create({
+        data: {
+          workspaceId: user.memberships[0]?.workspaceId ?? null,
+          actorUserId: user.id,
+          actorEmail: user.email,
+          action: 'ONBOARDING_COMPLETED',
+          entityName: 'User',
+          entityId: user.id,
+          ipAddress: ctx?.ipAddress ?? null,
+          userAgent: ctx?.userAgent?.substring(0, 500) ?? null,
+          metadata: { finalStep: 4 },
+        },
+      });
+    }
+
+    return this.getMe(userId);
   }
 }
 
