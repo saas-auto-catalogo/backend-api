@@ -8,9 +8,10 @@ import {
   PlanType,
 } from '../../types/checkout.js';
 import { PLAN_LIMITS } from '../../modules/billing/plan-limits.js';
-import { emailService } from '../email/emailService.js';
 import { getStripeClient, isStripeMockMode } from './stripe-client.js';
 import { resolveStripePriceId, StripePriceConfigError } from './stripe-price-config.js';
+import { stripeWebhookService } from '../../modules/billing/stripe-webhook.service.js';
+import Stripe from 'stripe';
 
 export const PLAN_PRICING: Record<PlanType, { monthly: number; yearly: number; name: string }> = {
   STARTER: {
@@ -145,11 +146,24 @@ export class StripePaymentService {
     customerId: string,
     returnUrl: string = 'https://app.autocatalogo.com.br/settings/billing'
   ): Promise<StripePortalResponse> {
-    const portalSessionId = `bps_${Date.now()}_${Math.random().toString(36).substring(7)}`;
-    const url = `https://billing.stripe.com/p/session/${portalSessionId}?return_url=${encodeURIComponent(returnUrl)}`;
+    if (isStripeMockMode()) {
+      const portalSessionId = `bps_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+      const url = `https://billing.stripe.com/p/session/${portalSessionId}?return_url=${encodeURIComponent(returnUrl)}`;
+      return { url, customerId, returnUrl };
+    }
+
+    const stripe = getStripeClient();
+    const session = await stripe.billingPortal.sessions.create({
+      customer: customerId,
+      return_url: returnUrl,
+    });
+
+    if (!session.url) {
+      throw new Error('Stripe Billing Portal session created without URL');
+    }
 
     return {
-      url,
+      url: session.url,
       customerId,
       returnUrl,
     };
@@ -158,113 +172,18 @@ export class StripePaymentService {
   /**
    * Processa os Webhooks oficiais do ciclo de vida da assinatura no Stripe
    */
-  public async handleWebhook(event: {
+  public async handleWebhook(event: Stripe.Event | {
+    id?: string;
     type: string;
-    data: { object: Record<string, unknown> };
+    data: { object: Record<string, unknown>; previous_attributes?: Record<string, unknown> };
   }): Promise<StripeWebhookResult> {
-    const eventObject = event.data.object;
+    const normalizedEvent = {
+      id: 'id' in event && event.id ? event.id : `evt_mock_${Date.now()}`,
+      type: event.type,
+      data: event.data,
+    } as Stripe.Event;
 
-    switch (event.type) {
-      // 1. Checkout concluído -> Ativar Workspace e provisionar tenant
-      case 'checkout.session.completed': {
-        const customerEmail = (eventObject.customer_email as string) || (eventObject.customer_details as Record<string, string>)?.email || 'cliente@autocatalogo.com.br';
-        const plan = (eventObject.metadata as Record<string, string>)?.plan || 'PRO';
-
-        if (customerEmail) {
-          await emailService.sendPaymentApprovedEmail(customerEmail, {
-            userName: customerEmail.split('@')[0],
-            planName: `Plano ${plan}`,
-            amountFormatted: 'R$ 297,00/mês',
-            paymentMethod: 'Cartão de Crédito',
-            dashboardUrl: 'https://app.autocatalogo.com.br/dashboard',
-          });
-        }
-
-        return {
-          received: true,
-          action: 'PROVISION_TENANT',
-          status: 'ACTIVE',
-          details: { email: customerEmail, plan },
-        };
-      }
-
-      // 2. Pagamento de fatura aprovado -> Renovar período de vigência
-      case 'invoice.payment_succeeded': {
-        const invoiceId = eventObject.id as string;
-        const customerEmail = (eventObject.customer_email as string) || 'cliente@autocatalogo.com.br';
-
-        return {
-          received: true,
-          action: 'RENEW_SUBSCRIPTION',
-          status: 'ACTIVE',
-          details: { invoiceId, email: customerEmail },
-        };
-      }
-
-      // 3. Falha no pagamento da fatura -> Alerta e suspensão preventiva
-      case 'invoice.payment_failed': {
-        const invoiceId = eventObject.id as string;
-        const attemptCount = (eventObject.attempt_count as number) || 1;
-        const customerEmail = (eventObject.customer_email as string) || 'cliente@autocatalogo.com.br';
-
-        const shouldSuspend = attemptCount >= 3;
-
-        return {
-          received: true,
-          action: shouldSuspend ? 'SUSPEND_WORKSPACE' : 'PAYMENT_FAILED_ALERT',
-          status: shouldSuspend ? 'SUSPENDED' : 'PAST_DUE',
-          details: { invoiceId, attemptCount, shouldSuspend, email: customerEmail },
-        };
-      }
-
-      // 4. Assinatura cancelada -> Bloqueio ou encerramento após o período
-      case 'customer.subscription.deleted': {
-        const subscriptionId = eventObject.id as string;
-        const customerEmail = (eventObject.customer_email as string) || 'cliente@autocatalogo.com.br';
-
-        await emailService.sendSubscriptionCanceledEmail(customerEmail, {
-          userName: 'Cliente',
-          planName: 'Plano Pro',
-          accessUntilDate: new Date().toLocaleDateString('pt-BR'),
-          reactivateUrl: 'https://app.autocatalogo.com.br/settings/billing',
-        });
-
-        return {
-          received: true,
-          action: 'CANCEL_SUBSCRIPTION',
-          status: 'CANCELED',
-          details: { subscriptionId, email: customerEmail },
-        };
-      }
-
-      // 5. Assinatura atualizada (Upgrade ou Downgrade de Plano)
-      case 'customer.subscription.updated': {
-        const subscriptionId = eventObject.id as string;
-        const previousAttributes = (event.data as Record<string, unknown>).previous_attributes as Record<string, unknown> | undefined;
-        const newPlan = (eventObject.metadata as Record<string, string>)?.plan || 'PRO';
-
-        return {
-          received: true,
-          action: 'UPDATE_PLAN_LIMITS',
-          status: 'UPDATED',
-          details: { subscriptionId, newPlan, changedFields: previousAttributes ? Object.keys(previousAttributes) : [] },
-        };
-      }
-
-      // 6. Pix ou Pagamento pontual aprovado
-      case 'payment_intent.succeeded': {
-        const paymentIntentId = eventObject.id as string;
-        return {
-          received: true,
-          action: 'PROVISION_TENANT',
-          status: 'ACTIVE',
-          details: { paymentIntentId },
-        };
-      }
-
-      default:
-        return { received: true, action: 'IGNORED' };
-    }
+    return stripeWebhookService.processEvent(normalizedEvent);
   }
 }
 

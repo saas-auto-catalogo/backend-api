@@ -1,4 +1,5 @@
 import { buildServer } from '../server.js';
+import { prisma } from '../lib/prisma.js';
 import {
   PLAN_LIMITS,
   hasPlanFeature,
@@ -7,6 +8,7 @@ import {
 } from '../modules/billing/plan-limits.js';
 import { stripePaymentService } from '../services/payments/stripePaymentService.js';
 import { AuthUser } from '../modules/auth/auth.middleware.js';
+import { resetSystemUserCacheForTests } from '../lib/system-user.js';
 
 let totalTests = 0;
 let passedTests = 0;
@@ -37,6 +39,8 @@ async function runStripeLifecycleTestSuite() {
 
   const app = await buildServer();
   const startTime = Date.now();
+  resetSystemUserCacheForTests();
+  const lifecycleSuffix = Date.now();
 
   try {
     // ─────────────────────────────────────────────────────────────────────────
@@ -105,14 +109,26 @@ async function runStripeLifecycleTestSuite() {
     // ─────────────────────────────────────────────────────────────────────────
     section('4. Webhooks do Stripe — Ciclo de Vida Completo');
 
+    const owner1 = await prisma.user.findUnique({
+      where: { email: 'carlos.silva@autoelitemotors.com.br' },
+      include: { memberships: { where: { role: 'OWNER' }, take: 1 } },
+    });
+
     // 4.1 checkout.session.completed -> Ativação e Provisionamento
     const hookCheckout = await stripePaymentService.handleWebhook({
+      id: `evt_lifecycle_checkout_${lifecycleSuffix}`,
       type: 'checkout.session.completed',
       data: {
         object: {
-          id: 'cs_test_123',
-          customer_email: 'novo.cliente@autoelite.com.br',
-          metadata: { plan: 'PRO' },
+          id: `cs_test_lifecycle_${lifecycleSuffix}`,
+          customer: 'cus_seed_auto_elite',
+          subscription: 'sub_seed_auto_elite',
+          metadata: {
+            plan: 'PRO',
+            billingInterval: 'MONTHLY',
+            customerEmail: 'carlos.silva@autoelitemotors.com.br',
+            dealershipName: 'Auto Elite Motors',
+          },
         },
       },
     });
@@ -122,11 +138,14 @@ async function runStripeLifecycleTestSuite() {
 
     // 4.2 invoice.payment_succeeded -> Renovação da Assinatura
     const hookRenew = await stripePaymentService.handleWebhook({
+      id: `evt_lifecycle_renew_${lifecycleSuffix}`,
       type: 'invoice.payment_succeeded',
       data: {
         object: {
           id: 'in_test_456',
-          customer_email: 'novo.cliente@autoelite.com.br',
+          subscription: 'sub_seed_auto_elite',
+          customer_email: 'carlos.silva@autoelitemotors.com.br',
+          period_end: Math.floor(Date.now() / 1000) + 86400 * 30,
         },
       },
     });
@@ -135,13 +154,19 @@ async function runStripeLifecycleTestSuite() {
     assert(hookRenew.status === 'ACTIVE', 'Status: ACTIVE');
 
     // 4.3 invoice.payment_failed (Tentativa 1 - Alerta)
+    await prisma.subscription.update({
+      where: { stripeSubscriptionId: 'sub_seed_auto_elite' },
+      data: { status: 'ACTIVE' },
+    });
     const hookFailAlert = await stripePaymentService.handleWebhook({
+      id: `evt_lifecycle_fail1_${lifecycleSuffix}`,
       type: 'invoice.payment_failed',
       data: {
         object: {
           id: 'in_test_fail_1',
+          subscription: 'sub_seed_auto_elite',
           attempt_count: 1,
-          customer_email: 'novo.cliente@autoelite.com.br',
+          customer_email: 'carlos.silva@autoelitemotors.com.br',
         },
       },
     });
@@ -151,38 +176,31 @@ async function runStripeLifecycleTestSuite() {
 
     // 4.4 invoice.payment_failed (Tentativa 3 - Suspensão do Workspace)
     const hookFailSuspend = await stripePaymentService.handleWebhook({
+      id: `evt_lifecycle_fail3_${lifecycleSuffix}`,
       type: 'invoice.payment_failed',
       data: {
         object: {
           id: 'in_test_fail_3',
+          subscription: 'sub_seed_auto_elite',
           attempt_count: 3,
-          customer_email: 'novo.cliente@autoelite.com.br',
+          customer_email: 'carlos.silva@autoelitemotors.com.br',
         },
       },
     });
     assert(hookFailSuspend.action === 'SUSPEND_WORKSPACE', 'Ação tentativa 3: SUSPEND_WORKSPACE');
     assert(hookFailSuspend.status === 'SUSPENDED', 'Status tentativa 3: SUSPENDED');
 
-    // 4.5 customer.subscription.deleted -> Cancelamento
-    const hookCancel = await stripePaymentService.handleWebhook({
-      type: 'customer.subscription.deleted',
-      data: {
-        object: {
-          id: 'sub_test_canceled_789',
-          customer_email: 'novo.cliente@autoelite.com.br',
-        },
-      },
+    // 4.5 customer.subscription.updated -> Upgrade/Downgrade de Plano
+    await prisma.subscription.update({
+      where: { stripeSubscriptionId: 'sub_seed_auto_elite' },
+      data: { status: 'ACTIVE' },
     });
-    assert(hookCancel.received, 'Webhook customer.subscription.deleted recebido');
-    assert(hookCancel.action === 'CANCEL_SUBSCRIPTION', 'Ação: CANCEL_SUBSCRIPTION');
-    assert(hookCancel.status === 'CANCELED', 'Status: CANCELED');
-
-    // 4.6 customer.subscription.updated -> Upgrade/Downgrade de Plano
     const hookUpdate = await stripePaymentService.handleWebhook({
+      id: `evt_lifecycle_update_${lifecycleSuffix}`,
       type: 'customer.subscription.updated',
       data: {
         object: {
-          id: 'sub_test_updated_101',
+          id: 'sub_seed_auto_elite',
           metadata: { plan: 'ENTERPRISE' },
         },
       },
@@ -191,26 +209,65 @@ async function runStripeLifecycleTestSuite() {
     assert(hookUpdate.action === 'UPDATE_PLAN_LIMITS', 'Ação: UPDATE_PLAN_LIMITS');
     assert(hookUpdate.status === 'UPDATED', 'Status: UPDATED');
 
+    // 4.6 customer.subscription.deleted -> Cancelamento
+    const hookCancel = await stripePaymentService.handleWebhook({
+      id: `evt_lifecycle_cancel_${lifecycleSuffix}`,
+      type: 'customer.subscription.deleted',
+      data: {
+        object: {
+          id: 'sub_seed_auto_elite',
+          metadata: { customerEmail: 'carlos.silva@autoelitemotors.com.br' },
+        },
+      },
+    });
+    assert(hookCancel.received, 'Webhook customer.subscription.deleted recebido');
+    assert(hookCancel.action === 'CANCEL_SUBSCRIPTION', 'Ação: CANCEL_SUBSCRIPTION');
+    assert(hookCancel.status === 'CANCELED', 'Status: CANCELED');
+
+    // Restaura subscription seed para testes HTTP de billing
+    if (owner1?.memberships[0]) {
+      await prisma.subscription.update({
+        where: { workspaceId: owner1.memberships[0].workspaceId },
+        data: { status: 'ACTIVE', planTier: 'PRO' },
+      });
+      await prisma.workspace.update({
+        where: { id: owner1.memberships[0].workspaceId },
+        data: { status: 'ACTIVE' },
+      });
+    }
+
     // ─────────────────────────────────────────────────────────────────────────
     // 5. STRIPE CUSTOMER PORTAL & ENDPOINTS HTTP DE BILLING
     // ─────────────────────────────────────────────────────────────────────────
     section('5. Endpoints HTTP de Billing e Stripe Customer Portal');
 
+    const owner1Db = await prisma.user.findUnique({
+      where: { email: 'carlos.silva@autoelitemotors.com.br' },
+      include: { memberships: { where: { role: 'OWNER' }, take: 1 } },
+    });
+    const owner2Db = await prisma.user.findUnique({
+      where: { email: 'roberto.junior@jrcaseminovos.com.br' },
+      include: { memberships: { where: { role: 'OWNER' }, take: 1 } },
+    });
+
+    assert(!!owner1Db?.memberships[0], 'Owner seed workspace 1 disponível');
+    assert(!!owner2Db?.memberships[0], 'Owner seed workspace 2 disponível');
+
     const authOwnerA: AuthUser = {
-      id: 'usr-owner-a',
-      email: 'owner@autoelite.com.br',
-      name: 'Owner A',
+      id: owner1Db!.id,
+      email: owner1Db!.email,
+      name: owner1Db!.name,
       isSuperAdmin: false,
-      workspaceId: 'workspace-auto-elite',
+      workspaceId: owner1Db!.memberships[0].workspaceId,
       role: 'OWNER',
     };
 
     const authOwnerB: AuthUser = {
-      id: 'usr-owner-b',
-      email: 'owner@jrcasa.com.br',
-      name: 'Owner B',
+      id: owner2Db!.id,
+      email: owner2Db!.email,
+      name: owner2Db!.name,
       isSuperAdmin: false,
-      workspaceId: 'workspace-jrcasa',
+      workspaceId: owner2Db!.memberships[0].workspaceId,
       role: 'OWNER',
     };
 
@@ -238,18 +295,18 @@ async function runStripeLifecycleTestSuite() {
     // 5.3 GET /api/v1/workspaces/:workspaceId/billing no próprio workspace -> 200
     const resBillingOwn = await app.inject({
       method: 'GET',
-      url: '/api/v1/workspaces/workspace-auto-elite/billing',
+      url: `/api/v1/workspaces/${authOwnerA.workspaceId}/billing`,
       headers: { authorization: `Bearer ${tokenOwnerA}` },
     });
     assert(resBillingOwn.statusCode === 200, 'Consulta de billing no próprio workspace retorna 200 OK');
     const billingData = JSON.parse(resBillingOwn.payload);
-    assert(billingData.workspaceId === 'workspace-auto-elite', 'WorkspaceId correto retornado');
-    assert(billingData.limits.maxVehicles > 0, 'Limites do plano incluídos na resposta');
+    assert(billingData.workspaceId === authOwnerA.workspaceId, 'WorkspaceId correto retornado');
+    assert(billingData.limits?.maxVehicles > 0, 'Limites do plano incluídos na resposta');
 
     // 5.4 GET /api/v1/workspaces/:workspaceId/billing em outro workspace -> 403 (Isolamento)
     const resBillingOther = await app.inject({
       method: 'GET',
-      url: '/api/v1/workspaces/workspace-auto-elite/billing',
+      url: `/api/v1/workspaces/${authOwnerA.workspaceId}/billing`,
       headers: { authorization: `Bearer ${tokenOwnerB}` },
     });
     assert(resBillingOther.statusCode === 403, 'Tentativa de consultar billing de outro workspace bloqueada (403)');
@@ -270,6 +327,7 @@ async function runStripeLifecycleTestSuite() {
       process.exit(1);
     } else {
       console.log('\n🎉 Todos os testes do ciclo de subscription Stripe e feature gates passaram com 100% de sucesso!');
+      process.exit(0);
     }
   } finally {
     await app.close();

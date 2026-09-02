@@ -18,6 +18,8 @@ async function main() {
   await prisma.metaCatalog.deleteMany();
   await prisma.feedConfig.deleteMany();
   await prisma.dealership.deleteMany();
+  await prisma.checkoutProvision.deleteMany();
+  await prisma.stripeWebhookEvent.deleteMany();
   await prisma.subscription.deleteMany();
   await prisma.workspaceMember.deleteMany();
   await prisma.user.deleteMany();
@@ -74,6 +76,18 @@ async function main() {
       onboardingCompleted: true,
       onboardingStep: 4,
     }
+  });
+
+  // System user for Stripe webhook audit logs (Issue #50)
+  await prisma.user.create({
+    data: {
+      email: 'stripe-webhook@system.internal',
+      name: 'Stripe Webhook System',
+      passwordHash: '$2b$10$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGga31lW',
+      isSuperAdmin: true,
+      onboardingCompleted: true,
+      onboardingStep: 4,
+    },
   });
 
   // Usuários do Workspace 1 (Auto Elite Motors - Plano PRO)
@@ -165,7 +179,9 @@ async function main() {
       planTier: 'PRO',
       maxVehicles: 500,
       status: 'ACTIVE',
-      currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+      currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+      stripeCustomerId: 'cus_seed_auto_elite',
+      stripeSubscriptionId: 'sub_seed_auto_elite',
     }
   });
 

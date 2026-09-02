@@ -5,6 +5,7 @@ import { prisma } from '../../lib/prisma.js';
 import { redisClient } from '../../infra/redis/redis-client.js';
 import { emailService } from '../../services/email/index.js';
 import { AuthUser } from './auth.middleware.js';
+import { subscriptionService } from '../billing/subscription.service.js';
 
 const BCRYPT_COST = 12;
 const ACCESS_TOKEN_EXPIRY = '15m';
@@ -182,6 +183,130 @@ export class AuthService {
     name: string,
     email: string,
     password: string,
+    workspaceName: string | undefined,
+    ipAddress?: string,
+    userAgentStr?: string,
+    checkoutSessionId?: string,
+  ): Promise<LoginResult> {
+    if (checkoutSessionId) {
+      return this.registerFromCheckoutProvision(
+        server,
+        name,
+        email,
+        password,
+        checkoutSessionId,
+        ipAddress,
+        userAgentStr,
+      );
+    }
+
+    if (!workspaceName) {
+      throw createAuthError('Nome da revenda e obrigatorio.', 400);
+    }
+
+    return this.registerNewWorkspace(
+      server,
+      name,
+      email,
+      password,
+      workspaceName,
+      ipAddress,
+      userAgentStr,
+    );
+  }
+
+  private async registerFromCheckoutProvision(
+    server: FastifyInstance,
+    name: string,
+    email: string,
+    password: string,
+    checkoutSessionId: string,
+    ipAddress?: string,
+    userAgentStr?: string,
+  ): Promise<LoginResult> {
+    const normalizedEmail = email.toLowerCase().trim();
+    const provision = await subscriptionService.getCheckoutProvision(checkoutSessionId);
+
+    if (!provision || provision.status !== 'PENDING_REGISTRATION') {
+      throw createAuthError('Sessao de checkout invalida ou ja utilizada.', 404);
+    }
+
+    if (provision.expiresAt <= new Date()) {
+      throw createAuthError('Sessao de checkout expirada. Entre em contato com o suporte.', 410);
+    }
+
+    if (provision.customerEmail !== normalizedEmail) {
+      throw createAuthError('Email nao corresponde ao checkout realizado.', 409);
+    }
+
+    const existingUser = await prisma.user.findUnique({
+      where: { email: normalizedEmail },
+    });
+
+    if (existingUser) {
+      throw createAuthError('Este email ja esta cadastrado. Faca login ou use outro email.', 409);
+    }
+
+    const passwordHash = await bcrypt.hash(password, BCRYPT_COST);
+
+    const { user, membership, dealership } = await prisma.$transaction(async (tx) => {
+      const createdUser = await tx.user.create({
+        data: {
+          email: normalizedEmail,
+          name: name.trim(),
+          passwordHash,
+        },
+      });
+
+      const createdMembership = await tx.workspaceMember.create({
+        data: {
+          workspaceId: provision.workspaceId,
+          userId: createdUser.id,
+          role: 'OWNER',
+        },
+        include: { workspace: true },
+      });
+
+      const existingDealership = await tx.dealership.findFirst({
+        where: { workspaceId: provision.workspaceId },
+      });
+
+      const createdDealership = existingDealership ?? await tx.dealership.create({
+        data: {
+          workspaceId: provision.workspaceId,
+          tradeName: provision.workspace.name,
+          email: normalizedEmail,
+        },
+      });
+
+      await tx.checkoutProvision.update({
+        where: { stripeSessionId: checkoutSessionId },
+        data: { status: 'COMPLETED' },
+      });
+
+      return {
+        user: createdUser,
+        membership: createdMembership,
+        dealership: createdDealership,
+      };
+    });
+
+    return this.issueAuthResponse(
+      server,
+      user,
+      membership,
+      dealership.id,
+      ipAddress,
+      userAgentStr,
+      true,
+    );
+  }
+
+  private async registerNewWorkspace(
+    server: FastifyInstance,
+    name: string,
+    email: string,
+    password: string,
     workspaceName: string,
     ipAddress?: string,
     userAgentStr?: string,
@@ -240,14 +365,35 @@ export class AuthService {
       };
     });
 
+    return this.issueAuthResponse(
+      server,
+      user,
+      membership,
+      dealership.id,
+      ipAddress,
+      userAgentStr,
+      false,
+    );
+  }
+
+  private async issueAuthResponse(
+    server: FastifyInstance,
+    user: { id: string; email: string; name: string; avatarUrl: string | null; isSuperAdmin: boolean },
+    membership: { workspaceId: string; role: string; workspace: { name: string } },
+    dealershipId: string,
+    ipAddress?: string,
+    userAgentStr?: string,
+    fromCheckout = false,
+  ): Promise<LoginResult> {
+    void fromCheckout;
     const payload: AuthUser = {
       id: user.id,
       email: user.email,
       name: user.name,
       isSuperAdmin: user.isSuperAdmin,
       workspaceId: membership.workspaceId,
-      dealershipId: dealership.id,
-      role: membership.role,
+      dealershipId,
+      role: membership.role as AuthUser['role'],
     };
 
     const accessToken = server.jwt.sign(
@@ -286,13 +432,16 @@ export class AuthService {
         avatarUrl: user.avatarUrl,
         isSuperAdmin: user.isSuperAdmin,
         workspaceId: membership.workspaceId,
-        dealershipId: dealership.id,
+        dealershipId,
         role: membership.role,
       },
     };
   }
 
-  async refresh(server: FastifyInstance, refreshToken: string): Promise<RefreshResult> {
+  async refresh(
+    server: FastifyInstance,
+    refreshToken: string,
+  ): Promise<RefreshResult> {
     const storedToken = await prisma.refreshToken.findUnique({
       where: { token: refreshToken },
       include: {

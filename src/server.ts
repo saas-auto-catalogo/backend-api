@@ -34,6 +34,7 @@ import { feedParamsSchema } from './schemas/feeds.js';
 import { createStripePixSchema, createStripeCardSchema, createStripeCheckoutSessionSchema } from './schemas/billing.js';
 import { portalSessionSchema } from './schemas/billing.js';
 import { getAuthUrlQuerySchema, postCallbackBodySchema, diagnosticsParamsSchema } from './schemas/metaConnector.js';
+import { workspaceParamsSchema } from './schemas/workspaces.js';
 
 export async function buildServer(): Promise<FastifyInstance> {
   const server = Fastify({
@@ -63,6 +64,21 @@ export async function buildServer(): Promise<FastifyInstance> {
   });
 
   server.setErrorHandler(errorHandler);
+
+  server.addHook('preParsing', async (request, _reply, payload) => {
+    const url = request.url.split('?')[0];
+    if (url !== '/api/v1/webhooks/stripe') {
+      return payload;
+    }
+
+    const chunks: Buffer[] = [];
+    for await (const chunk of payload) {
+      chunks.push(typeof chunk === 'string' ? Buffer.from(chunk) : chunk);
+    }
+    const rawBody = Buffer.concat(chunks);
+    (request as { rawBody?: Buffer }).rawBody = rawBody;
+    return rawBody;
+  });
 
   // --- ROTAS PUBLICAS ---
 
@@ -95,7 +111,7 @@ export async function buildServer(): Promise<FastifyInstance> {
 
   server.get(
     '/api/v1/workspaces/:workspaceId/billing',
-    { preHandler: [authenticate, requireWorkspace, requireRole(['SUPER_ADMIN', 'OWNER']), validate(diagnosticsParamsSchema, 'params')] },
+    { preHandler: [authenticate, requireWorkspace, requireRole(['SUPER_ADMIN', 'OWNER']), validate(workspaceParamsSchema, 'params')] },
     async (req, reply) => getWorkspaceBillingDetailsHandler(req as any, reply)
   );
 

@@ -123,6 +123,7 @@ model Workspace {
   syncHistory  SyncHistory[]
   auditLogs    AuditLog[]
   subscription Subscription?
+  checkoutProvision CheckoutProvision?
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -408,12 +409,16 @@ model AuditLog {
 }
 
 model Subscription {
-  id               String   @id @default(uuid()) @db.Uuid
-  workspaceId      String   @unique @map("workspace_id") @db.Uuid
-  planTier         String   @map("plan_tier") @db.VarChar(50)
-  maxVehicles      Int      @default(100) @map("max_vehicles")
-  status           String   @db.VarChar(50)
-  currentPeriodEnd DateTime @map("current_period_end")
+  id                   String   @id @default(uuid()) @db.Uuid
+  workspaceId          String   @unique @map("workspace_id") @db.Uuid
+  planTier             String   @map("plan_tier") @db.VarChar(50)
+  maxVehicles          Int      @default(100) @map("max_vehicles")
+  status               String   @db.VarChar(50)
+  currentPeriodEnd     DateTime @map("current_period_end")
+  stripeCustomerId     String?  @unique @map("stripe_customer_id") @db.VarChar(255)
+  stripeSubscriptionId String?  @unique @map("stripe_subscription_id") @db.VarChar(255)
+  stripePriceId        String?  @map("stripe_price_id") @db.VarChar(255)
+  cancelAtPeriodEnd    Boolean  @default(false) @map("cancel_at_period_end")
 
   workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
@@ -421,6 +426,31 @@ model Subscription {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("subscriptions")
+}
+
+model StripeWebhookEvent {
+  id            String   @id @default(uuid()) @db.Uuid
+  stripeEventId String   @unique @map("stripe_event_id") @db.VarChar(255)
+  eventType     String   @map("event_type") @db.VarChar(100)
+  processedAt   DateTime @default(now()) @map("processed_at")
+
+  @@map("stripe_webhook_events")
+}
+
+model CheckoutProvision {
+  id              String   @id @default(uuid()) @db.Uuid
+  stripeSessionId String   @unique @map("stripe_session_id") @db.VarChar(255)
+  workspaceId     String   @unique @map("workspace_id") @db.Uuid
+  customerEmail   String   @map("customer_email") @db.VarChar(255)
+  status          String   @default("PENDING_REGISTRATION") @db.VarChar(50)
+  expiresAt       DateTime @map("expires_at")
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("checkout_provisions")
 }
 
 model AdminSetting {

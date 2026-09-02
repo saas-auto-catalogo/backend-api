@@ -46,3 +46,28 @@ export function resetStripeClientForTests(): void {
   testStripeOverride = undefined;
   stripeInstance = null;
 }
+
+export function isStripeWebhookMockMode(): boolean {
+  return process.env.NODE_ENV === 'test' || !process.env.STRIPE_WEBHOOK_SECRET;
+}
+
+export function constructStripeWebhookEvent(
+  rawBody: Buffer | string,
+  signature: string | undefined
+): Stripe.Event {
+  if (isStripeWebhookMockMode()) {
+    const payload = typeof rawBody === 'string' ? rawBody : rawBody.toString('utf8');
+    return JSON.parse(payload) as Stripe.Event;
+  }
+
+  if (!signature) {
+    throw new Error('Missing stripe-signature header');
+  }
+
+  const stripe = getStripeClient();
+  return stripe.webhooks.constructEvent(
+    rawBody,
+    signature,
+    process.env.STRIPE_WEBHOOK_SECRET!
+  );
+}

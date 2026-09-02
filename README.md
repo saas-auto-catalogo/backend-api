@@ -47,6 +47,7 @@ src/modules/
 | Feeds | `GET/POST/PUT/DELETE /workspaces/:id/feeds`, `POST .../feeds/validate-url`, `POST .../sync` |
 | Auditoria | `GET /workspaces/:id/audit-logs` (MANAGER+) |
 | Billing | `GET /workspaces/:id/billing`, `POST /billing/portal` |
+| Checkout | `POST /checkout/stripe/session` (Stripe Hosted Checkout) |
 | Meta | `GET /integrations/meta/auth-url`, `POST /integrations/meta/callback` |
 
 Lista completa e RBAC na [wiki](https://github.com/saas-auto-catalogo/.github/blob/main/docs/wiki/backend-api.md).
