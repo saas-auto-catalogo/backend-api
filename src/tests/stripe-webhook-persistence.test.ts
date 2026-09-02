@@ -1,7 +1,6 @@
 import { buildServer } from '../server.js';
 import { prisma } from '../lib/prisma.js';
 import { stripePaymentService } from '../services/payments/stripePaymentService.js';
-import { authService } from '../modules/auth/auth.service.js';
 import { resetSystemUserCacheForTests } from '../lib/system-user.js';
 
 let totalTests = 0;
@@ -27,7 +26,7 @@ function section(title: string): void {
 
 async function runStripeWebhookPersistenceTests() {
   console.log('╔══════════════════════════════════════════════════════════════╗');
-  console.log('║   💳 Stripe Webhook Persistence — Issue #50                  ║');
+  console.log('║   💳 Stripe Webhook Persistence — Issue #50 / #64            ║');
   console.log('╚══════════════════════════════════════════════════════════════╝');
 
   resetSystemUserCacheForTests();
@@ -36,7 +35,7 @@ async function runStripeWebhookPersistenceTests() {
   const uniqueSuffix = Date.now();
 
   try {
-    section('1. checkout.session.completed — novo email provisiona tenant');
+    section('1. checkout.session.completed — sem workspaceId é ignorado');
 
     const newEmail = `checkout.new.${uniqueSuffix}@example.com`;
     const sessionId = `cs_test_new_${uniqueSuffix}`;
@@ -61,16 +60,14 @@ async function runStripeWebhookPersistenceTests() {
       },
     });
 
-    assert(hookNew.action === 'PROVISION_TENANT', 'Provisiona tenant para email novo');
-    assert(!!hookNew.workspaceId, 'workspaceId retornado');
+    assert(hookNew.action === 'IGNORED', 'Webhook sem workspaceId é ignorado');
+    assert(
+      (hookNew.details as { reason?: string })?.reason === 'missing_workspace_id',
+      'reason missing_workspace_id'
+    );
 
     const provision = await prisma.checkoutProvision.findUnique({ where: { stripeSessionId: sessionId } });
-    assert(!!provision, 'CheckoutProvision criada');
-    assert(provision?.status === 'PENDING_REGISTRATION', 'Status PENDING_REGISTRATION');
-
-    const subscription = await prisma.subscription.findUnique({ where: { workspaceId: provision!.workspaceId } });
-    assert(subscription?.status === 'ACTIVE', 'Subscription ACTIVE');
-    assert(subscription?.stripeSubscriptionId === `sub_new_${uniqueSuffix}`, 'stripeSubscriptionId persistido');
+    assert(!provision, 'CheckoutProvision não criada');
 
     const hookDup = await stripePaymentService.handleWebhook({
       id: `evt_checkout_new_${uniqueSuffix}`,
@@ -85,13 +82,18 @@ async function runStripeWebhookPersistenceTests() {
     });
     assert(hookDup.action === 'IGNORED', 'Evento duplicado é ignorado (idempotência)');
 
-    section('2. checkout.session.completed — email existente vincula subscription');
+    section('2. checkout.session.completed — email existente sem workspaceId é ignorado');
 
     const owner1 = await prisma.user.findUnique({
       where: { email: 'carlos.silva@autoelitemotors.com.br' },
       include: { memberships: { where: { role: 'OWNER' }, take: 1 } },
     });
     assert(!!owner1?.memberships[0], 'Seed owner1 disponível');
+
+    const beforeSub = await prisma.subscription.findUnique({
+      where: { workspaceId: owner1!.memberships[0].workspaceId },
+    });
+    const beforeCustomerId = beforeSub?.stripeCustomerId ?? null;
 
     const hookExisting = await stripePaymentService.handleWebhook({
       id: `evt_checkout_existing_${uniqueSuffix}`,
@@ -112,11 +114,11 @@ async function runStripeWebhookPersistenceTests() {
       },
     });
 
-    assert(hookExisting.action === 'PROVISION_TENANT', 'Vincula subscription a user existente');
-    const existingSub = await prisma.subscription.findUnique({
+    assert(hookExisting.action === 'IGNORED', 'Email existente sem workspaceId é ignorado');
+    const afterSub = await prisma.subscription.findUnique({
       where: { workspaceId: owner1!.memberships[0].workspaceId },
     });
-    assert(existingSub?.stripeCustomerId === 'cus_seed_auto_elite', 'stripeCustomerId atualizado no workspace existente');
+    assert(afterSub?.stripeCustomerId === beforeCustomerId, 'Subscription não alterada sem workspaceId');
 
     section('2b. checkout.session.completed — metadata.workspaceId vincula workspace existente');
 
@@ -168,6 +170,32 @@ async function runStripeWebhookPersistenceTests() {
 
     await prisma.subscription.deleteMany({ where: { workspaceId: workspaceBound.id } });
     await prisma.workspace.delete({ where: { id: workspaceBound.id } });
+
+    section('2c. checkout.session.completed — workspaceId ativa subscription do owner seed');
+
+    const hookOwnerBound = await stripePaymentService.handleWebhook({
+      id: `evt_checkout_owner_bound_${uniqueSuffix}`,
+      type: 'checkout.session.completed',
+      data: {
+        object: {
+          id: `cs_test_owner_bound_${uniqueSuffix}`,
+          customer: 'cus_seed_auto_elite',
+          subscription: 'sub_seed_auto_elite',
+          metadata: {
+            workspaceId: owner1!.memberships[0].workspaceId,
+            plan: 'PRO',
+            billingInterval: 'MONTHLY',
+            customerEmail: 'carlos.silva@autoelitemotors.com.br',
+          },
+        },
+      },
+    });
+
+    assert(hookOwnerBound.action === 'PROVISION_TENANT', 'Webhook workspace-bound ativa owner seed');
+    const existingSub = await prisma.subscription.findUnique({
+      where: { workspaceId: owner1!.memberships[0].workspaceId },
+    });
+    assert(existingSub?.stripeCustomerId === 'cus_seed_auto_elite', 'stripeCustomerId atualizado no workspace existente');
 
     section('3. invoice.payment_succeeded — renova período');
 
@@ -242,51 +270,32 @@ async function runStripeWebhookPersistenceTests() {
     const canceledSub = await prisma.subscription.findUnique({ where: { stripeSubscriptionId: 'sub_seed_auto_elite' } });
     assert(canceledSub?.status === 'CANCELED', 'Status CANCELED');
 
-    section('6. GET /checkout/stripe/session/:sessionId/status');
+    section('6. GET /checkout/stripe/session/:sessionId/status — descontinuado (410)');
 
-    const resStatusPending = await app.inject({
+    const resStatusDeprecated = await app.inject({
       method: 'GET',
       url: `/api/v1/checkout/stripe/session/${sessionId}/status`,
     });
-    assert(resStatusPending.statusCode === 200, 'Status pending retorna 200');
-    const statusPending = JSON.parse(resStatusPending.payload);
-    assert(statusPending.customerEmail === newEmail, 'Status retorna customerEmail');
-    assert(statusPending.dealershipName === 'Nova Revenda Test', 'Status retorna dealershipName');
-    assert(statusPending.provisioned === true, 'Status provisioned true');
+    assert(resStatusDeprecated.statusCode === 410, 'Session status retorna 410 Gone');
 
     const resStatusMissing = await app.inject({
       method: 'GET',
       url: '/api/v1/checkout/stripe/session/cs_missing/status',
     });
-    assert(resStatusMissing.statusCode === 404, 'Session inexistente retorna 404');
+    assert(resStatusMissing.statusCode === 410, 'Session inexistente também retorna 410');
 
-    section('7. Register com checkoutSessionId completa provisionamento');
+    section('7. Register exige workspaceName');
 
-    const registerResult = await authService.register(
-      app,
-      'Novo Owner',
-      newEmail,
-      'password123',
-      undefined,
-      '127.0.0.1',
-      'test-agent',
-      sessionId,
-    );
-    assert(!!registerResult.accessToken, 'Register retorna accessToken');
-
-    const completedProvision = await prisma.checkoutProvision.findUnique({ where: { stripeSessionId: sessionId } });
-    assert(completedProvision?.status === 'COMPLETED', 'Provision COMPLETED após register');
-
-    const member = await prisma.workspaceMember.findFirst({
-      where: { workspaceId: provision!.workspaceId, user: { email: newEmail } },
+    const registerRes = await app.inject({
+      method: 'POST',
+      url: '/api/v1/auth/register',
+      payload: {
+        name: 'Sem Workspace',
+        email: `no.ws.${uniqueSuffix}@example.com`,
+        password: 'password123',
+      },
     });
-    assert(member?.role === 'OWNER', 'User vinculado como OWNER');
-
-    const resStatusConsumed = await app.inject({
-      method: 'GET',
-      url: `/api/v1/checkout/stripe/session/${sessionId}/status`,
-    });
-    assert(resStatusConsumed.statusCode === 409, 'Session consumida retorna 409');
+    assert(registerRes.statusCode === 422, 'Register sem workspaceName retorna 422');
 
     section('8. Billing GET sem subscription retorna NONE');
 
@@ -294,14 +303,6 @@ async function runStripeWebhookPersistenceTests() {
       data: { name: 'Sem Plano', slug: `sem-plano-${uniqueSuffix}`, status: 'ACTIVE' },
     });
 
-    const resBilling = await app.inject({
-      method: 'GET',
-      url: `/api/v1/workspaces/${tempWorkspace.id}/billing`,
-      headers: { authorization: `Bearer ${registerResult.accessToken}` },
-    });
-
-    // Sem auth RBAC no workspace temp - use super admin or skip 403
-    // Test service-level via handler with mocked user - instead query DB directly
     const subCount = await prisma.subscription.count({ where: { workspaceId: tempWorkspace.id } });
     assert(subCount === 0, 'Workspace temporário sem subscription');
 

@@ -114,7 +114,7 @@ async function runStripeLifecycleTestSuite() {
       include: { memberships: { where: { role: 'OWNER' }, take: 1 } },
     });
 
-    // 4.1 checkout.session.completed -> Ativação e Provisionamento
+    // 4.1 checkout.session.completed -> Ativação no workspace existente (metadata.workspaceId)
     const hookCheckout = await stripePaymentService.handleWebhook({
       id: `evt_lifecycle_checkout_${lifecycleSuffix}`,
       type: 'checkout.session.completed',
@@ -124,10 +124,10 @@ async function runStripeLifecycleTestSuite() {
           customer: 'cus_seed_auto_elite',
           subscription: 'sub_seed_auto_elite',
           metadata: {
+            workspaceId: owner1!.memberships[0].workspaceId,
             plan: 'PRO',
             billingInterval: 'MONTHLY',
             customerEmail: 'carlos.silva@autoelitemotors.com.br',
-            dealershipName: 'Auto Elite Motors',
           },
         },
       },

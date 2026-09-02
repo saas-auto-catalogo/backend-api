@@ -129,70 +129,18 @@ export class StripeWebhookService {
       };
     }
 
-    if (!customerEmail) {
-      return {
-        received: true,
-        action: 'IGNORED',
-        details: { reason: 'missing_customer_email' },
-      };
-    }
-
-    const existingWorkspaceId = await subscriptionService.findOwnerWorkspaceIdByEmail(customerEmail);
-
-    if (existingWorkspaceId) {
-      const subscription = await subscriptionService.upsertForExistingUser({
-        workspaceId: existingWorkspaceId,
-        session,
-      });
-
-      await writeBillingAuditLog({
-        workspaceId: existingWorkspaceId,
-        action: 'SUBSCRIPTION_PROVISIONED',
-        entityId: subscription.id,
-        metadata: { stripeEventId: event.id, plan, customerEmail, mode: 'existing_user' },
-      });
-
-      await emailService.sendPaymentApprovedEmail(customerEmail, {
-        userName: customerEmail.split('@')[0],
-        planName: `Plano ${plan}`,
-        amountFormatted: 'Assinatura ativa',
-        paymentMethod: 'Cartão de Crédito',
-        dashboardUrl: `${process.env.FRONTEND_URL || 'https://app.autocatalogo.com.br'}/dashboard`,
-      });
-
-      return {
-        received: true,
-        action: 'PROVISION_TENANT',
-        status: 'ACTIVE',
-        workspaceId: existingWorkspaceId,
-        details: { email: customerEmail, plan, mode: 'existing_user' },
-      };
-    }
-
-    const { workspaceId, subscription } = await subscriptionService.provisionNewCustomer({ session });
-    const registerUrl = `${process.env.FRONTEND_URL || 'https://app.autocatalogo.com.br'}/register?checkoutSessionId=${encodeURIComponent(session.id)}`;
-
-    await writeBillingAuditLog({
-      workspaceId,
-      action: 'SUBSCRIPTION_PROVISIONED',
-      entityId: subscription.id,
-      metadata: { stripeEventId: event.id, plan, customerEmail, mode: 'new_customer', registerUrl },
-    });
-
-    await emailService.sendPaymentApprovedEmail(customerEmail, {
-      userName: customerEmail.split('@')[0],
-      planName: `Plano ${plan}`,
-      amountFormatted: 'Assinatura ativa',
-      paymentMethod: 'Cartão de Crédito',
-      dashboardUrl: registerUrl,
-    });
+    console.warn(
+      '[stripe-webhook] checkout.session.completed ignored: missing metadata.workspaceId',
+      { sessionId: session.id, customerEmail: customerEmail || undefined },
+    );
 
     return {
       received: true,
-      action: 'PROVISION_TENANT',
-      status: 'ACTIVE',
-      workspaceId,
-      details: { email: customerEmail, plan, mode: 'new_customer', registerUrl },
+      action: 'IGNORED',
+      details: {
+        reason: 'missing_workspace_id',
+        ...(customerEmail ? { customerEmail } : {}),
+      },
     };
   }
 

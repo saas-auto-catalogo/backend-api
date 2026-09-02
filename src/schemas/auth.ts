@@ -9,12 +9,8 @@ export const registerSchema = z.object({
   name: z.string().min(2, { message: 'Nome deve ter ao menos 2 caracteres' }).max(255),
   email: z.string().email({ message: 'Email invalido' }),
   password: z.string().min(8, { message: 'Password deve ter ao menos 8 caracteres' }),
-  workspaceName: z.string().min(2, { message: 'Nome da revenda deve ter ao menos 2 caracteres' }).max(255).optional(),
-  checkoutSessionId: z.string().min(1).optional(),
-}).refine(
-  (data) => data.checkoutSessionId || data.workspaceName,
-  { message: 'Informe workspaceName ou checkoutSessionId', path: ['workspaceName'] }
-);
+  workspaceName: z.string().min(2, { message: 'Nome da revenda deve ter ao menos 2 caracteres' }).max(255),
+});
 
 export const refreshTokenSchema = z.object({
   refreshToken: z.string().min(20).optional(),
