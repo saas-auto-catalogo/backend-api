@@ -1,10 +1,15 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
 import { stripePaymentService, StripePriceConfigError } from '../../services/payments/stripePaymentService.js';
+import { constructStripeWebhookEvent } from '../../services/payments/stripe-client.js';
 import {
   CreateStripePixRequest,
   CreateStripeCardRequest,
   CreateStripeCheckoutSessionRequest,
 } from '../../types/checkout.js';
+
+interface StripeWebhookRequest extends FastifyRequest {
+  rawBody?: Buffer;
+}
 
 export async function createStripePixHandler(
   request: FastifyRequest<{ Body: CreateStripePixRequest }>,
@@ -64,9 +69,21 @@ export async function createStripeCheckoutSessionHandler(
 }
 
 export async function stripeWebhookHandler(
-  request: FastifyRequest<{ Body: { type: string; data: { object: Record<string, unknown> } } }>,
+  request: StripeWebhookRequest,
   reply: FastifyReply
 ): Promise<void> {
-  const result = await stripePaymentService.handleWebhook(request.body);
-  reply.status(200).send(result);
+  try {
+    const rawBody = request.rawBody ?? Buffer.from(JSON.stringify(request.body ?? {}));
+    const signature = request.headers['stripe-signature'] as string | undefined;
+    const event = constructStripeWebhookEvent(rawBody, signature);
+    const result = await stripePaymentService.handleWebhook(event);
+    reply.status(200).send(result);
+  } catch (error) {
+    reply.status(400).send({
+      type: 'https://autocatalogo.com.br/errors/stripe-webhook-invalid',
+      title: 'Invalid Stripe Webhook',
+      status: 400,
+      detail: error instanceof Error ? error.message : 'Invalid webhook payload',
+    });
+  }
 }

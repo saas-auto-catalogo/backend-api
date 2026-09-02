@@ -194,6 +194,7 @@ async function runStripeCheckoutSessionTests() {
       process.exit(1);
     } else {
       console.log('\n🎉 Todos os testes de Stripe Checkout Session passaram!');
+      process.exit(0);
     }
   } finally {
     await app.close();
