@@ -35,6 +35,7 @@ import { createStripePixSchema, createStripeCardSchema, createStripeCheckoutSess
 import { portalSessionSchema } from './schemas/billing.js';
 import { getAuthUrlQuerySchema, postCallbackBodySchema, diagnosticsParamsSchema } from './schemas/metaConnector.js';
 import { workspaceParamsSchema } from './schemas/workspaces.js';
+import { getCorsOrigin } from './config/cors.js';
 
 export async function buildServer(): Promise<FastifyInstance> {
   const server = Fastify({
@@ -42,7 +43,7 @@ export async function buildServer(): Promise<FastifyInstance> {
   });
 
   await server.register(cors, {
-    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+    origin: getCorsOrigin(),
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   });
