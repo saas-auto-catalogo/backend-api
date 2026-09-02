@@ -20,6 +20,7 @@ import {
 } from './modules/billing/billing.controller.js';
 import { registerFeedRoutes } from './modules/feeds/feed.routes.js';
 import { registerDashboardRoutes } from './modules/dashboard/index.js';
+import { registerProfileRoutes } from './modules/profile/index.js';
 import {
   authenticate,
   requireRole,
@@ -119,6 +120,9 @@ export async function buildServer(): Promise<FastifyInstance> {
 
   // Registro das Rotas do Dashboard (stats, vehicles, meta-catalogs, audit-logs)
   await registerDashboardRoutes(server);
+
+  // Registro das Rotas de Perfil (user + workspace/dealership)
+  await registerProfileRoutes(server);
 
   return server;
 }

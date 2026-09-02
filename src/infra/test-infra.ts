@@ -93,6 +93,7 @@ async function runInfraSmokeTest() {
   } finally {
     await closeAllQueues();
     redisClient.disconnect();
+    process.exit(0);
   }
 }
 

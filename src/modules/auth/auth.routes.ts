@@ -7,6 +7,7 @@ import {
   forgotPasswordHandler,
   resetPasswordHandler,
   getMeHandler,
+  patchMeHandler,
   patchOnboardingHandler,
 } from './auth.controller.js';
 import { authenticate } from './auth.middleware.js';
@@ -17,6 +18,7 @@ import {
   forgotPasswordSchema,
   resetPasswordSchema,
   updateOnboardingSchema,
+  updateMeSchema,
 } from '../../schemas/auth.js';
 import { rateLimiterService } from '../../infra/security/rate-limiter.service.js';
 
@@ -82,6 +84,12 @@ export async function registerAuthRoutes(server: FastifyInstance): Promise<void>
     '/api/v1/auth/me',
     { preHandler: [authenticate] },
     getMeHandler,
+  );
+
+  server.patch(
+    '/api/v1/auth/me',
+    { preHandler: [authenticate, validate(updateMeSchema, 'body')] },
+    async (req, reply) => patchMeHandler(req as any, reply),
   );
 
   server.patch(

@@ -61,6 +61,11 @@ export interface UpdateOnboardingContext {
   userAgent?: string;
 }
 
+export interface UpdateMeInput {
+  name?: string;
+  avatarUrl?: string | null;
+}
+
 export class AuthService {
   async login(
     server: FastifyInstance,
@@ -498,6 +503,30 @@ export class AuthService {
         },
       });
     }
+
+    return this.getMe(userId);
+  }
+
+  async updateMe(userId: string, data: UpdateMeInput): Promise<MeResult> {
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+
+    if (!user) {
+      throw createAuthError('Usuario nao encontrado.', 404);
+    }
+
+    const updateData: { name?: string; avatarUrl?: string | null } = {};
+
+    if (data.name !== undefined) {
+      updateData.name = data.name.trim();
+    }
+    if (data.avatarUrl !== undefined) {
+      updateData.avatarUrl = data.avatarUrl;
+    }
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: updateData,
+    });
 
     return this.getMe(userId);
   }

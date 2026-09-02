@@ -6,6 +6,7 @@ import {
   ForgotPasswordDTO,
   ResetPasswordDTO,
   UpdateOnboardingDTO,
+  UpdateMeDTO,
 } from '../../schemas/auth.js';
 import { AuthUser } from './auth.middleware.js';
 import {
@@ -131,6 +132,19 @@ export async function getMeHandler(
   const user = request.user as AuthUser;
 
   const profile = await authService.getMe(user.id);
+
+  reply.status(200).send({
+    user: profile,
+  });
+}
+
+export async function patchMeHandler(
+  request: FastifyRequest<{ Body: UpdateMeDTO }>,
+  reply: FastifyReply,
+): Promise<void> {
+  const user = request.user as AuthUser;
+
+  const profile = await authService.updateMe(user.id, request.body);
 
   reply.status(200).send({
     user: profile,
