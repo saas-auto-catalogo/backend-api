@@ -120,7 +120,7 @@ export async function buildServer(): Promise<FastifyInstance> {
 
   server.get(
     '/api/v1/workspaces/:workspaceId/billing',
-    { preHandler: [authenticate, requireWorkspace, requireRole(['SUPER_ADMIN', 'OWNER']), validate(workspaceParamsSchema, 'params')] },
+    { preHandler: [authenticate, requireWorkspace, requireRole(['SUPER_ADMIN', 'OWNER', 'MANAGER', 'VIEWER']), validate(workspaceParamsSchema, 'params')] },
     async (req, reply) => getWorkspaceBillingDetailsHandler(req as any, reply)
   );
 

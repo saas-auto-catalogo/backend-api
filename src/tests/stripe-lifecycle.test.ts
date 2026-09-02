@@ -249,9 +249,19 @@ async function runStripeLifecycleTestSuite() {
       where: { email: 'roberto.junior@jrcaseminovos.com.br' },
       include: { memberships: { where: { role: 'OWNER' }, take: 1 } },
     });
+    const manager1Db = await prisma.user.findUnique({
+      where: { email: 'marcos.trafego@autoelitemotors.com.br' },
+      include: { memberships: { where: { role: 'MANAGER' }, take: 1 } },
+    });
+    const viewer1Db = await prisma.user.findUnique({
+      where: { email: 'ana.vendas@autoelitemotors.com.br' },
+      include: { memberships: { where: { role: 'VIEWER' }, take: 1 } },
+    });
 
     assert(!!owner1Db?.memberships[0], 'Owner seed workspace 1 disponível');
     assert(!!owner2Db?.memberships[0], 'Owner seed workspace 2 disponível');
+    assert(!!manager1Db?.memberships[0], 'Manager seed workspace 1 disponível');
+    assert(!!viewer1Db?.memberships[0], 'Viewer seed workspace 1 disponível');
 
     const authOwnerA: AuthUser = {
       id: owner1Db!.id,
@@ -271,8 +281,28 @@ async function runStripeLifecycleTestSuite() {
       role: 'OWNER',
     };
 
+    const authManagerA: AuthUser = {
+      id: manager1Db!.id,
+      email: manager1Db!.email,
+      name: manager1Db!.name,
+      isSuperAdmin: false,
+      workspaceId: manager1Db!.memberships[0].workspaceId,
+      role: 'MANAGER',
+    };
+
+    const authViewerA: AuthUser = {
+      id: viewer1Db!.id,
+      email: viewer1Db!.email,
+      name: viewer1Db!.name,
+      isSuperAdmin: false,
+      workspaceId: viewer1Db!.memberships[0].workspaceId,
+      role: 'VIEWER',
+    };
+
     const tokenOwnerA = app.jwt.sign(authOwnerA);
     const tokenOwnerB = app.jwt.sign(authOwnerB);
+    const tokenManagerA = app.jwt.sign(authManagerA);
+    const tokenViewerA = app.jwt.sign(authViewerA);
 
     // 5.1 POST /api/v1/billing/portal sem autenticação -> 401
     const resPortalNoAuth = await app.inject({
@@ -303,7 +333,23 @@ async function runStripeLifecycleTestSuite() {
     assert(billingData.workspaceId === authOwnerA.workspaceId, 'WorkspaceId correto retornado');
     assert(billingData.limits?.maxVehicles > 0, 'Limites do plano incluídos na resposta');
 
-    // 5.4 GET /api/v1/workspaces/:workspaceId/billing em outro workspace -> 403 (Isolamento)
+    // 5.5 GET billing como MANAGER no próprio workspace -> 200
+    const resBillingManager = await app.inject({
+      method: 'GET',
+      url: `/api/v1/workspaces/${authManagerA.workspaceId}/billing`,
+      headers: { authorization: `Bearer ${tokenManagerA}` },
+    });
+    assert(resBillingManager.statusCode === 200, 'MANAGER consulta billing no próprio workspace retorna 200 OK');
+
+    // 5.6 GET billing como VIEWER no próprio workspace -> 200
+    const resBillingViewer = await app.inject({
+      method: 'GET',
+      url: `/api/v1/workspaces/${authViewerA.workspaceId}/billing`,
+      headers: { authorization: `Bearer ${tokenViewerA}` },
+    });
+    assert(resBillingViewer.statusCode === 200, 'VIEWER consulta billing no próprio workspace retorna 200 OK');
+
+    // 5.7 GET billing em outro workspace -> 403 (Isolamento)
     const resBillingOther = await app.inject({
       method: 'GET',
       url: `/api/v1/workspaces/${authOwnerA.workspaceId}/billing`,
