@@ -9,7 +9,7 @@ export const legalDocumentSlugParamsSchema = z.object({
   slug: z.string().min(1, { message: 'slug é obrigatório' }).max(100),
 });
 
-export const createLegalAcceptanceSchema = z.object({
+export const legalAcceptanceItemSchema = z.object({
   slug: z.string().min(1).max(100),
   version: isoDate,
   contentHash,
@@ -21,8 +21,12 @@ export const createLegalAcceptanceSchema = z.object({
     .refine((value) => Date.parse(value) <= Date.now(), {
       message: 'acceptedAt não pode ser futuro',
     }),
+});
+
+export const createLegalAcceptanceSchema = legalAcceptanceItemSchema.extend({
   workspaceId: z.string().uuid().optional(),
 });
 
 export type LegalDocumentSlugParams = z.infer<typeof legalDocumentSlugParamsSchema>;
+export type LegalAcceptanceItem = z.infer<typeof legalAcceptanceItemSchema>;
 export type CreateLegalAcceptanceDTO = z.infer<typeof createLegalAcceptanceSchema>;

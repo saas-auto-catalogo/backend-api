@@ -6,6 +6,7 @@ import {
   setStripeClientForTests,
   resetStripeClientForTests,
 } from '../services/payments/stripe-client.js';
+import { checkoutLegalAcceptances } from './legal-test-helpers.js';
 
 let totalTests = 0;
 let passedTests = 0;
@@ -251,6 +252,11 @@ async function runStripeCheckoutSessionTests() {
     }
 
     try {
+      const ownerCheckoutPayload = {
+        ...workspaceCheckoutPayload,
+        legalAcceptances: await checkoutLegalAcceptances(),
+      };
+
       const resNoAuth = await app.inject({
         method: 'POST',
         url: `/api/v1/workspaces/${workspaceId}/checkout/stripe/session`,
@@ -258,13 +264,26 @@ async function runStripeCheckoutSessionTests() {
       });
       assert(resNoAuth.statusCode === 401, 'Sem JWT retorna 401', `got ${resNoAuth.statusCode}`);
 
-      const resOwner = await app.inject({
+      const resMissingContract = await app.inject({
         method: 'POST',
         url: `/api/v1/workspaces/${workspaceId}/checkout/stripe/session`,
         headers: { authorization: `Bearer ${tokenOwnerA}` },
         payload: workspaceCheckoutPayload,
       });
+      assert(resMissingContract.statusCode === 422, 'OWNER sem contrato-saas retorna 422', `got ${resMissingContract.statusCode}`);
+
+      const resOwner = await app.inject({
+        method: 'POST',
+        url: `/api/v1/workspaces/${workspaceId}/checkout/stripe/session`,
+        headers: { authorization: `Bearer ${tokenOwnerA}` },
+        payload: ownerCheckoutPayload,
+      });
       assert(resOwner.statusCode === 201, 'OWNER no próprio workspace retorna 201', `got ${resOwner.statusCode}`);
+
+      const storedContract = await prisma.legalAcceptance.findFirst({
+        where: { userId: authOwnerA.id, slug: 'contrato-saas' },
+      });
+      assert(!!storedContract, 'aceite contrato-saas persistido no checkout');
 
       const resManager = await app.inject({
         method: 'POST',
@@ -292,7 +311,7 @@ async function runStripeCheckoutSessionTests() {
           method: 'POST',
           url: `/api/v1/workspaces/${workspaceId}/checkout/stripe/session`,
           headers: { authorization: `Bearer ${tokenOwnerA}` },
-          payload: workspaceCheckoutPayload,
+          payload: ownerCheckoutPayload,
         });
         assert(resActive.statusCode === 409, 'Workspace ACTIVE retorna 409', `got ${resActive.statusCode}`);
       }
@@ -337,7 +356,10 @@ async function runStripeCheckoutSessionTests() {
       const result = await stripePaymentService.createCheckoutSessionForWorkspace({
         workspaceId: 'ws_test_workspace_123',
         customerEmail: 'owner@example.com',
-        data: workspaceCheckoutPayload,
+        data: {
+          ...workspaceCheckoutPayload,
+          legalAcceptances: [],
+        },
       });
 
       assert(workspaceSdkCreateCalled, 'Workspace SDK checkout.sessions.create was called');

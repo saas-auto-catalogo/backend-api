@@ -1,6 +1,7 @@
 import { buildServer } from '../server.js';
 import { prisma } from '../lib/prisma.js';
 import { teardownIntegrationTest, resetAuthRateLimits } from './test-teardown.js';
+import { withRegisterConsent } from './legal-test-helpers.js';
 
 let totalTests = 0;
 let passedTests = 0;
@@ -41,12 +42,12 @@ async function runAuthOnboardingTestSuite() {
     const resRegister = await app.inject({
       method: 'POST',
       url: '/api/v1/auth/register',
-      payload: {
+      payload: await withRegisterConsent({
         name: 'Maria Onboarding',
         email: uniqueEmail,
         password,
         workspaceName: 'Revenda Onboarding',
-      },
+      }),
     });
     assert(resRegister.statusCode === 201, `Register retorna 201 (got ${resRegister.statusCode})`);
 

@@ -1,6 +1,7 @@
 import { buildServer } from '../server.js';
 import { resetEnvCache } from '../config/env.js';
 import { teardownIntegrationTest, resetAuthRateLimits } from './test-teardown.js';
+import { withRegisterConsent } from './legal-test-helpers.js';
 
 let totalTests = 0;
 let passedTests = 0;
@@ -105,12 +106,12 @@ async function runCorsDevTestSuite() {
       headers: {
         origin: 'http://localhost:3000',
       },
-      payload: {
+      payload: await withRegisterConsent({
         name: 'CORS Test User',
         email: uniqueEmail,
         password: 'SenhaSegura123!',
         workspaceName: 'CORS Test Workspace',
-      },
+      }),
     });
     assert(
       postRegister.statusCode === 201,

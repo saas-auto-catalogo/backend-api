@@ -43,7 +43,10 @@ export async function createLegalAcceptanceHandler(
   const user = request.user as AuthUser;
 
   try {
-    const { acceptance, created } = await legalService.recordAcceptance(user, request.body);
+    const { acceptance, created } = await legalService.recordAcceptance(user, request.body, {
+      ipAddress: request.ip,
+      userAgent: request.headers['user-agent'] || '',
+    });
     reply.status(created ? 201 : 200).send({ acceptance });
   } catch (err) {
     if (err instanceof LegalAcceptanceMismatchError) {

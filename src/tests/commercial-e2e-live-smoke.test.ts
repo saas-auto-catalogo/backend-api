@@ -37,6 +37,21 @@ async function runLiveSmoke() {
   const health = await fetch(`${API}/health`);
   assert(health.ok, 'Backend /health responde');
 
+  const docsRes = await fetch(`${API}/api/v1/legal/documents`);
+  const docsBody = (await docsRes.json()) as {
+    documents: Array<{ slug: string; version: string; contentHash: string }>;
+  };
+  const acceptedAt = new Date(Date.now() - 60_000).toISOString();
+  const legalAcceptancesFor = (slugs: string[]) =>
+    (docsBody.documents || [])
+      .filter((doc) => slugs.includes(doc.slug))
+      .map((doc) => ({
+        slug: doc.slug,
+        version: doc.version,
+        contentHash: doc.contentHash,
+        acceptedAt,
+      }));
+
   const registerRes = await fetch(`${API}/api/v1/auth/register`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -45,6 +60,7 @@ async function runLiveSmoke() {
       email,
       password,
       workspaceName: 'Live Smoke Revenda',
+      legalAcceptances: legalAcceptancesFor(['termos-de-uso', 'politica-de-privacidade']),
     }),
   });
   assert(registerRes.status === 201, 'Register 201', `got ${registerRes.status}`);
@@ -66,6 +82,7 @@ async function runLiveSmoke() {
       billingInterval: 'MONTHLY',
       successUrl: `${APP}/dashboard?checkout=success`,
       cancelUrl: 'http://127.0.0.1:5175/checkout/cancel',
+      legalAcceptances: legalAcceptancesFor(['contrato-saas']),
     }),
   });
   assert(checkoutRes.status === 201, 'Checkout autenticado 201', `got ${checkoutRes.status}`);

@@ -105,7 +105,7 @@ Checkout autenticado: `POST /workspaces/:id/checkout/stripe/session` (OWNER+) cr
 
 **Trial gratuito:** `POST /auth/register?plan=trial` cria subscription `TRIALING` (Pro, 14 dias, sem Stripe). Um trial por email (409 se já consumido). Register/login incluem objeto `billing` na resposta; `GET /workspaces/:id/billing` retorna `TRIALING` e limites Pro. Job diário `npm run job:trial-lifecycle` expira trials vencidos (`EXPIRED`) e envia email D-3 uma vez; em produção agendar via cron (ex.: `0 6 * * *` UTC). Upgrade durante trial via checkout autenticado converte para `ACTIVE`.
 
-**Documentos jurídicos:** `GET /legal/documents` e `GET /legal/documents/:slug` são públicos e devolvem a versão vigente (slug, version, contentHash) sincronizada do `manifest.json` do [legal-docs](https://github.com/saas-auto-catalogo/legal-docs). `POST /legal/acceptances` (JWT) registra aceite se hash/versão baterem com o vigente. Job `npm run job:legal-sync` puxa o manifest (cron sugerido `0 6 * * *` UTC). Register/checkout ainda **não** exigem aceite — isso é a issue #71. URL opcional: `LEGAL_DOCS_MANIFEST_URL`.
+**Documentos jurídicos:** `GET /legal/documents` e `GET /legal/documents/:slug` são públicos e devolvem a versão vigente (slug, version, contentHash) sincronizada do `manifest.json` do [legal-docs](https://github.com/saas-auto-catalogo/legal-docs). `POST /legal/acceptances` (JWT) registra aceite se hash/versão baterem com o vigente. `POST /auth/register` exige `legalAcceptances` de `termos-de-uso` + `politica-de-privacidade`; checkout autenticado exige `contrato-saas`. Job `npm run job:legal-sync` precisa ter populado os documentos vigentes (cron sugerido `0 6 * * *` UTC). URL opcional: `LEGAL_DOCS_MANIFEST_URL`.
 
 ### Validação no boot
 

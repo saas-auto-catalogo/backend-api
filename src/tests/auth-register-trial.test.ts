@@ -1,6 +1,7 @@
 import { buildServer } from '../server.js';
 import { prisma } from '../lib/prisma.js';
 import { teardownIntegrationTest, resetAuthRateLimits } from './test-teardown.js';
+import { withRegisterConsent } from './legal-test-helpers.js';
 import { calculateTrialEndDate, isEntitledSubscriptionStatus } from '../modules/billing/plan-limits.js';
 
 let totalTests = 0;
@@ -47,12 +48,12 @@ async function runAuthRegisterTrialTests() {
     const resTrial = await app.inject({
       method: 'POST',
       url: '/api/v1/auth/register?plan=trial',
-      payload: {
+      payload: await withRegisterConsent({
         name: 'Trial Owner',
         email: trialEmail,
         password,
         workspaceName: 'Revenda Trial',
-      },
+      }),
     });
 
     assert(resTrial.statusCode === 201, 'Register trial retorna 201', `got ${resTrial.statusCode}`);
@@ -84,12 +85,12 @@ async function runAuthRegisterTrialTests() {
     const resFree = await app.inject({
       method: 'POST',
       url: '/api/v1/auth/register',
-      payload: {
+      payload: await withRegisterConsent({
         name: 'Free Owner',
         email: freeEmail,
         password,
         workspaceName: 'Revenda Free',
-      },
+      }),
     });
     assert(resFree.statusCode === 201, 'Register normal 201');
     const freeBody = JSON.parse(resFree.payload);
@@ -100,12 +101,12 @@ async function runAuthRegisterTrialTests() {
     const resDup = await app.inject({
       method: 'POST',
       url: '/api/v1/auth/register?plan=trial',
-      payload: {
+      payload: await withRegisterConsent({
         name: 'Outro Nome',
         email: trialEmail,
         password,
         workspaceName: 'Outra Revenda',
-      },
+      }),
     });
     assert(resDup.statusCode === 409, 'Email duplicado retorna 409');
 
@@ -137,12 +138,12 @@ async function runAuthRegisterTrialTests() {
     const resConsumed = await app.inject({
       method: 'POST',
       url: '/api/v1/auth/register?plan=trial',
-      payload: {
+      payload: await withRegisterConsent({
         name: 'Abuse Attempt',
         email: consumedEmail,
         password,
         workspaceName: 'Nova Revenda Abuse',
-      },
+      }),
     });
     assert(resConsumed.statusCode === 409, 'Trial já consumido retorna 409');
 

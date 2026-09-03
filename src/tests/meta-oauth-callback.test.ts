@@ -2,6 +2,7 @@ import { buildServer } from '../server.js';
 import { prisma } from '../lib/prisma.js';
 import { teardownIntegrationTest, resetAuthRateLimits } from './test-teardown.js';
 import { loadIntegrationSeedContext } from './seed-test-context.js';
+import { withRegisterConsent } from './legal-test-helpers.js';
 import {
   metaConnectorService,
   DealershipNotFoundError,
@@ -47,12 +48,12 @@ async function runMetaOAuthCallbackTestSuite() {
     const resRegister = await app.inject({
       method: 'POST',
       url: '/api/v1/auth/register',
-      payload: {
+      payload: await withRegisterConsent({
         name: 'Owner Meta OAuth',
         email: uniqueEmail,
         password,
         workspaceName: 'Revenda Meta OAuth Test',
-      },
+      }),
     });
     assert(resRegister.statusCode === 201, `Register retorna 201 (got ${resRegister.statusCode})`);
 

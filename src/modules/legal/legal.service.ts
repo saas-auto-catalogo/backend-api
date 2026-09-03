@@ -1,7 +1,10 @@
-import { LegalDocument } from '@prisma/client';
+import { LegalDocument, Prisma } from '@prisma/client';
 import { prisma } from '../../lib/prisma.js';
 import { AuthUser } from '../auth/auth.middleware.js';
-import { CreateLegalAcceptanceDTO } from '../../schemas/legal.js';
+import { CreateLegalAcceptanceDTO, LegalAcceptanceItem } from '../../schemas/legal.js';
+
+export const REGISTER_REQUIRED_SLUGS = ['termos-de-uso', 'politica-de-privacidade'] as const;
+export const CHECKOUT_REQUIRED_SLUGS = ['contrato-saas'] as const;
 
 export class LegalAcceptanceMismatchError extends Error {
   constructor(message: string) {
@@ -109,6 +112,69 @@ export async function assertMatchesCurrentDocument(params: {
   return current;
 }
 
+export async function assertRequiredAcceptances(
+  items: LegalAcceptanceItem[],
+  requiredSlugs: readonly string[],
+): Promise<void> {
+  const bySlug = new Map(items.map((item) => [item.slug, item]));
+
+  for (const slug of requiredSlugs) {
+    const item = bySlug.get(slug);
+    if (!item) {
+      throw new LegalAcceptanceMismatchError(`Aceite obrigatório ausente: "${slug}".`);
+    }
+    await assertMatchesCurrentDocument(item);
+  }
+}
+
+export async function persistAcceptances(params: {
+  userId: string;
+  workspaceId?: string | null;
+  items: LegalAcceptanceItem[];
+  requiredSlugs: readonly string[];
+  ipAddress?: string;
+  userAgent?: string;
+  tx?: Prisma.TransactionClient;
+}): Promise<void> {
+  const db = params.tx ?? prisma;
+  const required = new Set(params.requiredSlugs);
+  const ipAddress = params.ipAddress?.substring(0, 50) || null;
+  const userAgent = params.userAgent?.substring(0, 500) || null;
+
+  for (const item of params.items) {
+    if (!required.has(item.slug)) {
+      continue;
+    }
+
+    const existing = await db.legalAcceptance.findUnique({
+      where: {
+        userId_slug_version: {
+          userId: params.userId,
+          slug: item.slug,
+          version: item.version,
+        },
+      },
+    });
+
+    if (existing) {
+      continue;
+    }
+
+    await db.legalAcceptance.create({
+      data: {
+        userId: params.userId,
+        workspaceId: params.workspaceId ?? null,
+        slug: item.slug,
+        version: item.version,
+        contentHash: item.contentHash,
+        acceptedAt: new Date(item.acceptedAt),
+        ipAddress,
+        userAgent,
+      },
+    });
+  }
+}
+
 async function assertWorkspaceMembership(user: AuthUser, workspaceId: string): Promise<void> {
   if (user.isSuperAdmin || user.role === 'SUPER_ADMIN') {
     return;
@@ -134,6 +200,7 @@ async function assertWorkspaceMembership(user: AuthUser, workspaceId: string): P
 export async function recordAcceptance(
   user: AuthUser,
   body: CreateLegalAcceptanceDTO,
+  audit?: { ipAddress?: string; userAgent?: string },
 ): Promise<{ acceptance: LegalAcceptancePublic; created: boolean }> {
   await assertMatchesCurrentDocument({
     slug: body.slug,
@@ -167,6 +234,8 @@ export async function recordAcceptance(
       version: body.version,
       contentHash: body.contentHash,
       acceptedAt: new Date(body.acceptedAt),
+      ipAddress: audit?.ipAddress?.substring(0, 50) || null,
+      userAgent: audit?.userAgent?.substring(0, 500) || null,
     },
   });
 
@@ -177,5 +246,7 @@ export const legalService = {
   listCurrentDocuments,
   getCurrentDocumentBySlug,
   assertMatchesCurrentDocument,
+  assertRequiredAcceptances,
+  persistAcceptances,
   recordAcceptance,
 };

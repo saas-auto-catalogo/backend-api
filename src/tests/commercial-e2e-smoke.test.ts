@@ -11,6 +11,7 @@ import { stripePaymentService } from '../services/payments/stripePaymentService.
 import { resetSystemUserCacheForTests } from '../lib/system-user.js';
 import { teardownIntegrationTest } from './test-teardown.js';
 import { loadIntegrationSeedContext } from './seed-test-context.js';
+import { checkoutLegalAcceptances, withRegisterConsent } from './legal-test-helpers.js';
 
 let total = 0;
 let passed = 0;
@@ -55,12 +56,12 @@ async function runCommercialE2ESmoke() {
     const registerRes = await app.inject({
       method: 'POST',
       url: '/api/v1/auth/register',
-      payload: {
+      payload: await withRegisterConsent({
         name: 'Smoke Owner',
         email,
         password,
         workspaceName: 'Smoke Test Revenda',
-      },
+      }),
     });
     assert(registerRes.statusCode === 201, 'Register 201', `got ${registerRes.statusCode}`);
     const register = JSON.parse(registerRes.payload);
@@ -81,7 +82,10 @@ async function runCommercialE2ESmoke() {
       method: 'POST',
       url: `/api/v1/workspaces/${workspaceId}/checkout/stripe/session`,
       headers: { authorization: `Bearer ${accessToken}` },
-      payload: checkoutPayload,
+      payload: {
+        ...checkoutPayload,
+        legalAcceptances: await checkoutLegalAcceptances(),
+      },
     });
     assert(checkoutRes.statusCode === 201, 'Checkout autenticado 201', `got ${checkoutRes.statusCode}`);
     const checkout = JSON.parse(checkoutRes.payload);
@@ -185,12 +189,12 @@ async function runCommercialE2ESmoke() {
     const freeRegister = await app.inject({
       method: 'POST',
       url: '/api/v1/auth/register',
-      payload: {
+      payload: await withRegisterConsent({
         name: 'Free User',
         email: freeEmail,
         password,
         workspaceName: 'Revenda Sem Plano',
-      },
+      }),
     });
     assert(freeRegister.statusCode === 201, 'Register sem pagamento 201');
     const freeToken = JSON.parse(freeRegister.payload).accessToken;
