@@ -1,8 +1,7 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
 import { stripePaymentService } from '../../services/payments/stripePaymentService.js';
-import { PLAN_LIMITS } from './plan-limits.js';
-import { PlanType } from '../../types/checkout.js';
 import { prisma } from '../../lib/prisma.js';
+import { formatWorkspaceBilling } from './billing-details.js';
 
 export async function createStripePortalSessionHandler(
   request: FastifyRequest<{ Body: { returnUrl?: string } }>,
@@ -47,26 +46,5 @@ export async function getWorkspaceBillingDetailsHandler(
     where: { workspaceId },
   });
 
-  if (!sub) {
-    return reply.send({
-      workspaceId,
-      planTier: null,
-      status: 'NONE',
-      currentPeriodEnd: null,
-      cancelAtPeriodEnd: false,
-      limits: null,
-    });
-  }
-
-  const planTier = sub.planTier as PlanType;
-  const planLimits = PLAN_LIMITS[planTier] || PLAN_LIMITS.PRO;
-
-  return reply.send({
-    workspaceId,
-    planTier,
-    status: sub.status,
-    currentPeriodEnd: sub.currentPeriodEnd.toISOString(),
-    cancelAtPeriodEnd: sub.cancelAtPeriodEnd,
-    limits: planLimits,
-  });
+  return reply.send(formatWorkspaceBilling(workspaceId, sub));
 }

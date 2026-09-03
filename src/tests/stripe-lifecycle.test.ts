@@ -5,6 +5,7 @@ import {
   hasPlanFeature,
   isResourceLimitReached,
   calculateTrialEndDate,
+  isEntitledSubscriptionStatus,
 } from '../modules/billing/plan-limits.js';
 import { stripePaymentService } from '../services/payments/stripePaymentService.js';
 import { AuthUser } from '../modules/auth/auth.middleware.js';
@@ -103,6 +104,9 @@ async function runStripeLifecycleTestSuite() {
     const trialEnd = calculateTrialEndDate(now);
     const diffDays = Math.round((trialEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
     assert(diffDays === 14, `Trial de 14 dias calculado com precisão (${diffDays} dias)`);
+    assert(isEntitledSubscriptionStatus('TRIALING'), 'TRIALING concede entitlement de plano');
+    assert(isEntitledSubscriptionStatus('ACTIVE'), 'ACTIVE concede entitlement de plano');
+    assert(!isEntitledSubscriptionStatus('NONE'), 'NONE não concede entitlement');
 
     // ─────────────────────────────────────────────────────────────────────────
     // 4. WEBHOOKS DO STRIPE (CICLO DE VIDA DA ASSINATURA)

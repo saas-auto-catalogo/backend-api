@@ -101,6 +101,13 @@ export function hasPlanFeature(plan: PlanType, feature: PlanFeatureKey): boolean
 }
 
 /**
+ * Status de subscription que concede limites/features do planTier
+ */
+export function isEntitledSubscriptionStatus(status: string): boolean {
+  return status === 'ACTIVE' || status === 'TRIALING';
+}
+
+/**
  * Calcula o término do trial de 14 dias
  */
 export function calculateTrialEndDate(startDate: Date = new Date()): Date {

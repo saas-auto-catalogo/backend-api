@@ -12,6 +12,10 @@ export const registerSchema = z.object({
   workspaceName: z.string().min(2, { message: 'Nome da revenda deve ter ao menos 2 caracteres' }).max(255),
 });
 
+export const registerQuerySchema = z.object({
+  plan: z.literal('trial').optional(),
+});
+
 export const refreshTokenSchema = z.object({
   refreshToken: z.string().min(20).optional(),
 });
@@ -49,6 +53,7 @@ export const updateMeSchema = z
 
 export type LoginDTO = z.infer<typeof loginSchema>;
 export type RegisterDTO = z.infer<typeof registerSchema>;
+export type RegisterQueryDTO = z.infer<typeof registerQuerySchema>;
 export type RefreshTokenDTO = z.infer<typeof refreshTokenSchema>;
 export type ForgotPasswordDTO = z.infer<typeof forgotPasswordSchema>;
 export type ResetPasswordDTO = z.infer<typeof resetPasswordSchema>;

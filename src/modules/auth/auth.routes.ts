@@ -15,6 +15,7 @@ import { validate } from '../../middleware/validation.js';
 import {
   loginSchema,
   registerSchema,
+  registerQuerySchema,
   forgotPasswordSchema,
   resetPasswordSchema,
   updateOnboardingSchema,
@@ -53,7 +54,7 @@ export async function registerAuthRoutes(server: FastifyInstance): Promise<void>
 
   server.post(
     '/api/v1/auth/register',
-    { preHandler: [loginRateLimit, validate(registerSchema, 'body')] },
+    { preHandler: [loginRateLimit, validate(registerQuerySchema, 'query'), validate(registerSchema, 'body')] },
     async (req, reply) => registerHandler(req as any, reply),
   );
 

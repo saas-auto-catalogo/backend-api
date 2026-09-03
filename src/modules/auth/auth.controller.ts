@@ -3,6 +3,7 @@ import { authService, createAuthError } from './auth.service.js';
 import {
   LoginDTO,
   RegisterDTO,
+  RegisterQueryDTO,
   ForgotPasswordDTO,
   ResetPasswordDTO,
   UpdateOnboardingDTO,
@@ -32,14 +33,16 @@ export async function loginHandler(
     expiresIn: result.expiresIn,
     tokenType: 'Bearer',
     user: result.user,
+    ...(result.billing ? { billing: result.billing } : {}),
   });
 }
 
 export async function registerHandler(
-  request: FastifyRequest<{ Body: RegisterDTO }>,
+  request: FastifyRequest<{ Body: RegisterDTO; Querystring: RegisterQueryDTO }>,
   reply: FastifyReply,
 ): Promise<void> {
   const { name, email, password, workspaceName } = request.body;
+  const { plan } = request.query;
   const ipAddress = request.ip;
   const userAgent = request.headers['user-agent'] || '';
 
@@ -51,6 +54,7 @@ export async function registerHandler(
     workspaceName,
     ipAddress,
     userAgent,
+    plan === 'trial' ? { plan: 'trial' } : undefined,
   );
 
   setRefreshTokenCookie(reply, result.refreshToken);
@@ -60,6 +64,7 @@ export async function registerHandler(
     expiresIn: result.expiresIn,
     tokenType: 'Bearer',
     user: result.user,
+    ...(result.billing ? { billing: result.billing } : {}),
   });
 }
 

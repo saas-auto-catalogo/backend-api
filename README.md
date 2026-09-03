@@ -102,6 +102,8 @@ Checkout autenticado: `POST /workspaces/:id/checkout/stripe/session` (OWNER+) cr
 
 **Fluxo comercial (register-first):** `POST /auth/register` (com `workspaceName`) → login → checkout autenticado → Stripe webhook `checkout.session.completed` com `metadata.workspaceId` → `GET /workspaces/:id/billing` retorna `ACTIVE`. O webhook **não** cria workspace novo; sessões sem `workspaceId` são ignoradas. `GET /checkout/stripe/session/:id/status` retorna **410 Gone** — a success page deve consultar billing autenticado. Email pós-pagamento aponta para `/dashboard`, não `/register`.
 
+**Trial gratuito:** `POST /auth/register?plan=trial` cria subscription `TRIALING` (Pro, 14 dias, sem Stripe). Um trial por email (409 se já consumido). Register/login incluem objeto `billing` na resposta; `GET /workspaces/:id/billing` retorna `TRIALING` e limites Pro.
+
 ### Validação no boot
 
 Com `NODE_ENV=production`, o backend valida variáveis críticas **antes** de subir o servidor e encerra listando todas as faltantes de uma vez. Em **development**, defaults locais são aplicados com `console.warn` para variáveis ausentes. Em **test/CI**, o schema é relaxado.
