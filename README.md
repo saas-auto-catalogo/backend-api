@@ -141,7 +141,8 @@ Variáveis **obrigatórias em production**: `DATABASE_URL`, `JWT_SECRET` (≥32 
 | `npm run test:email` | Templates e envio sandbox |
 | `npm run test:subscription` | Stripe lifecycle e billing |
 | `npm run test:legal` | Documentos jurídicos e aceites |
-| `npm run test:ci` | **Subset do CI** — auth, rbac, profile, dashboard, feeds, db, email |
+| `npm run test:legal:smoke` | Smoke E2E — aceite jurídico no funil comercial (.github#21) |
+| `npm run test:ci` | **Subset do CI** — auth, rbac, profile, dashboard, feeds, db, email, commercial, legal |
 | `npm run test:all` | Suite agregada completa |
 
 ### CI (GitHub Actions)
