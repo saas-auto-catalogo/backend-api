@@ -162,6 +162,23 @@ async function runEmailTestSuite() {
     assert(renewal.html.includes('https://billing.stripe.com/p/session_123'), 'HTML direciona para o Stripe Portal');
 
     // ─────────────────────────────────────────────────────────────────────────
+    // 7b. TEMPLATE DE AVISO DE FIM DE TRIAL (D-3)
+    // ─────────────────────────────────────────────────────────────────────────
+    section('7b. Template: Aviso de Fim de Trial (D-3)');
+
+    const { renderTrialEndingReminderEmail } = await import('../services/email/templates/trial-ending-reminder.template.js');
+    const trialEnding = renderTrialEndingReminderEmail({
+      userName: 'Carlos Silva',
+      planName: 'Plano PRO',
+      trialEndDate: '05/09/2026',
+      upgradeUrl: 'https://app.autocatalogo.com.br/settings/billing',
+    });
+
+    assert(trialEnding.subject.includes('trial'), 'Assunto menciona trial');
+    assert(trialEnding.html.includes('05/09/2026'), 'HTML contém data de fim do trial');
+    assert(trialEnding.html.includes('settings/billing'), 'HTML contém CTA de upgrade');
+
+    // ─────────────────────────────────────────────────────────────────────────
     // 8. DISPAROS VIA EMAIL SERVICE (SANDBOX / MOCK ENGINE)
     // ─────────────────────────────────────────────────────────────────────────
     section('8. Envio de Emails via EmailService (Sandbox Engine)');
@@ -225,6 +242,14 @@ async function runEmailTestSuite() {
       billingPortalUrl: 'https://billing.stripe.com',
     });
     assert(res6.success, 'Disparo de email de lembrete de renovação com sucesso');
+
+    const res7 = await emailService.sendTrialEndingReminderEmail(targetEmail, {
+      userName: 'Carlos Silva',
+      planName: 'Plano PRO',
+      trialEndDate: '05/09/2026',
+      upgradeUrl: 'https://app.autocatalogo.com.br/settings/billing',
+    });
+    assert(res7.success, 'Disparo de email de aviso de fim de trial com sucesso');
   } catch (err) {
     console.error('Erro na execução dos testes de email:', err);
     process.exit(1);

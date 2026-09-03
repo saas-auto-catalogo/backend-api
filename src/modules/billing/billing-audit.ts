@@ -8,7 +8,9 @@ export type BillingAuditAction =
   | 'SUBSCRIPTION_PAST_DUE'
   | 'SUBSCRIPTION_CANCELED'
   | 'SUBSCRIPTION_PLAN_CHANGED'
-  | 'WORKSPACE_SUSPENDED';
+  | 'WORKSPACE_SUSPENDED'
+  | 'TRIAL_EXPIRED'
+  | 'TRIAL_REMINDER_SENT';
 
 export async function writeBillingAuditLog(params: {
   workspaceId: string;
