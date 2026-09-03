@@ -1,6 +1,6 @@
-import { Subscription } from '@prisma/client';
+import { Prisma, Subscription } from '@prisma/client';
 import { prisma } from '../../lib/prisma.js';
-import { PLAN_LIMITS } from './plan-limits.js';
+import { calculateTrialEndDate, PLAN_LIMITS } from './plan-limits.js';
 import { PlanType, BillingInterval } from '../../types/checkout.js';
 
 export interface CheckoutSessionPayload {
@@ -84,6 +84,52 @@ export class SubscriptionService {
 
   async findByStripeCustomerId(stripeCustomerId: string): Promise<Subscription | null> {
     return prisma.subscription.findUnique({ where: { stripeCustomerId } });
+  }
+
+  async hasEmailConsumedTrial(email: string): Promise<boolean> {
+    const normalizedEmail = email.toLowerCase().trim();
+
+    const existingTrial = await prisma.subscription.findFirst({
+      where: {
+        stripeSubscriptionId: null,
+        OR: [
+          {
+            workspace: {
+              dealerships: {
+                some: { email: normalizedEmail },
+              },
+            },
+          },
+          {
+            workspace: {
+              members: {
+                some: {
+                  role: 'OWNER',
+                  user: { email: normalizedEmail },
+                },
+              },
+            },
+          },
+        ],
+      },
+    });
+
+    return existingTrial !== null;
+  }
+
+  async createTrialSubscription(
+    workspaceId: string,
+    tx: Prisma.TransactionClient = prisma,
+  ): Promise<Subscription> {
+    return tx.subscription.create({
+      data: {
+        workspaceId,
+        planTier: 'PRO',
+        maxVehicles: PLAN_LIMITS.PRO.maxVehicles === Infinity ? 999999 : PLAN_LIMITS.PRO.maxVehicles,
+        status: 'TRIALING',
+        currentPeriodEnd: calculateTrialEndDate(),
+      },
+    });
   }
 
   async upsertForExistingUser(params: {

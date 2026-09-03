@@ -1,5 +1,5 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
-import { PlanFeatureKey, hasPlanFeature } from './plan-limits.js';
+import { PlanFeatureKey, hasPlanFeature, isEntitledSubscriptionStatus } from './plan-limits.js';
 import { PlanType } from '../../types/checkout.js';
 import { prisma } from '../../lib/prisma.js';
 
@@ -50,7 +50,7 @@ export function requirePlanFeature(feature: PlanFeatureKey) {
         where: { workspaceId },
       });
 
-      if (subscription && subscription.status === 'ACTIVE') {
+      if (subscription && isEntitledSubscriptionStatus(subscription.status)) {
         userPlan = subscription.planTier as PlanType;
       }
     } catch {

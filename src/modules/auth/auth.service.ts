@@ -1,10 +1,13 @@
 import { randomUUID } from 'node:crypto';
 import bcrypt from 'bcryptjs';
+import { Subscription } from '@prisma/client';
 import { FastifyInstance } from 'fastify';
 import { prisma } from '../../lib/prisma.js';
 import { redisClient } from '../../infra/redis/redis-client.js';
 import { emailService } from '../../services/email/index.js';
 import { AuthUser } from './auth.middleware.js';
+import { subscriptionService } from '../billing/subscription.service.js';
+import { formatWorkspaceBilling, WorkspaceBillingDetails } from '../billing/billing-details.js';
 
 const BCRYPT_COST = 12;
 const ACCESS_TOKEN_EXPIRY = '15m';
@@ -27,6 +30,7 @@ export interface LoginResult {
     dealershipId: string | null;
     role: string | null;
   };
+  billing?: WorkspaceBillingDetails;
 }
 
 export interface RefreshResult {
@@ -132,6 +136,9 @@ export class AuthService {
     });
 
     const membership = user.memberships[0] || null;
+    const workspaceId = membership?.workspaceId || null;
+    const billing = await this.loadBilling(workspaceId);
+
     const payload: AuthUser = {
       id: user.id,
       email: user.email,
@@ -174,6 +181,7 @@ export class AuthService {
         dealershipId: null,
         role: membership?.role || null,
       },
+      ...(billing ? { billing } : {}),
     };
   }
 
@@ -185,6 +193,7 @@ export class AuthService {
     workspaceName: string,
     ipAddress?: string,
     userAgentStr?: string,
+    options?: { plan?: 'trial' },
   ): Promise<LoginResult> {
     return this.registerNewWorkspace(
       server,
@@ -194,6 +203,7 @@ export class AuthService {
       workspaceName,
       ipAddress,
       userAgentStr,
+      options,
     );
   }
 
@@ -205,6 +215,7 @@ export class AuthService {
     workspaceName: string,
     ipAddress?: string,
     userAgentStr?: string,
+    options?: { plan?: 'trial' },
   ): Promise<LoginResult> {
     const normalizedEmail = email.toLowerCase().trim();
 
@@ -216,10 +227,17 @@ export class AuthService {
       throw createAuthError('Este email ja esta cadastrado. Faca login ou use outro email.', 409);
     }
 
+    if (options?.plan === 'trial') {
+      const trialConsumed = await subscriptionService.hasEmailConsumedTrial(normalizedEmail);
+      if (trialConsumed) {
+        throw createAuthError('Este email ja utilizou o periodo de teste gratuito.', 409);
+      }
+    }
+
     const passwordHash = await bcrypt.hash(password, BCRYPT_COST);
     const slug = await generateUniqueSlug(workspaceName);
 
-    const { user, membership, dealership } = await prisma.$transaction(async (tx) => {
+    const { user, membership, dealership, subscription } = await prisma.$transaction(async (tx) => {
       const createdUser = await tx.user.create({
         data: {
           email: normalizedEmail,
@@ -253,10 +271,15 @@ export class AuthService {
         },
       });
 
+      const createdSubscription = options?.plan === 'trial'
+        ? await subscriptionService.createTrialSubscription(workspace.id, tx)
+        : null;
+
       return {
         user: createdUser,
         membership: createdMembership,
         dealership: createdDealership,
+        subscription: createdSubscription,
       };
     });
 
@@ -268,7 +291,20 @@ export class AuthService {
       ipAddress,
       userAgentStr,
       false,
+      subscription,
     );
+  }
+
+  private async loadBilling(workspaceId: string | null | undefined): Promise<WorkspaceBillingDetails | undefined> {
+    if (!workspaceId) {
+      return undefined;
+    }
+
+    const sub = await prisma.subscription.findUnique({
+      where: { workspaceId },
+    });
+
+    return formatWorkspaceBilling(workspaceId, sub);
   }
 
   private async issueAuthResponse(
@@ -279,6 +315,7 @@ export class AuthService {
     ipAddress?: string,
     userAgentStr?: string,
     fromCheckout = false,
+    subscription: Subscription | null = null,
   ): Promise<LoginResult> {
     void fromCheckout;
     const payload: AuthUser = {
@@ -316,6 +353,10 @@ export class AuthService {
       loginUrl,
     }).catch(() => {});
 
+    const billing = subscription
+      ? formatWorkspaceBilling(subscription.workspaceId, subscription)
+      : await this.loadBilling(membership.workspaceId);
+
     return {
       accessToken,
       refreshToken: refreshTokenValue,
@@ -330,6 +371,7 @@ export class AuthService {
         dealershipId,
         role: membership.role,
       },
+      ...(billing ? { billing } : {}),
     };
   }
 
