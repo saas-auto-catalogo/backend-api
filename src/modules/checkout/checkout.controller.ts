@@ -8,6 +8,12 @@ import {
   CreateWorkspaceStripeCheckoutSessionRequest,
 } from '../../types/checkout.js';
 import { prisma } from '../../lib/prisma.js';
+import {
+  assertRequiredAcceptances,
+  persistAcceptances,
+  CHECKOUT_REQUIRED_SLUGS,
+  LegalAcceptanceMismatchError,
+} from '../legal/legal.service.js';
 
 interface StripeWebhookRequest extends FastifyRequest {
   rawBody?: Buffer;
@@ -111,6 +117,16 @@ export async function createWorkspaceStripeCheckoutSessionHandler(
   }
 
   try {
+    await assertRequiredAcceptances(request.body.legalAcceptances, CHECKOUT_REQUIRED_SLUGS);
+    await persistAcceptances({
+      userId: user.id,
+      workspaceId,
+      items: request.body.legalAcceptances,
+      requiredSlugs: CHECKOUT_REQUIRED_SLUGS,
+      ipAddress: request.ip,
+      userAgent: request.headers['user-agent'] || '',
+    });
+
     const session = await stripePaymentService.createCheckoutSessionForWorkspace({
       workspaceId,
       customerEmail: user.email,
@@ -118,6 +134,16 @@ export async function createWorkspaceStripeCheckoutSessionHandler(
     });
     reply.status(201).send(session);
   } catch (error) {
+    if (error instanceof LegalAcceptanceMismatchError) {
+      reply.status(422).send({
+        type: 'https://autocatalogo.com.br/errors/validation-error',
+        title: 'Validation Error',
+        status: 422,
+        detail: error.message,
+        instance: request.url,
+      });
+      return;
+    }
     if (error instanceof StripePriceConfigError) {
       reply.status(503).send({
         type: 'https://autocatalogo.com.br/errors/stripe-config-error',

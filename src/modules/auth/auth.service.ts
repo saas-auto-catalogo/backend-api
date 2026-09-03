@@ -8,6 +8,12 @@ import { emailService } from '../../services/email/index.js';
 import { AuthUser } from './auth.middleware.js';
 import { subscriptionService } from '../billing/subscription.service.js';
 import { formatWorkspaceBilling, WorkspaceBillingDetails } from '../billing/billing-details.js';
+import {
+  assertRequiredAcceptances,
+  persistAcceptances,
+  REGISTER_REQUIRED_SLUGS,
+} from '../legal/legal.service.js';
+import { LegalAcceptanceItem } from '../../schemas/legal.js';
 
 const BCRYPT_COST = 12;
 const ACCESS_TOKEN_EXPIRY = '15m';
@@ -194,6 +200,7 @@ export class AuthService {
     ipAddress?: string,
     userAgentStr?: string,
     options?: { plan?: 'trial' },
+    legalAcceptances: LegalAcceptanceItem[] = [],
   ): Promise<LoginResult> {
     return this.registerNewWorkspace(
       server,
@@ -204,6 +211,7 @@ export class AuthService {
       ipAddress,
       userAgentStr,
       options,
+      legalAcceptances,
     );
   }
 
@@ -216,8 +224,11 @@ export class AuthService {
     ipAddress?: string,
     userAgentStr?: string,
     options?: { plan?: 'trial' },
+    legalAcceptances: LegalAcceptanceItem[] = [],
   ): Promise<LoginResult> {
     const normalizedEmail = email.toLowerCase().trim();
+
+    await assertRequiredAcceptances(legalAcceptances, REGISTER_REQUIRED_SLUGS);
 
     const existingUser = await prisma.user.findUnique({
       where: { email: normalizedEmail },
@@ -274,6 +285,16 @@ export class AuthService {
       const createdSubscription = options?.plan === 'trial'
         ? await subscriptionService.createTrialSubscription(workspace.id, tx)
         : null;
+
+      await persistAcceptances({
+        userId: createdUser.id,
+        workspaceId: workspace.id,
+        items: legalAcceptances,
+        requiredSlugs: REGISTER_REQUIRED_SLUGS,
+        ipAddress,
+        userAgent: userAgentStr,
+        tx,
+      });
 
       return {
         user: createdUser,

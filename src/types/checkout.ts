@@ -1,3 +1,5 @@
+import type { LegalAcceptanceItem } from '../schemas/legal.js';
+
 export type BillingInterval = 'MONTHLY' | 'YEARLY';
 export type PlanType = 'STARTER' | 'PRO' | 'ENTERPRISE';
 
@@ -54,6 +56,7 @@ export interface CreateWorkspaceStripeCheckoutSessionRequest {
   billingInterval: BillingInterval;
   successUrl: string;
   cancelUrl: string;
+  legalAcceptances: LegalAcceptanceItem[];
 }
 
 export interface CreateWorkspaceStripeCheckoutSessionParams {

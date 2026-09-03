@@ -1,5 +1,7 @@
 import { buildServer } from '../server.js';
+import { prisma } from '../lib/prisma.js';
 import { teardownIntegrationTest, resetAuthRateLimits } from './test-teardown.js';
+import { registerLegalAcceptances, withRegisterConsent } from './legal-test-helpers.js';
 
 let totalTests = 0;
 let passedTests = 0;
@@ -72,9 +74,7 @@ async function runAuthRegisterTestSuite() {
     });
     assert(resMissingWorkspace.statusCode === 422, 'workspaceName ausente retorna 422');
 
-    section('2. Cadastro com sucesso (201)');
-
-    const resRegister = await app.inject({
+    const resMissingLegal = await app.inject({
       method: 'POST',
       url: '/api/v1/auth/register',
       payload: {
@@ -83,6 +83,36 @@ async function runAuthRegisterTestSuite() {
         password,
         workspaceName: 'Revenda ABC',
       },
+    });
+    assert(resMissingLegal.statusCode === 422, 'legalAcceptances ausente retorna 422');
+
+    const legalAcceptances = await registerLegalAcceptances();
+    const resBadHash = await app.inject({
+      method: 'POST',
+      url: '/api/v1/auth/register',
+      payload: {
+        name: 'João Silva',
+        email: uniqueEmail,
+        password,
+        workspaceName: 'Revenda ABC',
+        legalAcceptances: legalAcceptances.map((item, index) =>
+          index === 0 ? { ...item, contentHash: `sha256:${'0'.repeat(64)}` } : item,
+        ),
+      },
+    });
+    assert(resBadHash.statusCode === 422, 'hash divergente retorna 422');
+
+    section('2. Cadastro com sucesso (201)');
+
+    const resRegister = await app.inject({
+      method: 'POST',
+      url: '/api/v1/auth/register',
+      payload: await withRegisterConsent({
+        name: 'João Silva',
+        email: uniqueEmail,
+        password,
+        workspaceName: 'Revenda ABC',
+      }),
     });
     assert(resRegister.statusCode === 201, `Cadastro válido retorna 201 (got ${resRegister.statusCode})`);
 
@@ -102,17 +132,23 @@ async function runAuthRegisterTestSuite() {
     assert(registerData.user?.role === 'OWNER', 'user.role é OWNER');
     assert(!!registerData.user?.dealershipId, 'user.dealershipId preenchido');
 
+    const storedAcceptances = await prisma.legalAcceptance.findMany({
+      where: { userId: registerData.user.id },
+    });
+    assert(storedAcceptances.length === 2, 'dois aceites persistidos no register');
+    assert(storedAcceptances.every((row) => !!row.ipAddress), 'aceites gravaram IP');
+
     section('3. Email duplicado (409)');
 
     const resDuplicate = await app.inject({
       method: 'POST',
       url: '/api/v1/auth/register',
-      payload: {
+      payload: await withRegisterConsent({
         name: 'Outro Usuário',
         email: uniqueEmail,
         password,
         workspaceName: 'Outra Revenda',
-      },
+      }),
     });
     assert(resDuplicate.statusCode === 409, `Email duplicado retorna 409 (got ${resDuplicate.statusCode})`);
 

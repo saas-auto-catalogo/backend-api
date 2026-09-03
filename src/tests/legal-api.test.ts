@@ -2,6 +2,7 @@ import { buildServer } from '../server.js';
 import { prisma } from '../lib/prisma.js';
 import { teardownIntegrationTest, resetAuthRateLimits } from './test-teardown.js';
 import { applyManifest } from '../modules/legal/legal-sync.service.js';
+import { withRegisterConsent } from './legal-test-helpers.js';
 
 let totalTests = 0;
 let passedTests = 0;
@@ -156,12 +157,12 @@ async function runLegalApiTests() {
     const resRegister = await app.inject({
       method: 'POST',
       url: '/api/v1/auth/register',
-      payload: {
+      payload: await withRegisterConsent({
         name: 'Legal Tester',
         email: uniqueEmail,
         password,
         workspaceName: `Revenda Legal ${suffix}`,
-      },
+      }),
     });
     assert(resRegister.statusCode === 201, `register para JWT retorna 201 (got ${resRegister.statusCode})`);
     const registerData = JSON.parse(resRegister.payload);

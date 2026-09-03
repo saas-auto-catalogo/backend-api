@@ -1,6 +1,7 @@
 import { buildServer } from '../server.js';
 import { REFRESH_TOKEN_COOKIE } from '../modules/auth/auth.cookie.js';
 import { teardownIntegrationTest, resetAuthRateLimits } from './test-teardown.js';
+import { withRegisterConsent } from './legal-test-helpers.js';
 
 let totalTests = 0;
 let passedTests = 0;
@@ -55,12 +56,12 @@ async function runAuthCookieTestSuite() {
     const resRegister = await app.inject({
       method: 'POST',
       url: '/api/v1/auth/register',
-      payload: {
+      payload: await withRegisterConsent({
         name: 'Cookie Tester',
         email: uniqueEmail,
         password,
         workspaceName: 'Revenda Cookie',
-      },
+      }),
     });
 
     if (resRegister.statusCode !== 201) {

@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { PlanType, BillingInterval } from '../types/checkout.js';
+import { legalAcceptanceItemSchema } from './legal.js';
 
 export const portalSessionSchema = z.object({
   returnUrl: z.string().url().optional()
@@ -33,6 +34,7 @@ export const createWorkspaceStripeCheckoutSessionSchema = z.object({
   billingInterval: z.enum(['MONTHLY', 'YEARLY'] as const),
   successUrl: z.string().url(),
   cancelUrl: z.string().url(),
+  legalAcceptances: z.array(legalAcceptanceItemSchema).min(1, { message: 'legalAcceptances é obrigatório' }),
 });
 
 export const checkoutSessionParamsSchema = z.object({

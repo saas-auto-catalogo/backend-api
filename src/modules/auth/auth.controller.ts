@@ -10,6 +10,7 @@ import {
   UpdateMeDTO,
 } from '../../schemas/auth.js';
 import { AuthUser } from './auth.middleware.js';
+import { LegalAcceptanceMismatchError } from '../legal/legal.service.js';
 import {
   setRefreshTokenCookie,
   clearRefreshTokenCookie,
@@ -41,31 +42,46 @@ export async function registerHandler(
   request: FastifyRequest<{ Body: RegisterDTO; Querystring: RegisterQueryDTO }>,
   reply: FastifyReply,
 ): Promise<void> {
-  const { name, email, password, workspaceName } = request.body;
+  const { name, email, password, workspaceName, legalAcceptances } = request.body;
   const { plan } = request.query;
   const ipAddress = request.ip;
   const userAgent = request.headers['user-agent'] || '';
 
-  const result = await authService.register(
-    request.server,
-    name,
-    email,
-    password,
-    workspaceName,
-    ipAddress,
-    userAgent,
-    plan === 'trial' ? { plan: 'trial' } : undefined,
-  );
+  try {
+    const result = await authService.register(
+      request.server,
+      name,
+      email,
+      password,
+      workspaceName,
+      ipAddress,
+      userAgent,
+      plan === 'trial' ? { plan: 'trial' } : undefined,
+      legalAcceptances,
+    );
 
-  setRefreshTokenCookie(reply, result.refreshToken);
+    setRefreshTokenCookie(reply, result.refreshToken);
 
-  reply.status(201).send({
-    accessToken: result.accessToken,
-    expiresIn: result.expiresIn,
-    tokenType: 'Bearer',
-    user: result.user,
-    ...(result.billing ? { billing: result.billing } : {}),
-  });
+    reply.status(201).send({
+      accessToken: result.accessToken,
+      expiresIn: result.expiresIn,
+      tokenType: 'Bearer',
+      user: result.user,
+      ...(result.billing ? { billing: result.billing } : {}),
+    });
+  } catch (err) {
+    if (err instanceof LegalAcceptanceMismatchError) {
+      reply.status(422).send({
+        type: 'https://autocatalogo.com.br/errors/validation-error',
+        title: 'Validation Error',
+        status: 422,
+        detail: err.message,
+        instance: request.url,
+      });
+      return;
+    }
+    throw err;
+  }
 }
 
 export async function refreshHandler(

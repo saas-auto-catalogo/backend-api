@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { legalAcceptanceItemSchema } from './legal.js';
 
 export const loginSchema = z.object({
   email: z.string().email({ message: 'Email invalido' }),
@@ -10,6 +11,7 @@ export const registerSchema = z.object({
   email: z.string().email({ message: 'Email invalido' }),
   password: z.string().min(8, { message: 'Password deve ter ao menos 8 caracteres' }),
   workspaceName: z.string().min(2, { message: 'Nome da revenda deve ter ao menos 2 caracteres' }).max(255),
+  legalAcceptances: z.array(legalAcceptanceItemSchema).min(1, { message: 'legalAcceptances é obrigatório' }),
 });
 
 export const registerQuerySchema = z.object({
