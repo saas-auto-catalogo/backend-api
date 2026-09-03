@@ -34,7 +34,7 @@
     "test:email": "tsx --import ./src/tests/setup-env.ts src/tests/email.test.ts",
     "test:subscription": "tsx --import ./src/tests/setup-env.ts src/tests/stripe-lifecycle.test.ts && tsx --import ./src/tests/setup-env.ts src/tests/stripe-checkout-session.test.ts && tsx --import ./src/tests/setup-env.ts src/tests/stripe-webhook-persistence.test.ts && tsx --import ./src/tests/setup-env.ts src/tests/trial-lifecycle.test.ts",
     "test:commercial": "tsx --import ./src/tests/setup-env.ts src/tests/commercial-e2e-smoke.test.ts",
-    "test:feeds": "tsx --import ./src/tests/setup-env.ts src/tests/feed-crud.test.ts && tsx --import ./src/tests/setup-env.ts src/tests/feed-validate-url.test.ts",
+    "test:feeds": "tsx --import ./src/tests/setup-env.ts src/tests/feed-crud.test.ts && tsx --import ./src/tests/setup-env.ts src/tests/feed-validate-url.test.ts && tsx --import ./src/tests/setup-env.ts src/tests/feed-ingestion.test.ts",
     "test:validate-url": "tsx --import ./src/tests/setup-env.ts src/tests/feed-validate-url.test.ts",
     "test:meta-oauth-callback": "tsx --import ./src/tests/setup-env.ts src/tests/meta-oauth-callback.test.ts",
     "test:dashboard": "tsx --import ./src/tests/setup-env.ts src/tests/dashboard-apis.test.ts",

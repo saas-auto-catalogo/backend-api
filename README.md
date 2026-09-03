@@ -79,11 +79,15 @@ npm run prisma:seed
 npm start              # http://localhost:3333
 ```
 
-Worker de sync (terminal separado):
+> **Importante:** a ingestão de feeds depende de **Redis** (fila BullMQ) **e** do **worker de sync** em um terminal separado. Sem o `worker:sync-feed` rodando, os jobs ficam `waiting`/`active` e o frontend estoura timeout no poll — o onboarding de um lojista fica preso em “Sincronizando…”.
+
+Worker de sync (terminal separado) **obrigatório** para o assíncrono funcionar:
 
 ```bash
 npm run worker:sync-feed
 ```
+
+O worker ingere feeds **XML** (SAX streaming) e **JSON** no formato `{ vehicles: [...] }` (ex.: BASE44/4boss), normaliza via `AutoMatchingEngine` e persiste com o `StockSyncService`. Se um job falhar antes ou depois do sync, o worker marca `lastSyncStatus = FAILED` no `FeedConfig` (não fica preso em `RUNNING`).
 
 ### Variáveis importantes
 
@@ -130,7 +134,7 @@ Variáveis **obrigatórias em production**: `DATABASE_URL`, `JWT_SECRET` (≥32 
 | `npm run test:auth` | Register + cookie refresh |
 | `npm run test:rbac` | Permissões por role |
 | `npm run test:profile` | Perfil de usuário e workspace/dealership |
-| `npm run test:feeds` | CRUD, validate-url e sync |
+| `npm run test:feeds` | CRUD, validate-url, ingestão JSON/XML e sync |
 | `npm run test:validate-url` | Validação de URL de feed (XML/JSON/timeout) |
 | `npm run test:dashboard` | Stats, vehicles, audit-logs, issues, activity |
 | `npm run test:db` | Validação de schema, migrations e seed |

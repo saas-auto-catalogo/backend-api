@@ -1,10 +1,15 @@
 import { Job, Worker } from 'bullmq';
+import { Readable } from 'stream';
+import { SyncStatus } from '@prisma/client';
+import { prisma } from '../../../lib/prisma.js';
 import { createRedisConnection } from '../../redis/redis-client.js';
 import { JOB_NAMES, QUEUE_NAMES, XmlIngestionJobData } from '../queue-types.js';
 import { downloadFeedStream } from '../../../modules/xml-ingestion/feed-downloader.js';
-import { XmlStreamParser } from '../../../modules/xml-ingestion/stream-parser.js';
+import { ingestFeedStream } from '../../../modules/feeds/feed-format.parser.js';
 import { AutoMatchingEngine, CanonicalVehicleOutput } from '../../../modules/normalization/auto-matching.engine.js';
 import { StockSyncService } from '../../../modules/stock-diff/stock-sync.service.js';
+
+export const INGEST_PROGRESS_CEILING = 45;
 
 export interface SyncFeedJobResult {
   syncHistoryId?: string;
@@ -22,6 +27,26 @@ function validateJobData(data: XmlIngestionJobData): void {
   }
 }
 
+async function ingestFeedStreamWithProgress(
+  stream: Readable,
+  contentType: string,
+  out: Record<string, unknown>[],
+  job: Job<XmlIngestionJobData>
+): Promise<void> {
+  const { format, rawVehicles } = await ingestFeedStream(stream, contentType);
+
+  for (const vehicle of rawVehicles) {
+    out.push(vehicle);
+    if (out.length % 50 === 0) {
+      await job.updateProgress(Math.min(10 + Math.floor(out.length / 10), INGEST_PROGRESS_CEILING));
+    }
+  }
+
+  if (format === 'unknown') {
+    throw new Error('Formato não suportado — esperado XML ou JSON no formato { vehicles: [...] }');
+  }
+}
+
 async function processSyncFeedJob(job: Job<XmlIngestionJobData>): Promise<SyncFeedJobResult> {
   const data = job.data;
   validateJobData(data);
@@ -35,15 +60,7 @@ async function processSyncFeedJob(job: Job<XmlIngestionJobData>): Promise<SyncFe
 
   const rawVehicles: Record<string, unknown>[] = [];
 
-  await XmlStreamParser.parseStream(
-    downloadResult.stream,
-    async (vehicle) => {
-      rawVehicles.push(vehicle);
-      if (rawVehicles.length % 50 === 0) {
-        await job.updateProgress(Math.min(10 + Math.floor(rawVehicles.length / 10), 45));
-      }
-    }
-  );
+  await ingestFeedStreamWithProgress(downloadResult.stream, downloadResult.contentType, rawVehicles, job);
 
   await job.updateProgress(50);
 
@@ -100,9 +117,30 @@ export function createSyncFeedWorker(concurrency: number = 2): Worker<XmlIngesti
   });
 
   worker.on('failed', (job, err) => {
+    const feedConfigId = job?.data?.feedConfigId;
+    const message = err.message || String(err);
+    const shortMessage = message.length > 255 ? `${message.slice(0, 252)}...` : message;
+
     console.error(
-      `[SyncFeedWorker] Job ${job?.id} falhou — feed ${job?.data.feedConfigId}: ${err.message}`
+      `[SyncFeedWorker] Job ${job?.id} falhou — feed ${feedConfigId}: ${message}`
     );
+
+    if (feedConfigId) {
+      prisma.feedConfig
+        .update({
+          where: { id: feedConfigId },
+          data: {
+            lastSyncAt: new Date(),
+            lastSyncStatus: SyncStatus.FAILED,
+            lastSyncMessage: `Erro na sincronização: ${shortMessage}`,
+          },
+        })
+        .catch((updateErr) => {
+          console.error(
+            `[SyncFeedWorker] Não foi possível marcar feed ${feedConfigId} como FAILED: ${(updateErr as Error).message}`
+          );
+        });
+    }
   });
 
   return worker;
