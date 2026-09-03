@@ -5,6 +5,7 @@ import { renderPaymentApprovedEmail, PaymentApprovedEmailData } from './template
 import { renderSyncFailureEmail, SyncFailureEmailData } from './templates/sync-failure.template.js';
 import { renderSubscriptionCanceledEmail, SubscriptionCanceledEmailData } from './templates/subscription-canceled.template.js';
 import { renderRenewalReminderEmail, RenewalReminderEmailData } from './templates/renewal-reminder.template.js';
+import { renderTrialEndingReminderEmail, TrialEndingReminderEmailData } from './templates/trial-ending-reminder.template.js';
 
 export interface EmailSendResult {
   success: boolean;
@@ -134,6 +135,14 @@ export class EmailService {
   public async sendRenewalReminderEmail(to: string, data: RenewalReminderEmailData): Promise<EmailSendResult> {
     const { subject, html } = renderRenewalReminderEmail(data);
     return this.send(to, subject, html, { event: 'RENEWAL_REMINDER', plan: data.planName });
+  }
+
+  public async sendTrialEndingReminderEmail(
+    to: string,
+    data: TrialEndingReminderEmailData,
+  ): Promise<EmailSendResult> {
+    const { subject, html } = renderTrialEndingReminderEmail(data);
+    return this.send(to, subject, html, { event: 'TRIAL_ENDING_REMINDER', plan: data.planName });
   }
 }
 

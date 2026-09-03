@@ -32,7 +32,7 @@
     "test:profile": "tsx --import ./src/tests/setup-env.ts src/tests/profile.test.ts",
     "test:auth": "tsx --import ./src/tests/setup-env.ts src/tests/auth-register.test.ts && tsx --import ./src/tests/setup-env.ts src/tests/auth-register-trial.test.ts && tsx --import ./src/tests/setup-env.ts src/tests/auth-cookie.test.ts && tsx --import ./src/tests/setup-env.ts src/tests/auth-onboarding.test.ts && tsx --import ./src/tests/setup-env.ts src/tests/cors-dev.test.ts",
     "test:email": "tsx --import ./src/tests/setup-env.ts src/tests/email.test.ts",
-    "test:subscription": "tsx --import ./src/tests/setup-env.ts src/tests/stripe-lifecycle.test.ts && tsx --import ./src/tests/setup-env.ts src/tests/stripe-checkout-session.test.ts && tsx --import ./src/tests/setup-env.ts src/tests/stripe-webhook-persistence.test.ts",
+    "test:subscription": "tsx --import ./src/tests/setup-env.ts src/tests/stripe-lifecycle.test.ts && tsx --import ./src/tests/setup-env.ts src/tests/stripe-checkout-session.test.ts && tsx --import ./src/tests/setup-env.ts src/tests/stripe-webhook-persistence.test.ts && tsx --import ./src/tests/setup-env.ts src/tests/trial-lifecycle.test.ts",
     "test:commercial": "tsx --import ./src/tests/setup-env.ts src/tests/commercial-e2e-smoke.test.ts",
     "test:feeds": "tsx --import ./src/tests/setup-env.ts src/tests/feed-crud.test.ts && tsx --import ./src/tests/setup-env.ts src/tests/feed-validate-url.test.ts",
     "test:validate-url": "tsx --import ./src/tests/setup-env.ts src/tests/feed-validate-url.test.ts",
@@ -40,6 +40,7 @@
     "test:dashboard": "tsx --import ./src/tests/setup-env.ts src/tests/dashboard-apis.test.ts",
     "test:ci": "npm run test:auth && npm run test:rbac && npm run test:profile && npm run test:dashboard && npm run test:feeds && npm run test:meta-oauth-callback && npm run test:db && npm run test:email && npm run test:subscription && npm run test:commercial",
     "worker:sync-feed": "tsx src/workers/start-sync-feed-worker.ts",
+    "job:trial-lifecycle": "tsx --import dotenv/config src/workers/run-trial-lifecycle.ts",
     "test:all": "npm run test:qa && npm run test:vehicles && npm run test:db && npm run test:rbac && npm run test:auth && npm run test:dashboard && npm run test:email && npm run test:subscription && npm run test:feeds"
   },
   "prisma": {

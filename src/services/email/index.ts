@@ -6,3 +6,4 @@ export * from './templates/payment-approved.template.js';
 export * from './templates/sync-failure.template.js';
 export * from './templates/subscription-canceled.template.js';
 export * from './templates/renewal-reminder.template.js';
+export * from './templates/trial-ending-reminder.template.js';

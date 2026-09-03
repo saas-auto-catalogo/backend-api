@@ -419,6 +419,7 @@ model Subscription {
   stripeSubscriptionId String?  @unique @map("stripe_subscription_id") @db.VarChar(255)
   stripePriceId        String?  @map("stripe_price_id") @db.VarChar(255)
   cancelAtPeriodEnd    Boolean  @default(false) @map("cancel_at_period_end")
+  trialReminderSentAt  DateTime? @map("trial_reminder_sent_at")
 
   workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 

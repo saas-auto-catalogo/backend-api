@@ -26,6 +26,17 @@ export function formatWorkspaceBilling(
     };
   }
 
+  if (sub.status === 'EXPIRED') {
+    return {
+      workspaceId,
+      planTier: null,
+      status: 'EXPIRED',
+      currentPeriodEnd: sub.currentPeriodEnd.toISOString(),
+      cancelAtPeriodEnd: false,
+      limits: null,
+    };
+  }
+
   const planTier = sub.planTier as PlanType;
   const planLimits = PLAN_LIMITS[planTier] || PLAN_LIMITS.PRO;
 
