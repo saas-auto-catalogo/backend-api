@@ -10,7 +10,17 @@ const FIXTURE_TITLES: Record<string, string> = {
   'termos-de-uso': 'Termos de Uso',
   'politica-de-privacidade': 'Política de Privacidade',
   'contrato-saas': 'Contrato SaaS',
+  'politica-de-cookies': 'Política de Cookies',
+  'aviso-lgpd': 'Aviso LGPD',
 };
+
+export const ALL_LEGAL_SLUGS = [
+  'termos-de-uso',
+  'politica-de-privacidade',
+  'contrato-saas',
+  'politica-de-cookies',
+  'aviso-lgpd',
+] as const;
 
 function fixtureHash(slug: string): string {
   const seed = slug.split('').reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
@@ -63,6 +73,10 @@ export async function registerLegalAcceptances(): Promise<LegalAcceptanceItem[]>
 export async function checkoutLegalAcceptances(): Promise<LegalAcceptanceItem[]> {
   const docs = await ensureCurrentDocuments(CHECKOUT_REQUIRED_SLUGS);
   return toAcceptanceItems(docs);
+}
+
+export async function ensureAllLegalDocuments() {
+  return ensureCurrentDocuments(ALL_LEGAL_SLUGS);
 }
 
 export async function withRegisterConsent<T extends Record<string, unknown>>(
