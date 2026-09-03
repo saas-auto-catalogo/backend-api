@@ -31,6 +31,7 @@ import {
   requireWorkspace,
 } from './modules/auth/index.js';
 import { registerAuthRoutes } from './modules/auth/auth.routes.js';
+import { registerLegalRoutes } from './modules/legal/index.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { validate } from './middleware/validation.js';
 import { feedParamsSchema } from './schemas/feeds.js';
@@ -110,6 +111,7 @@ export async function buildServer(): Promise<FastifyInstance> {
 
   // --- ROTAS DE AUTENTICACAO (Issue #12) ---
   await registerAuthRoutes(server);
+  await registerLegalRoutes(server);
 
   // --- ROTAS PRIVADAS AUTENTICADAS (JWT + RBAC + Multi-Tenant) ---
 

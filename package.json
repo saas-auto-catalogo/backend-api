@@ -38,9 +38,11 @@
     "test:validate-url": "tsx --import ./src/tests/setup-env.ts src/tests/feed-validate-url.test.ts",
     "test:meta-oauth-callback": "tsx --import ./src/tests/setup-env.ts src/tests/meta-oauth-callback.test.ts",
     "test:dashboard": "tsx --import ./src/tests/setup-env.ts src/tests/dashboard-apis.test.ts",
-    "test:ci": "npm run test:auth && npm run test:rbac && npm run test:profile && npm run test:dashboard && npm run test:feeds && npm run test:meta-oauth-callback && npm run test:db && npm run test:email && npm run test:subscription && npm run test:commercial",
+    "test:ci": "npm run test:auth && npm run test:rbac && npm run test:profile && npm run test:dashboard && npm run test:feeds && npm run test:meta-oauth-callback && npm run test:db && npm run test:email && npm run test:subscription && npm run test:commercial && npm run test:legal",
     "worker:sync-feed": "tsx src/workers/start-sync-feed-worker.ts",
     "job:trial-lifecycle": "tsx --import dotenv/config src/workers/run-trial-lifecycle.ts",
+    "job:legal-sync": "tsx --import dotenv/config src/workers/run-legal-sync.ts",
+    "test:legal": "tsx --import ./src/tests/setup-env.ts src/tests/legal-api.test.ts",
     "test:all": "npm run test:qa && npm run test:vehicles && npm run test:db && npm run test:rbac && npm run test:auth && npm run test:dashboard && npm run test:email && npm run test:subscription && npm run test:feeds"
   },
   "prisma": {

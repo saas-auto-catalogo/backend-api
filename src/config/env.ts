@@ -68,6 +68,7 @@ const envRecordSchema = z.object({
   RESEND_API_KEY: z.string().optional(),
   META_APP_ID: z.string().optional(),
   META_APP_SECRET: z.string().optional(),
+  LEGAL_DOCS_MANIFEST_URL: z.string().optional(),
 });
 
 export type Env = {
@@ -89,6 +90,7 @@ export type Env = {
   RESEND_API_KEY?: string;
   META_APP_ID?: string;
   META_APP_SECRET?: string;
+  LEGAL_DOCS_MANIFEST_URL?: string;
 };
 
 let cachedEnv: Env | null = null;
@@ -204,6 +206,7 @@ function normalizeEnv(raw: z.infer<typeof envRecordSchema>): Env {
     RESEND_API_KEY: raw.RESEND_API_KEY,
     META_APP_ID: raw.META_APP_ID,
     META_APP_SECRET: raw.META_APP_SECRET,
+    LEGAL_DOCS_MANIFEST_URL: raw.LEGAL_DOCS_MANIFEST_URL?.trim() || undefined,
   };
 }
 
