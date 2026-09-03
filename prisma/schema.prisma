@@ -124,6 +124,7 @@ model Workspace {
   auditLogs    AuditLog[]
   subscription Subscription?
   checkoutProvision CheckoutProvision?
+  legalAcceptances LegalAcceptance[]
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -180,9 +181,10 @@ model User {
   onboardingCompleted Boolean @default(false) @map("onboarding_completed")
   onboardingStep      Int     @default(1) @map("onboarding_step")
 
-  memberships   WorkspaceMember[]
-  auditLogs     AuditLog[]        @relation("ActorAuditLogs")
-  refreshTokens RefreshToken[]
+  memberships      WorkspaceMember[]
+  auditLogs        AuditLog[]        @relation("ActorAuditLogs")
+  refreshTokens    RefreshToken[]
+  legalAcceptances LegalAcceptance[]
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -466,4 +468,48 @@ model AdminSetting {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("admin_settings")
+}
+
+// ------------------------------------------------------------------------------
+// DOCUMENTOS JURÍDICOS E ACEITES (Issue #70)
+// ------------------------------------------------------------------------------
+
+model LegalDocument {
+  id             String   @id @default(uuid()) @db.Uuid
+  slug           String   @db.VarChar(100)
+  title          String   @db.VarChar(255)
+  version        String   @db.VarChar(20)
+  frbrWork       String   @map("frbr_work") @db.VarChar(255)
+  frbrExpression String   @map("frbr_expression") @db.VarChar(255)
+  path           String   @db.VarChar(500)
+  contentHash    String   @map("content_hash") @db.VarChar(80)
+  publishedAt    DateTime @map("published_at") @db.Date
+  isCurrent      Boolean  @default(true) @map("is_current")
+  syncedAt       DateTime @map("synced_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@unique([slug, version])
+  @@index([slug, isCurrent])
+  @@map("legal_documents")
+}
+
+model LegalAcceptance {
+  id          String    @id @default(uuid()) @db.Uuid
+  userId      String    @map("user_id") @db.Uuid
+  workspaceId String?   @map("workspace_id") @db.Uuid
+  slug        String    @db.VarChar(100)
+  version     String    @db.VarChar(20)
+  contentHash String    @map("content_hash") @db.VarChar(80)
+  acceptedAt  DateTime  @map("accepted_at")
+
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspace Workspace? @relation(fields: [workspaceId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@unique([userId, slug, version])
+  @@index([workspaceId, slug])
+  @@map("legal_acceptances")
 }

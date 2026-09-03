@@ -84,7 +84,9 @@ async function runDatabaseValidation() {
       'syncHistory',
       'subscription',
       'auditLog',
-      'adminSetting'
+      'adminSetting',
+      'legalDocument',
+      'legalAcceptance',
     ] as const;
 
     for (const model of models) {

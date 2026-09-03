@@ -97,12 +97,15 @@ npm run worker:sync-feed
 | `STRIPE_SECRET_KEY` | Chave secreta Stripe (Checkout Session real) |
 | `STRIPE_*_PRICE_ID` | Price IDs por plano/intervalo (ver `.env.example`) |
 | `STRIPE_MOCK` | Opcional — força mock mesmo com secret key |
+| `LEGAL_DOCS_MANIFEST_URL` | URL do `manifest.json` do legal-docs (opcional; default GitHub raw `main`) |
 
 Checkout autenticado: `POST /workspaces/:id/checkout/stripe/session` (OWNER+) cria Stripe Session com `metadata.workspaceId`. Retorna **409** se o workspace já tiver subscription **ACTIVE**. A rota pública `POST /checkout/stripe/session` está **deprecated** (header `Deprecation: true`).
 
 **Fluxo comercial (register-first):** `POST /auth/register` (com `workspaceName`) → login → checkout autenticado → Stripe webhook `checkout.session.completed` com `metadata.workspaceId` → `GET /workspaces/:id/billing` retorna `ACTIVE`. O webhook **não** cria workspace novo; sessões sem `workspaceId` são ignoradas. `GET /checkout/stripe/session/:id/status` retorna **410 Gone** — a success page deve consultar billing autenticado. Email pós-pagamento aponta para `/dashboard`, não `/register`.
 
 **Trial gratuito:** `POST /auth/register?plan=trial` cria subscription `TRIALING` (Pro, 14 dias, sem Stripe). Um trial por email (409 se já consumido). Register/login incluem objeto `billing` na resposta; `GET /workspaces/:id/billing` retorna `TRIALING` e limites Pro. Job diário `npm run job:trial-lifecycle` expira trials vencidos (`EXPIRED`) e envia email D-3 uma vez; em produção agendar via cron (ex.: `0 6 * * *` UTC). Upgrade durante trial via checkout autenticado converte para `ACTIVE`.
+
+**Documentos jurídicos:** `GET /legal/documents` e `GET /legal/documents/:slug` são públicos e devolvem a versão vigente (slug, version, contentHash) sincronizada do `manifest.json` do [legal-docs](https://github.com/saas-auto-catalogo/legal-docs). `POST /legal/acceptances` (JWT) registra aceite se hash/versão baterem com o vigente. Job `npm run job:legal-sync` puxa o manifest (cron sugerido `0 6 * * *` UTC). Register/checkout ainda **não** exigem aceite — isso é a issue #71. URL opcional: `LEGAL_DOCS_MANIFEST_URL`.
 
 ### Validação no boot
 
@@ -133,6 +136,7 @@ Variáveis **obrigatórias em production**: `DATABASE_URL`, `JWT_SECRET` (≥32 
 | `npm run test:db` | Validação de schema, migrations e seed |
 | `npm run test:email` | Templates e envio sandbox |
 | `npm run test:subscription` | Stripe lifecycle e billing |
+| `npm run test:legal` | Documentos jurídicos e aceites |
 | `npm run test:ci` | **Subset do CI** — auth, rbac, profile, dashboard, feeds, db, email |
 | `npm run test:all` | Suite agregada completa |
 
