@@ -140,4 +140,51 @@ export class MetaOAuthService {
       expiresInSeconds: data.expires_in || 60 * 24 * 60 * 60 // 60 dias
     };
   }
+
+  /**
+   * Emite um token de sessão temporário (30 min) assinado via HMAC contendo
+   * workspaceId e o access token de longa duração, para uso na etapa de
+   * seleção/criação de catálogo sem expor o token da Meta ao cliente.
+   */
+  generateMetaSessionToken(workspaceId: string, accessToken: string): string {
+    const timestamp = Date.now();
+    const payload = { workspaceId, accessToken, timestamp };
+    const signature = crypto
+      .createHmac('sha256', this.appSecret)
+      .update(JSON.stringify(payload))
+      .digest('hex');
+    return Buffer.from(JSON.stringify({ ...payload, signature })).toString('base64url');
+  }
+
+  /**
+   * Valida e decodifica um token de sessão Meta. Retorna o workspaceId e o
+   * access token apenas se a assinatura for válida e o token não tiver expirado.
+   */
+  verifyMetaSessionToken(token: string): {
+    isValid: boolean;
+    workspaceId?: string;
+    accessToken?: string;
+  } {
+    try {
+      const decoded = JSON.parse(Buffer.from(token, 'base64url').toString('utf-8'));
+      const { workspaceId, accessToken, timestamp, signature } = decoded;
+
+      if (Date.now() - timestamp > 30 * 60 * 1000) {
+        return { isValid: false };
+      }
+
+      const expectedSignature = crypto
+        .createHmac('sha256', this.appSecret)
+        .update(JSON.stringify({ workspaceId, accessToken, timestamp }))
+        .digest('hex');
+
+      if (signature !== expectedSignature) {
+        return { isValid: false };
+      }
+
+      return { isValid: true, workspaceId, accessToken };
+    } catch {
+      return { isValid: false };
+    }
+  }
 }

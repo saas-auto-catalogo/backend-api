@@ -8,6 +8,7 @@ import { getMetaVehiclesFeedHandler } from './modules/meta-feed/meta-feed.contro
 import {
   getMetaAuthUrlHandler,
   postMetaCallbackHandler,
+  postMetaSelectCatalogHandler,
   getMetaDiagnosticsHandler
 } from './modules/meta-connector/meta-connector.controller.js';
 import {
@@ -37,7 +38,7 @@ import { validate } from './middleware/validation.js';
 import { feedParamsSchema } from './schemas/feeds.js';
 import { createStripePixSchema, createStripeCardSchema, createStripeCheckoutSessionSchema, createWorkspaceStripeCheckoutSessionSchema, checkoutSessionParamsSchema } from './schemas/billing.js';
 import { portalSessionSchema } from './schemas/billing.js';
-import { getAuthUrlQuerySchema, postCallbackBodySchema, diagnosticsParamsSchema } from './schemas/metaConnector.js';
+import { getAuthUrlQuerySchema, postCallbackBodySchema, postSelectCatalogBodySchema, diagnosticsParamsSchema } from './schemas/metaConnector.js';
 import { workspaceParamsSchema } from './schemas/workspaces.js';
 import { getCorsOrigin } from './config/cors.js';
 import { getEnv, validateEnv } from './config/env.js';
@@ -151,6 +152,12 @@ export async function buildServer(): Promise<FastifyInstance> {
     '/api/v1/integrations/meta/callback',
     { preHandler: [authenticate, requireRole(['SUPER_ADMIN', 'OWNER']), validate(postCallbackBodySchema, 'body')] },
     async (req, reply) => postMetaCallbackHandler(req as any, reply)
+  );
+
+  server.post(
+    '/api/v1/integrations/meta/select-catalog',
+    { preHandler: [authenticate, requireRole(['SUPER_ADMIN', 'OWNER']), validate(postSelectCatalogBodySchema, 'body')] },
+    async (req, reply) => postMetaSelectCatalogHandler(req as any, reply)
   );
 
   server.get(

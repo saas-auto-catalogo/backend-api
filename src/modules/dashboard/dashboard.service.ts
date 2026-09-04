@@ -1,4 +1,4 @@
-import { FuelType, Prisma, SyncStatus, Vehicle, VehicleStatus } from '@prisma/client';
+import { FuelType, MetaCatalog, Prisma, SyncStatus, Vehicle, VehicleStatus } from '@prisma/client';
 import { prisma } from '../../lib/prisma.js';
 import type { AuditLogsQuery, ActivityQuery, VehiclesListQuery } from '../../schemas/dashboard.js';
 
@@ -590,30 +590,73 @@ export class DashboardService {
     return vehicle ? mapVehicleToDTO(vehicle) : null;
   }
 
-  async listMetaCatalogs(workspaceId: string): Promise<MetaCatalogSummary[]> {
-    const catalogs = await prisma.metaCatalog.findMany({
+  async listMetaCatalogs(workspaceId: string, baseUrl?: string): Promise<MetaCatalogSummary[]> {
+    let catalogs = await prisma.metaCatalog.findMany({
       where: { workspaceId },
       orderBy: { updatedAt: 'desc' },
     });
 
-    return catalogs.map((catalog) => {
-      const healthScore = catalog.totalVehiclesCount > 0
-        ? Math.round((catalog.eligibleVehiclesCount / catalog.totalVehiclesCount) * 1000) / 10
-        : 0;
+    if (catalogs.length === 0) {
+      const provisioned = await this.provisionMetaCatalogForWorkspace(workspaceId, baseUrl);
+      if (provisioned) {
+        catalogs = [provisioned];
+      }
+    } else if (baseUrl && catalogs.some((c) => !c.publicFeedUrl || c.publicFeedUrl.includes('localhost/'))) {
+      const feedConfig = await prisma.feedConfig.findFirst({
+        where: { workspaceId, isActive: true },
+        orderBy: { createdAt: 'asc' },
+      });
+      if (feedConfig) {
+        const correctUrl = `${baseUrl}/api/v1/feeds/${feedConfig.activeTokenHash}/meta-vehicles.xml`;
+        await prisma.metaCatalog.updateMany({
+          where: { workspaceId },
+          data: { publicFeedUrl: correctUrl },
+        });
+        catalogs = await prisma.metaCatalog.findMany({
+          where: { workspaceId },
+          orderBy: { updatedAt: 'desc' },
+        });
+      }
+    }
 
-      return {
-        id: catalog.id,
-        catalogName: catalog.catalogName,
-        metaCatalogId: catalog.metaCatalogId,
-        feedFormat: catalog.feedFormat,
-        publicFeedUrl: catalog.publicFeedUrl,
-        totalVehiclesCount: catalog.totalVehiclesCount,
-        eligibleVehiclesCount: catalog.eligibleVehiclesCount,
-        lastExportAt: catalog.lastExportAt?.toISOString() ?? null,
-        lastExportStatus: catalog.lastExportStatus,
-        healthScore,
-        dealershipId: catalog.dealershipId,
-      };
+    return catalogs.map(mapMetaCatalogToSummary);
+  }
+
+  private async provisionMetaCatalogForWorkspace(
+    workspaceId: string,
+    baseUrl?: string,
+  ): Promise<MetaCatalog | null> {
+    const feedConfig = await prisma.feedConfig.findFirst({
+      where: { workspaceId, isActive: true },
+      orderBy: { createdAt: 'asc' },
+      include: { workspace: true },
+    });
+    if (!feedConfig) return null;
+
+    const [totalVehiclesCount, eligibleVehiclesCount] = await Promise.all([
+      prisma.vehicle.count({ where: { workspaceId } }),
+      prisma.vehicle.count({ where: { workspaceId, eligibleForMetaAds: true } }),
+    ]);
+
+    const publicFeedUrl = baseUrl
+      ? `${baseUrl}/api/v1/feeds/${feedConfig.activeTokenHash}/meta-vehicles.xml`
+      : null;
+
+    const lastSyncStatus = feedConfig.lastSyncStatus ?? null;
+    const catalogName = `${feedConfig.workspace.name} - Catálogo Meta Automotive Ads`;
+
+    return prisma.metaCatalog.create({
+      data: {
+        workspaceId,
+        dealershipId: feedConfig.dealershipId,
+        catalogName,
+        feedFormat: 'XML_DAA',
+        publicFeedUrl,
+        totalVehiclesCount,
+        eligibleVehiclesCount,
+        lastExportAt: feedConfig.lastSyncAt ?? null,
+        lastExportStatus: lastSyncStatus,
+      },
     });
   }
 
@@ -743,6 +786,26 @@ export class DashboardService {
       )
       .slice(0, limit);
   }
+}
+
+function mapMetaCatalogToSummary(catalog: MetaCatalog): MetaCatalogSummary {
+  const healthScore = catalog.totalVehiclesCount > 0
+    ? Math.round((catalog.eligibleVehiclesCount / catalog.totalVehiclesCount) * 1000) / 10
+    : 0;
+
+  return {
+    id: catalog.id,
+    catalogName: catalog.catalogName,
+    metaCatalogId: catalog.metaCatalogId,
+    feedFormat: catalog.feedFormat,
+    publicFeedUrl: catalog.publicFeedUrl,
+    totalVehiclesCount: catalog.totalVehiclesCount,
+    eligibleVehiclesCount: catalog.eligibleVehiclesCount,
+    lastExportAt: catalog.lastExportAt?.toISOString() ?? null,
+    lastExportStatus: catalog.lastExportStatus,
+    healthScore,
+    dealershipId: catalog.dealershipId,
+  };
 }
 
 export const dashboardService = new DashboardService();

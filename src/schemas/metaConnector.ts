@@ -12,6 +12,15 @@ export const postCallbackBodySchema = z.object({
   catalogName: z.string().optional()
 });
 
+export const postSelectCatalogBodySchema = z.object({
+  workspaceId: z.string().uuid(),
+  metaSessionToken: z.string().min(1),
+  catalogId: z.string().min(1).optional(),
+  catalogName: z.string().min(1).optional(),
+  createNew: z.boolean().optional(),
+  businessId: z.string().min(1).optional()
+});
+
 export const diagnosticsParamsSchema = z.object({
   workspaceId: z.string().min(3),
   catalogId: z.string().min(3)

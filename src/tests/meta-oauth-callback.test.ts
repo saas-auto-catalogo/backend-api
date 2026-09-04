@@ -7,6 +7,7 @@ import {
   metaConnectorService,
   DealershipNotFoundError,
 } from '../modules/meta-connector/meta-connector.service.js';
+import { MetaOAuthService } from '../modules/meta-connector/meta-oauth.service.js';
 
 let totalTests = 0;
 let passedTests = 0;
@@ -115,6 +116,57 @@ async function runMetaOAuthCallbackTestSuite() {
       console.log('    ℹ️ Pulando teste de update no seed — banco não disponível');
     }
 
+    section('2.5 Auto-provisionamento OAuth — preenche metaCatalogId no catálogo provisionado');
+
+    const autoWs = await prisma.workspace.create({
+      data: {
+        name: 'Revenda Provisionada',
+        slug: `ws-provisioned-${Date.now()}`,
+        status: 'ACTIVE',
+      },
+    });
+
+    const provisioned = await prisma.metaCatalog.create({
+      data: {
+        workspaceId: autoWs.id,
+        catalogName: 'Revenda Provisionada - Catálogo Meta Automotive Ads',
+        metaCatalogId: null,
+        feedFormat: 'XML_DAA',
+        publicFeedUrl: 'https://api.test.local/api/v1/feeds/x/meta-vehicles.xml',
+        totalVehiclesCount: 12,
+        eligibleVehiclesCount: 9,
+      },
+    });
+    assert(provisioned.metaCatalogId === null, 'Catálogo provisionado inicia sem metaCatalogId');
+
+    const createdCatalog = {
+      id: 'meta-auto-cat-created-001',
+      name: 'Revenda Provisionada - Catálogo Meta Automotive Ads',
+      vertical: 'vehicles',
+    };
+
+    await metaConnectorService.upsertMetaCatalogFromOAuth({
+      workspaceId: autoWs.id,
+      catalogs: [createdCatalog],
+    });
+
+    const afterOAuth = await prisma.metaCatalog.findUnique({ where: { id: provisioned.id } });
+    assert(
+      afterOAuth?.metaCatalogId === 'meta-auto-cat-created-001',
+      'OAuth persiste metaCatalogId no registro provisionado',
+    );
+    assert(
+      afterOAuth?.catalogName === 'Revenda Provisionada - Catálogo Meta Automotive Ads',
+      'catalogName sincronizado com o catálogo criado na Meta',
+    );
+    assert(
+      afterOAuth?.totalVehiclesCount === 12,
+      'Contagens provisionadas preservadas após OAuth',
+    );
+
+    await prisma.metaCatalog.deleteMany({ where: { workspaceId: autoWs.id } });
+    await prisma.workspace.deleteMany({ where: { id: autoWs.id } });
+
     section('3. Workspace sem dealership — erro 404');
 
     const orphanWorkspace = await prisma.workspace.create({
@@ -138,6 +190,101 @@ async function runMetaOAuthCallbackTestSuite() {
     assert(dealershipError instanceof DealershipNotFoundError, 'Upsert sem dealership lança DealershipNotFoundError');
 
     await prisma.workspace.delete({ where: { id: orphanWorkspace.id } });
+
+    section('4. Token de sessão Meta — geração e verificação HMAC');
+
+    const testOAuthService = new MetaOAuthService();
+    const sessionToken = testOAuthService.generateMetaSessionToken(workspaceId, 'meta-long-token-abc');
+
+    const verified = testOAuthService.verifyMetaSessionToken(sessionToken);
+    assert(verified.isValid === true, 'Token de sessão válido verificado');
+    assert(verified.workspaceId === workspaceId, 'Token de sessão preserva workspaceId');
+    assert(verified.accessToken === 'meta-long-token-abc', 'Token de sessão preserva access token');
+
+    const tamperedVerification = testOAuthService.verifyMetaSessionToken('tok.tampered.invalid');
+    assert(tamperedVerification.isValid === false, 'Token adulterado é rejeitado');
+
+    const otherWsToken = testOAuthService.generateMetaSessionToken('foreign-ws-uuid', 'x');
+    const otherWsVerification = testOAuthService.verifyMetaSessionToken(otherWsToken);
+    assert(otherWsVerification.isValid === true, 'Token de outro workspace ainda é válido (HMAC ok)');
+    assert(otherWsVerification.workspaceId === 'foreign-ws-uuid', 'Token preserva workspaceId de origem');
+
+    section('5. Selecionar catálogo existente — vincula metaCatalogId via select-catalog');
+
+    const selectToken = testOAuthService.generateMetaSessionToken(workspaceId, 'meta-long-token-abc');
+
+    const resSelect = await app.inject({
+      method: 'POST',
+      url: '/api/v1/integrations/meta/select-catalog',
+      headers: { authorization: `Bearer ${accessToken}` },
+      payload: {
+        workspaceId,
+        metaSessionToken: selectToken,
+        catalogId: 'meta-listed-cat-777',
+        catalogName: 'Catálogo Selecionado pelo Lojista',
+      },
+    });
+    assert(
+      resSelect.statusCode === 200,
+      `Select catálogo existente retorna 200 (got ${resSelect.statusCode})`,
+    );
+
+    const selectData = JSON.parse(resSelect.payload);
+    assert(selectData.catalogId === 'meta-listed-cat-777', 'Select retorna catalogId vinculado');
+    assert(selectData.created === false, 'Select não marca created para catálogo existente');
+
+    const selectLinkedMeta = await prisma.metaCatalog.findFirst({
+      where: { workspaceId },
+      orderBy: { updatedAt: 'desc' },
+    });
+    assert(
+      selectLinkedMeta?.metaCatalogId === 'meta-listed-cat-777',
+      'metaCatalogId persistido no meta_catalogs após select',
+    );
+
+    const selectLinkedDealership = await prisma.dealership.findFirst({
+      where: { workspaceId },
+      orderBy: { createdAt: 'asc' },
+    });
+    assert(
+      selectLinkedDealership?.metaCatalogId === 'meta-listed-cat-777',
+      'Dealership.metaCatalogId atualizado após select',
+    );
+
+    section('6. Token de sessão inválido — 401');
+
+    const resBadToken = await app.inject({
+      method: 'POST',
+      url: '/api/v1/integrations/meta/select-catalog',
+      headers: { authorization: `Bearer ${accessToken}` },
+      payload: {
+        workspaceId,
+        metaSessionToken: 'tampered.invalid',
+        catalogId: 'x-y-z',
+      },
+    });
+    assert(
+      resBadToken.statusCode === 401,
+      `Select com token inválido retorna 401 (got ${resBadToken.statusCode})`,
+    );
+
+    section('7. Criar catálogo sem businessId — erro 400');
+
+    const resCreateNoBiz = await app.inject({
+      method: 'POST',
+      url: '/api/v1/integrations/meta/select-catalog',
+      headers: { authorization: `Bearer ${accessToken}` },
+      payload: {
+        workspaceId,
+        metaSessionToken: selectToken,
+        createNew: true,
+        catalogName: 'Novo Catálogo de Veículos',
+      },
+    });
+    assert(
+      resCreateNoBiz.statusCode === 400,
+      `Create sem businessId retorna 400 (got ${resCreateNoBiz.statusCode})`,
+    );
   } finally {
     await app.close();
     await teardownIntegrationTest();

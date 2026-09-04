@@ -54,7 +54,9 @@ export async function listMetaCatalogsHandler(
   reply: FastifyReply,
 ): Promise<void> {
   const { workspaceId } = request.params;
-  const catalogs = await dashboardService.listMetaCatalogs(workspaceId);
+  const host = request.headers.host || request.hostname;
+  const baseUrl = `${request.protocol}://${host}`;
+  const catalogs = await dashboardService.listMetaCatalogs(workspaceId, baseUrl);
   return reply.status(200).send({ catalogs });
 }
 
