@@ -132,6 +132,7 @@ async function runCorsDevTestSuite() {
 
   const savedNodeEnv = process.env.NODE_ENV;
   const savedFrontendUrl = process.env.FRONTEND_URL;
+  const savedCorsOrigins = process.env.CORS_ORIGINS;
   const savedDatabaseUrl = process.env.DATABASE_URL;
   const savedJwtSecret = process.env.JWT_SECRET;
   const savedRedisUrl = process.env.REDIS_URL;
@@ -140,6 +141,7 @@ async function runCorsDevTestSuite() {
 
   process.env.NODE_ENV = 'production';
   process.env.FRONTEND_URL = 'http://app.example.com';
+  process.env.CORS_ORIGINS = 'http://admin.example.com,https://drivesync.me';
   process.env.DATABASE_URL = 'postgresql://postgres:postgres@localhost:5432/auto_catalogo_db?schema=public';
   process.env.JWT_SECRET = 'production-jwt-secret-minimum-32-characters';
   process.env.REDIS_URL = 'redis://localhost:6379';
@@ -170,6 +172,21 @@ async function runCorsDevTestSuite() {
       `got ${getAllowOrigin(prodAllowed.headers)}`
     );
 
+    const prodExtra = await prodApp.inject({
+      method: 'OPTIONS',
+      url: '/api/v1/auth/register',
+      headers: {
+        origin: 'http://admin.example.com',
+        'access-control-request-method': 'POST',
+        'access-control-request-headers': 'content-type',
+      },
+    });
+    assert(
+      getAllowOrigin(prodExtra.headers) === 'http://admin.example.com',
+      'Production OPTIONS CORS_ORIGINS extra reflete Allow-Origin',
+      `got ${getAllowOrigin(prodExtra.headers)}`
+    );
+
     const prodBlocked = await prodApp.inject({
       method: 'OPTIONS',
       url: '/api/v1/auth/register',
@@ -195,6 +212,11 @@ async function runCorsDevTestSuite() {
       delete process.env.FRONTEND_URL;
     } else {
       process.env.FRONTEND_URL = savedFrontendUrl;
+    }
+    if (savedCorsOrigins === undefined) {
+      delete process.env.CORS_ORIGINS;
+    } else {
+      process.env.CORS_ORIGINS = savedCorsOrigins;
     }
     if (savedDatabaseUrl === undefined) {
       delete process.env.DATABASE_URL;
