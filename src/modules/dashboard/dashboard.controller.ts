@@ -8,7 +8,7 @@ export async function getDashboardStatsHandler(
 ): Promise<void> {
   const { workspaceId } = request.params;
   const stats = await dashboardService.getStats(workspaceId);
-  reply.status(200).send(stats);
+  return reply.status(200).send(stats);
 }
 
 export async function listVehiclesHandler(
@@ -17,7 +17,16 @@ export async function listVehiclesHandler(
 ): Promise<void> {
   const { workspaceId } = request.params;
   const result = await dashboardService.listVehicles(workspaceId, request.query);
-  reply.status(200).send(result);
+  return reply.status(200).send(result);
+}
+
+export async function listVehicleMakesHandler(
+  request: FastifyRequest<{ Params: { workspaceId: string } }>,
+  reply: FastifyReply,
+): Promise<void> {
+  const { workspaceId } = request.params;
+  const makes = await dashboardService.listVehicleMakes(workspaceId);
+  return reply.status(200).send({ makes });
 }
 
 export async function getVehicleByIdHandler(
@@ -28,17 +37,16 @@ export async function getVehicleByIdHandler(
   const vehicle = await dashboardService.getVehicleById(workspaceId, vehicleId);
 
   if (!vehicle) {
-    reply.status(404).send({
+    return reply.status(404).send({
       type: 'https://autocatalogo.com.br/errors/not-found',
       title: 'Veiculo Nao Encontrado',
       status: 404,
       detail: `O veiculo com identificador "${vehicleId}" nao foi encontrado neste workspace.`,
       instance: request.url,
     });
-    return;
   }
 
-  reply.status(200).send(vehicle);
+  return reply.status(200).send(vehicle);
 }
 
 export async function listMetaCatalogsHandler(
@@ -47,7 +55,7 @@ export async function listMetaCatalogsHandler(
 ): Promise<void> {
   const { workspaceId } = request.params;
   const catalogs = await dashboardService.listMetaCatalogs(workspaceId);
-  reply.status(200).send({ catalogs });
+  return reply.status(200).send({ catalogs });
 }
 
 export async function listAuditLogsHandler(
@@ -56,7 +64,7 @@ export async function listAuditLogsHandler(
 ): Promise<void> {
   const { workspaceId } = request.params;
   const result = await dashboardService.listAuditLogs(workspaceId, request.query);
-  reply.status(200).send(result);
+  return reply.status(200).send(result);
 }
 
 export async function listDashboardIssuesHandler(
@@ -65,7 +73,7 @@ export async function listDashboardIssuesHandler(
 ): Promise<void> {
   const { workspaceId } = request.params;
   const items = await dashboardService.listDashboardIssues(workspaceId);
-  reply.status(200).send({ items });
+  return reply.status(200).send({ items });
 }
 
 export async function listDashboardActivityHandler(
@@ -74,5 +82,5 @@ export async function listDashboardActivityHandler(
 ): Promise<void> {
   const { workspaceId } = request.params;
   const events = await dashboardService.listDashboardActivity(workspaceId, request.query);
-  reply.status(200).send({ events });
+  return reply.status(200).send({ events });
 }
