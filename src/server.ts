@@ -5,6 +5,7 @@ import cors from '@fastify/cors';
 import compress from '@fastify/compress';
 import cookie from '@fastify/cookie';
 import fastifyJwt from '@fastify/jwt';
+import { Sentry } from './instrument.js';
 import { getMetaVehiclesFeedHandler } from './modules/meta-feed/meta-feed.controller.js';
 import {
   getMetaAuthUrlHandler,
@@ -202,12 +203,18 @@ export async function buildServer(): Promise<FastifyInstance> {
 export async function startServer(port: number = 3333, host: string = '0.0.0.0') {
   validateEnv();
   const server = await buildServer();
+  Sentry.setupFastifyErrorHandler(server);
 
   try {
     const address = await server.listen({ port, host });
     console.log(`SaaS Auto Catalogo Backend API rodando em ${address}`);
+    if (process.env.SENTRY_SEND_TEST_EVENT === 'true') {
+      Sentry.captureMessage('drivesync-backend sentry smoke test', 'info');
+      await Sentry.flush(2000);
+    }
     return server;
   } catch (err) {
+    Sentry.captureException(err);
     server.log.error(err);
     process.exit(1);
   }
