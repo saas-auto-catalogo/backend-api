@@ -5,6 +5,7 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  workflow_dispatch:
 
 jobs:
   unit:
@@ -134,3 +135,28 @@ jobs:
 
       - name: Integration test suite
         run: npm run test:ci
+
+  deploy:
+    name: deploy-vps
+    needs: [unit, integration]
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy API over SSH
+        uses: appleboy/ssh-action@v1.2.2
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          fingerprint: SHA256:tl/ekv9wlq8ZVT96lSC3EuR3qrHkv64AzWp4Y0t7WVs
+          script_stop: true
+          command_timeout: 20m
+          script: |
+            /opt/autocatalogo/scripts/deploy-api.sh
+
+      - name: HTTPS health check
+        run: |
+          set -euo pipefail
+          curl -fsS https://api.drivesync.me/health
+          echo
+          echo "HEALTH_OK"
