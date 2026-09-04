@@ -1,4 +1,5 @@
 import 'dotenv/config';
+import { Readable } from 'node:stream';
 import Fastify, { FastifyInstance } from 'fastify';
 import cors from '@fastify/cors';
 import compress from '@fastify/compress';
@@ -86,7 +87,8 @@ export async function buildServer(): Promise<FastifyInstance> {
     }
     const rawBody = Buffer.concat(chunks);
     (request as { rawBody?: Buffer }).rawBody = rawBody;
-    return rawBody;
+    // Fastify expects a Readable stream from preParsing (Buffer breaks setEncoding).
+    return Readable.from(rawBody);
   });
 
   // --- ROTAS PUBLICAS ---
@@ -110,7 +112,10 @@ export async function buildServer(): Promise<FastifyInstance> {
     { preHandler: [validate(checkoutSessionParamsSchema, 'params')] },
     async (req, reply) => getStripeCheckoutSessionStatusHandler(req as any, reply),
   );
-  server.post('/api/v1/webhooks/stripe', stripeWebhookHandler);
+  server.post('/api/v1/webhooks/stripe', {
+    config: { rawBody: true },
+    compress: false,
+  }, stripeWebhookHandler);
 
   // --- ROTAS DE AUTENTICACAO (Issue #12) ---
   await registerAuthRoutes(server);
