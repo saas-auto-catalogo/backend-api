@@ -1,3 +1,5 @@
+import 'dotenv/config';
+import './instrument.js';
 import { startServer } from './server.js';
 
 const port = parseInt(process.env.PORT || '3333', 10);

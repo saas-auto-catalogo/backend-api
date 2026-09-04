@@ -1,10 +1,14 @@
 import { FastifyReply, FastifyRequest } from 'fastify';
+import { Sentry } from '../instrument.js';
 
 export function errorHandler(error: any, request: FastifyRequest, reply: FastifyReply) {
   // If an error includes a structured Problem Details object, use it
   if (error && typeof error === 'object' && error.problem) {
     const problem = error.problem;
     const status = error.statusCode || problem.status || 500;
+    if (status >= 500) {
+      Sentry.captureException(error);
+    }
     reply.status(status).send(problem);
     return;
   }
@@ -44,6 +48,7 @@ export function errorHandler(error: any, request: FastifyRequest, reply: Fastify
   }
 
   // Fallback: 500 Internal Server Error
+  Sentry.captureException(error);
   const problem = {
     type: 'https://autocatalogo.com.br/errors/internal-server-error',
     title: 'Internal Server Error',
