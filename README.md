@@ -1,5 +1,7 @@
 # SaaS Auto Catálogo — Backend API
 
+[![CI](https://github.com/saas-auto-catalogo/backend-api/actions/workflows/ci.yml/badge.svg)](https://github.com/saas-auto-catalogo/backend-api/actions/workflows/ci.yml)
+
 Core da plataforma SaaS multi-tenant: ingestão de inventário automotivo, diffs de estoque, feeds XML Meta DAA, autenticação JWT, dashboard workspace-scoped e billing Stripe.
 
 **Wiki:** [backend-api](https://github.com/saas-auto-catalogo/.github/blob/main/docs/wiki/backend-api.md) · [Roadmap](https://github.com/saas-auto-catalogo/.github/blob/main/docs/wiki/roadmap.md)
