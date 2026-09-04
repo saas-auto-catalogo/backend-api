@@ -41,6 +41,12 @@ export const checkoutSessionParamsSchema = z.object({
   sessionId: z.string().min(1, { message: 'sessionId é obrigatório' }),
 });
 
+export const listInvoicesQuerySchema = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(100).default(10),
+});
+export type ListInvoicesQueryDTO = z.infer<typeof listInvoicesQuerySchema>;
+
 export type CreateStripePixDTO = z.infer<typeof createStripePixSchema>;
 export type CreateStripeCardDTO = z.infer<typeof createStripeCardSchema>;
 export type CreateStripeCheckoutSessionDTO = z.infer<typeof createStripeCheckoutSessionSchema>;

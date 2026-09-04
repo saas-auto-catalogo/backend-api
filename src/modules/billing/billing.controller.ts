@@ -2,6 +2,11 @@ import { FastifyRequest, FastifyReply } from 'fastify';
 import { stripePaymentService } from '../../services/payments/stripePaymentService.js';
 import { prisma } from '../../lib/prisma.js';
 import { formatWorkspaceBilling } from './billing-details.js';
+import type { ListInvoicesQueryDTO } from '../../schemas/billing.js';
+
+interface BillingInvoicesParams {
+  workspaceId: string;
+}
 
 export async function createStripePortalSessionHandler(
   request: FastifyRequest<{ Body: { returnUrl?: string } }>,
@@ -47,4 +52,26 @@ export async function getWorkspaceBillingDetailsHandler(
   });
 
   return reply.send(formatWorkspaceBilling(workspaceId, sub));
+}
+
+export async function getWorkspaceBillingInvoicesHandler(
+  request: FastifyRequest<{ Params: BillingInvoicesParams; Querystring: ListInvoicesQueryDTO }>,
+  reply: FastifyReply
+) {
+  const { workspaceId } = request.params;
+  const { page, limit } = request.query;
+
+  const sub = await prisma.subscription.findUnique({
+    where: { workspaceId },
+  });
+
+  if (!sub?.stripeCustomerId) {
+    return reply.send({
+      items: [],
+      pagination: { total: 0, page, limit, totalPages: 0 },
+    });
+  }
+
+  const result = await stripePaymentService.listInvoices(sub.stripeCustomerId, { page, limit });
+  return reply.send(result);
 }
