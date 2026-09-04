@@ -122,6 +122,41 @@ async function runDashboardApiTests() {
     });
     assert(resVehicle404.statusCode === 404, 'Veículo inexistente retorna 404');
 
+    const resMakes = await app.inject({
+
+      method: 'GET',
+
+      url: `/api/v1/workspaces/${workspaceA}/vehicles/makes`,
+
+      headers: { authorization: `Bearer ${tokenOwnerA}` },
+
+    });
+
+    assert(resMakes.statusCode === 200, 'Lista marcas do workspace (200)');
+
+    const makesPayload = JSON.parse(resMakes.payload);
+
+    assert(Array.isArray(makesPayload.makes), 'Resposta de marcas contem array makes');
+
+    assert(makesPayload.makes.every((m: unknown) => typeof m === 'string'), 'Marcas sao strings');
+
+    const resHybrid = await app.inject({
+
+      method: 'GET',
+
+      url: `/api/v1/workspaces/${workspaceA}/vehicles?fuelType=HYBRID_EV&limit=5`,
+
+      headers: { authorization: `Bearer ${tokenOwnerA}` },
+
+    });
+
+    assert(resHybrid.statusCode === 200, 'Filtro HYBRID_EV retorna 200');
+
+    const hybridPayload = JSON.parse(resHybrid.payload);
+
+    assert(Array.isArray(hybridPayload.items), 'Filtro HYBRID_EV retorna items');
+
+
     section('3. Meta Catalogs');
 
     const resCatalogs = await app.inject({

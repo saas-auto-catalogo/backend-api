@@ -20,6 +20,7 @@ import {
   listDashboardIssuesHandler,
   listMetaCatalogsHandler,
   listVehiclesHandler,
+  listVehicleMakesHandler,
 } from './dashboard.controller.js';
 
 export async function registerDashboardRoutes(server: FastifyInstance): Promise<void> {
@@ -33,7 +34,7 @@ export async function registerDashboardRoutes(server: FastifyInstance): Promise<
         validate(workspaceParamsSchema, 'params'),
       ],
     },
-    async (req, reply) => getDashboardStatsHandler(req as any, reply),
+    (req, reply) => getDashboardStatsHandler(req as any, reply),
   );
 
   server.get(
@@ -46,7 +47,7 @@ export async function registerDashboardRoutes(server: FastifyInstance): Promise<
         validate(workspaceParamsSchema, 'params'),
       ],
     },
-    async (req, reply) => listDashboardIssuesHandler(req as any, reply),
+    (req, reply) => listDashboardIssuesHandler(req as any, reply),
   );
 
   server.get(
@@ -60,7 +61,7 @@ export async function registerDashboardRoutes(server: FastifyInstance): Promise<
         validate(activityQuerySchema, 'query'),
       ],
     },
-    async (req, reply) => listDashboardActivityHandler(req as any, reply),
+    (req, reply) => listDashboardActivityHandler(req as any, reply),
   );
 
   server.get(
@@ -74,7 +75,20 @@ export async function registerDashboardRoutes(server: FastifyInstance): Promise<
         validate(vehiclesListQuerySchema, 'query'),
       ],
     },
-    async (req, reply) => listVehiclesHandler(req as any, reply),
+    (req, reply) => listVehiclesHandler(req as any, reply),
+  );
+
+  server.get(
+    '/api/v1/workspaces/:workspaceId/vehicles/makes',
+    {
+      preHandler: [
+        authenticate,
+        requireWorkspace,
+        requirePermission('VEHICLES_VIEW'),
+        validate(workspaceParamsSchema, 'params'),
+      ],
+    },
+    (req, reply) => listVehicleMakesHandler(req as any, reply),
   );
 
   server.get(
@@ -87,7 +101,7 @@ export async function registerDashboardRoutes(server: FastifyInstance): Promise<
         validate(vehicleIdParamsSchema, 'params'),
       ],
     },
-    async (req, reply) => getVehicleByIdHandler(req as any, reply),
+    (req, reply) => getVehicleByIdHandler(req as any, reply),
   );
 
   server.get(
@@ -100,7 +114,7 @@ export async function registerDashboardRoutes(server: FastifyInstance): Promise<
         validate(workspaceParamsSchema, 'params'),
       ],
     },
-    async (req, reply) => listMetaCatalogsHandler(req as any, reply),
+    (req, reply) => listMetaCatalogsHandler(req as any, reply),
   );
 
   server.get(
@@ -114,6 +128,6 @@ export async function registerDashboardRoutes(server: FastifyInstance): Promise<
         validate(auditLogsQuerySchema, 'query'),
       ],
     },
-    async (req, reply) => listAuditLogsHandler(req as any, reply),
+    (req, reply) => listAuditLogsHandler(req as any, reply),
   );
 }

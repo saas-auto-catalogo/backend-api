@@ -1,4 +1,4 @@
-import { Prisma, SyncStatus, Vehicle, VehicleStatus } from '@prisma/client';
+import { FuelType, Prisma, SyncStatus, Vehicle, VehicleStatus } from '@prisma/client';
 import { prisma } from '../../lib/prisma.js';
 import type { AuditLogsQuery, ActivityQuery, VehiclesListQuery } from '../../schemas/dashboard.js';
 
@@ -41,6 +41,7 @@ export interface VehicleDTO {
   color?: string;
   doors?: number;
   imageUrl: string;
+  heroImageUrl?: string;
   status: VehicleStatus;
   armored?: boolean;
   hasWarranty?: boolean;
@@ -240,6 +241,7 @@ function mapVehicleToDTO(vehicle: Vehicle): VehicleDTO {
     color: vehicle.exteriorColor || undefined,
     doors: vehicle.doors,
     imageUrl: vehicle.heroImageUrl,
+    heroImageUrl: vehicle.heroImageUrl,
     status: vehicle.status,
     armored: vehicle.armored,
     hasWarranty: vehicle.hasWarranty,
@@ -500,8 +502,33 @@ export class DashboardService {
     }
 
     if (query.fuelType) {
-      const fuel = query.fuelType.toUpperCase().replace(/\s+/g, '_') as Vehicle['fuelType'];
-      where.fuelType = fuel;
+
+      const fuel = query.fuelType.toUpperCase().replace(/\s+/g, '_');
+
+      if (fuel === 'HYBRID_EV') {
+
+        where.fuelType = {
+
+          in: [
+
+            FuelType.HIBRIDO,
+
+            FuelType.HIBRIDO_PLUG_IN,
+
+            FuelType.MHEV_HIBRIDO_LEVE,
+
+            FuelType.ELETRICO,
+
+          ],
+
+        };
+
+      } else if (Object.values(FuelType).includes(fuel as FuelType)) {
+
+        where.fuelType = fuel as Vehicle['fuelType'];
+
+      }
+
     }
 
     if (query.status) {
@@ -535,6 +562,24 @@ export class DashboardService {
       items: vehicles.map(mapVehicleToDTO),
       pagination: buildPagination(total, query.page, query.limit),
     };
+  }
+
+  async listVehicleMakes(workspaceId: string): Promise<string[]> {
+
+    const rows = await prisma.vehicle.findMany({
+
+      where: { workspaceId },
+
+      distinct: ['make'],
+
+      orderBy: { make: 'asc' },
+
+      select: { make: true },
+
+    });
+
+    return rows.map((row) => row.make);
+
   }
 
   async getVehicleById(workspaceId: string, vehicleId: string): Promise<VehicleDTO | null> {
