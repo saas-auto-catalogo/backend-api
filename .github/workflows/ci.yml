@@ -148,10 +148,10 @@ jobs:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
-          fingerprint: SHA256:tl/ekv9wlq8ZVT96lSC3EuR3qrHkv64AzWp4Y0t7WVs
-          script_stop: true
+          fingerprint: SHA256:Y2xt7oRzNaWivQcaxk3a9G4YuUWE0aEsuGhjcYeqR8k
           command_timeout: 20m
           script: |
+            set -euo pipefail
             /opt/autocatalogo/scripts/deploy-api.sh
 
       - name: HTTPS health check
