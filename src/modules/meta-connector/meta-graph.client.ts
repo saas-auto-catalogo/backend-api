@@ -10,6 +10,8 @@ export interface MetaCatalogItem {
   vertical?: string;
   productCount?: number;
   feedCount?: number;
+  businessId?: string;
+  businessName?: string;
 }
 
 export interface CatalogDiagnosticIssue {
@@ -77,6 +79,25 @@ export class MetaGraphApiClient {
   }
 
   /**
+   * Obtém os catálogos associados diretamente ao usuário autenticado (fallback
+   * quando o usuário não possui contas de Business Manager via `/me/businesses`).
+   */
+  async getUserCatalogs(accessToken: string): Promise<MetaCatalogItem[]> {
+    const res = await this.request<{ data: any[] }>(
+      '/me/product_catalogs?fields=id,name,vertical,product_count,feed_count',
+      accessToken
+    );
+
+    return (res.data || []).map((c) => ({
+      id: c.id,
+      name: c.name,
+      vertical: c.vertical,
+      productCount: c.product_count,
+      feedCount: c.feed_count
+    }));
+  }
+
+  /**
    * Obtém os catálogos associados a uma conta de Business Manager.
    */
   async getOwnedCatalogs(businessId: string, accessToken: string): Promise<MetaCatalogItem[]> {
@@ -104,6 +125,27 @@ export class MetaGraphApiClient {
         name: catalogName,
         vertical: 'vehicles'
       })
+    });
+  }
+
+  /**
+   * Cria/registra programaticamente uma Fonte de Dados de Feed (XML/CSV) no catálogo da Meta.
+   */
+  async createProductFeed(
+    catalogId: string,
+    feedName: string,
+    feedUrl: string,
+    accessToken: string,
+  ): Promise<{ id: string }> {
+    return this.request<{ id: string }>(`/${catalogId}/product_feeds`, accessToken, {
+      method: 'POST',
+      body: JSON.stringify({
+        name: feedName,
+        schedule: JSON.stringify({
+          interval: 'HOURLY',
+          url: feedUrl,
+        }),
+      }),
     });
   }
 

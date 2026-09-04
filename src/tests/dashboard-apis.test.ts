@@ -1,6 +1,7 @@
-import { buildServer } from '../server.js';
+﻿import { buildServer } from '../server.js';
 import { AuthUser } from '../modules/auth/auth.middleware.js';
 import { prisma } from '../lib/prisma.js';
+import { dashboardService } from '../modules/dashboard/dashboard.service.js';
 import { closeAllQueues } from '../infra/queues/queue-manager.js';
 import { redisClient } from '../infra/redis/redis-client.js';
 
@@ -167,6 +168,48 @@ async function runDashboardApiTests() {
     assert(resCatalogs.statusCode === 200, 'Viewer lista meta-catalogs');
     const catalogsPayload = JSON.parse(resCatalogs.payload);
     assert(Array.isArray(catalogsPayload.catalogs), 'Resposta contém array catalogs');
+
+    // Auto-provisionamento: workspace com feed ativo e sem catálogo ganha catálogo com publicFeedUrl
+    const createdWs = await prisma.workspace.create({
+      data: {
+        name: 'Provision Test Revenda',
+        slug: `provision-ws-${Date.now()}`,
+      },
+    });
+    const provisionWsId = createdWs.id;
+    const provisionToken = `prov-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+    await prisma.feedConfig.create({
+      data: {
+        workspaceId: provisionWsId,
+        sourceType: 'AUTOCERTO',
+        feedUrl: 'https://dms.example.com/feed.xml',
+        activeTokenHash: provisionToken,
+        tokenSalt: 'salt',
+      },
+    });
+
+    const provisioned = await dashboardService.listMetaCatalogs(provisionWsId, 'https://api.test.local');
+    assert(provisioned.length >= 1, 'Workspace com feed ativo provisão catálogo Meta automaticamente');
+    const provisionedFirst = provisioned[0];
+    assert(
+      provisionedFirst.publicFeedUrl === `https://api.test.local/api/v1/feeds/${provisionToken}/meta-vehicles.xml`,
+      'Catálogo provisionado possui publicFeedUrl do feed XML Atom DAA',
+    );
+    assert(provisionedFirst.feedFormat === 'XML_DAA', 'Catálogo provisionado usa feedFormat XML_DAA');
+    assert(typeof provisionedFirst.totalVehiclesCount === 'number', 'Catálogo provisionado expõe totalVehiclesCount');
+
+    // Persistência: chamada subsequente reutiliza o catálogo provisionado
+    const secondCall = await dashboardService.listMetaCatalogs(provisionWsId, 'https://api.test.local');
+    assert(secondCall.length === 1, 'Catálogo provisionado é persistido entre consultas');
+    assert(
+      secondCall[0].publicFeedUrl === provisionedFirst.publicFeedUrl,
+      'publicFeedUrl estável entre consultas subsequentes',
+    );
+
+    await prisma.metaCatalog.deleteMany({ where: { workspaceId: provisionWsId } });
+    await prisma.feedConfig.deleteMany({ where: { workspaceId: provisionWsId } });
+    await prisma.workspace.deleteMany({ where: { id: provisionWsId } });
+
 
     section('4. Audit Logs (RBAC)');
 

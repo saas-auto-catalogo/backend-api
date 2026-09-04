@@ -1,4 +1,4 @@
-import { PrismaClient, VehicleStatus, SyncStatus, BodyStyle, FuelType, TransmissionType, VehicleCondition } from '@prisma/client';
+﻿import { PrismaClient, VehicleStatus, SyncStatus, BodyStyle, FuelType, TransmissionType, VehicleCondition } from '@prisma/client';
 import { prisma as defaultPrisma } from '../../lib/prisma.js';
 import { feedCacheService } from '../../infra/cache/feed-cache.service.js';
 import { CanonicalVehicleOutput } from '../normalization/index.js';
@@ -198,6 +198,21 @@ export class StockSyncService {
         }
       });
 
+
+      // 5.5 Mantém o MetaCatalog com contagens de estoque e exportação atualizadas
+      const [totalVehiclesCount, eligibleVehiclesCount] = await Promise.all([
+        prisma.vehicle.count({ where: { workspaceId } }),
+        prisma.vehicle.count({ where: { workspaceId, eligibleForMetaAds: true } }),
+      ]);
+      await prisma.metaCatalog.updateMany({
+        where: { workspaceId },
+        data: {
+          totalVehiclesCount,
+          eligibleVehiclesCount,
+          lastExportAt: new Date(),
+          lastExportStatus: syncStatus,
+        },
+      });
       // 6. Invalidação de Cache Redis se houve mutações no estoque
       let cacheInvalidated = false;
       const hasMutations = diff.totalCreated > 0 || diff.totalUpdated > 0 || diff.totalRemoved > 0;
