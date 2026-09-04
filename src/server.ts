@@ -21,7 +21,8 @@ import {
 } from './modules/checkout/checkout.controller.js';
 import {
   createStripePortalSessionHandler,
-  getWorkspaceBillingDetailsHandler
+  getWorkspaceBillingDetailsHandler,
+  getWorkspaceBillingInvoicesHandler
 } from './modules/billing/billing.controller.js';
 import { registerFeedRoutes } from './modules/feeds/feed.routes.js';
 import { registerDashboardRoutes } from './modules/dashboard/index.js';
@@ -38,6 +39,7 @@ import { validate } from './middleware/validation.js';
 import { feedParamsSchema } from './schemas/feeds.js';
 import { createStripePixSchema, createStripeCardSchema, createStripeCheckoutSessionSchema, createWorkspaceStripeCheckoutSessionSchema, checkoutSessionParamsSchema } from './schemas/billing.js';
 import { portalSessionSchema } from './schemas/billing.js';
+import { listInvoicesQuerySchema } from './schemas/billing.js';
 import { getAuthUrlQuerySchema, postCallbackBodySchema, postSelectCatalogBodySchema, diagnosticsParamsSchema } from './schemas/metaConnector.js';
 import { workspaceParamsSchema } from './schemas/workspaces.js';
 import { getCorsOrigin } from './config/cors.js';
@@ -126,6 +128,20 @@ export async function buildServer(): Promise<FastifyInstance> {
     '/api/v1/workspaces/:workspaceId/billing',
     { preHandler: [authenticate, requireWorkspace, requireRole(['SUPER_ADMIN', 'OWNER', 'MANAGER', 'VIEWER']), validate(workspaceParamsSchema, 'params')] },
     async (req, reply) => getWorkspaceBillingDetailsHandler(req as any, reply)
+  );
+
+  server.get(
+    '/api/v1/workspaces/:workspaceId/billing/invoices',
+    {
+      preHandler: [
+        authenticate,
+        requireWorkspace,
+        requireRole(['SUPER_ADMIN', 'OWNER']),
+        validate(workspaceParamsSchema, 'params'),
+        validate(listInvoicesQuerySchema, 'query'),
+      ],
+    },
+    async (req, reply) => getWorkspaceBillingInvoicesHandler(req as any, reply)
   );
 
   server.post(
