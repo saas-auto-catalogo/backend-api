@@ -154,6 +154,9 @@ jobs:
           script: |
             set -euo pipefail
             /opt/autocatalogo/scripts/deploy-api.sh
+            # Keep legal_documents current after every release (register/checkout depend on it).
+            cd /opt/autocatalogo/backend-api
+            npm run job:legal-sync
 
       - name: HTTPS health check
         run: |
