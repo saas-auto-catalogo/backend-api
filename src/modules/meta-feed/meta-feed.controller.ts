@@ -8,8 +8,12 @@ interface FeedParams {
   token: string;
 }
 
+interface FeedQuery {
+  refresh?: string;
+}
+
 export async function getMetaVehiclesFeedHandler(
-  request: FastifyRequest<{ Params: FeedParams }>,
+  request: FastifyRequest<{ Params: FeedParams; Querystring: FeedQuery }>,
   reply: FastifyReply
 ) {
   const startTime = Date.now();
@@ -26,7 +30,13 @@ export async function getMetaVehiclesFeedHandler(
   // 1. Consulta no Cache Distribuído Redis
   const cacheEntry = await feedCacheService.getFeedXml(token);
 
-  if (cacheEntry) {
+  // Auto-invalidação de cache legado: se o XML armazenado em cache ainda for o Atom antigo
+  // (sem a tag raiz RSS 2.0) ou se for requisitado refresh explícito via ?refresh=true,
+  // ignoramos o cache antigo e forçamos a regeneração imediata em RSS 2.0.
+  const isLegacyFeed = Boolean(cacheEntry && !cacheEntry.xml.includes('<rss version="2.0"'));
+  const forceRefresh = Boolean(request.query?.refresh);
+
+  if (cacheEntry && !isLegacyFeed && !forceRefresh) {
     // Resposta condicional 304 Not Modified
     if (clientEtag && clientEtag === cacheEntry.etag) {
       return reply
