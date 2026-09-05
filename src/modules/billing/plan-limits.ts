@@ -21,8 +21,8 @@ export const PLAN_LIMITS: Record<PlanType, PlanConfig> = {
     maxMetaCatalogs: 1,
     hasAiBlogWorker: false,
     hasPrioritySupport: false,
-    monthlyPriceCents: 49000, // R$ 490,00
-    yearlyPriceCents: 490000, // R$ 4.900,00
+    monthlyPriceCents: 9700, // R$ 97,00
+    yearlyPriceCents: 97000, // R$ 970,00
   },
   PRO: {
     name: 'Pro Automotive',
@@ -32,8 +32,8 @@ export const PLAN_LIMITS: Record<PlanType, PlanConfig> = {
     maxMetaCatalogs: 3,
     hasAiBlogWorker: true,
     hasPrioritySupport: false,
-    monthlyPriceCents: 89000, // R$ 890,00
-    yearlyPriceCents: 890000, // R$ 8.900,00
+    monthlyPriceCents: 19700, // R$ 197,00
+    yearlyPriceCents: 197000, // R$ 1.970,00
   },
   ENTERPRISE: {
     name: 'Enterprise DAA',
@@ -43,8 +43,8 @@ export const PLAN_LIMITS: Record<PlanType, PlanConfig> = {
     maxMetaCatalogs: Infinity,
     hasAiBlogWorker: true,
     hasPrioritySupport: true,
-    monthlyPriceCents: 149000, // R$ 1.490,00
-    yearlyPriceCents: 1490000, // R$ 14.900,00
+    monthlyPriceCents: 39700, // R$ 397,00
+    yearlyPriceCents: 397000, // R$ 3.970,00
   },
 };
 
