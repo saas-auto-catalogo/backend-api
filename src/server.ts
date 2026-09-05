@@ -50,7 +50,8 @@ import { getEnv, validateEnv } from './config/env.js';
 
 export async function buildServer(): Promise<FastifyInstance> {
   const server = Fastify({
-    logger: process.env.NODE_ENV !== 'test'
+    logger: process.env.NODE_ENV !== 'test',
+    trustProxy: true
   });
 
   await server.register(cors, {

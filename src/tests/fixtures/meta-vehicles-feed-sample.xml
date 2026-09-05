@@ -1,48 +1,58 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom" xmlns:g="http://base.google.com/ns/1.0">
-  <title>DriveSync - Feed Meta Automotive Inventory Ads</title>
-  <link rel="self" href="https://api.drivesync.me/api/v1/feeds/sample-token/meta-vehicles.xml" />
-  <updated>2026-08-31T20:30:00Z</updated>
+<rss version="2.0" xmlns:g="http://base.google.com/ns/1.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>DriveSync - Feed Meta Automotive Inventory Ads</title>
+    <link>https://api.drivesync.me/api/v1/feeds/sample-token/meta-vehicles.xml</link>
+    <description>DriveSync - Feed Meta Automotive Inventory Ads</description>
+    <atom:link href="https://api.drivesync.me/api/v1/feeds/sample-token/meta-vehicles.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Mon, 31 Aug 2026 20:30:00 GMT</lastBuildDate>
 
-  <entry>
-    <g:vehicle_id>mercedes-benz-glc-300-2-0-mhev-amg-line-coupe-4matic-9g-tronic-6a8f5a9e935cc12118419802</g:vehicle_id>
-    <g:title>Mercedes-Benz GLC 300 2.0 MHEV AMG Line Coupé 4Matic 2025/2026</g:title>
-    <g:description>Mercedes-Benz GLC 300 2.0 MHEV AMG Line Coupé 2025/2026 com 4.686 km.</g:description>
-    <g:url>https://www.4boss.com.br/veiculo/mercedes-benz-glc-300-2025</g:url>
-    <g:image_link>https://base44.app/api/apps/68c89c3cdd78df273c3177d4/files/mp/public/68c89c3cdd78df273c3177d4/6f04c9088_2A8A7948.jpg</g:image_link>
-    <g:price>489700.00 BRL</g:price>
-    <g:availability>in stock</g:availability>
-    <g:make>Mercedes-Benz</g:make>
-    <g:model>GLC 300</g:model>
-    <g:year>2026</g:year>
-    <g:state_of_vehicle>used</g:state_of_vehicle>
-  </entry>
+    <item>
+      <g:id>mercedes-benz-glc-300-2-0-mhev-amg-line-coupe-4matic-9g-tronic-6a8f5a9e935cc12118419802</g:id>
+      <g:vehicle_id>mercedes-benz-glc-300-2-0-mhev-amg-line-coupe-4matic-9g-tronic-6a8f5a9e935cc12118419802</g:vehicle_id>
+      <title>Mercedes-Benz GLC 300 2.0 MHEV AMG Line Coupé 2025/2026</title>
+      <description>Mercedes-Benz GLC 300 2.0 MHEV AMG Line Coupé 2025/2026 com 4.686 km.</description>
+      <link>https://www.4boss.com.br/veiculo/mercedes-benz-glc-300-2025</link>
+      <g:url>https://www.4boss.com.br/veiculo/mercedes-benz-glc-300-2025</g:url>
+      <g:image_link>https://base44.app/api/apps/68c89c3cdd78df273c3177d4/files/mp/public/68c89c3cdd78df273c3177d4/6f04c9088_2A8A7948.jpg</g:image_link>
+      <g:price>489700.00 BRL</g:price>
+      <g:availability>in stock</g:availability>
+      <g:make>Mercedes-Benz</g:make>
+      <g:model>GLC 300</g:model>
+      <g:year>2026</g:year>
+      <g:state_of_vehicle>used</g:state_of_vehicle>
+    </item>
 
-  <entry>
-    <g:vehicle_id>104380</g:vehicle_id>
-    <g:title>Audi Q5 Performance 2.0 TFSIe S.Tr. Qt Híbrido 2023/2024</g:title>
-    <g:description>Audi Q5 Performance 2.0 TFSIe S-Tronic Quattro Híbrido Plug-in 2023/2024 com 17.881 km.</g:description>
-    <g:url>https://www.jrcaseminovos.com.br/veiculo/audi-q5-performance-2-0-tfsie-s-tr-qt-hibrido/104380</g:url>
-    <g:image_link>https://cdn.spicedigital.com.br/vehicles/36/images/104380/spice-jrca-veiculos-d890ffe5-871239.png</g:image_link>
-    <g:price>289990.00 BRL</g:price>
-    <g:availability>in stock</g:availability>
-    <g:make>Audi</g:make>
-    <g:model>Q5</g:model>
-    <g:year>2024</g:year>
-    <g:state_of_vehicle>used</g:state_of_vehicle>
-  </entry>
+    <item>
+      <g:id>104380</g:id>
+      <g:vehicle_id>104380</g:vehicle_id>
+      <title>Audi Q5 Performance 2.0 TFSIe S.Tr. Qt Híbrido 2023/2024</title>
+      <description>Audi Q5 Performance 2.0 TFSIe S-Tronic Quattro Híbrido Plug-in 2023/2024 com 17.881 km.</description>
+      <link>https://www.jrcaseminovos.com.br/veiculo/audi-q5-performance-2-0-tfsie-s-tr-qt-hibrido/104380</link>
+      <g:url>https://www.jrcaseminovos.com.br/veiculo/audi-q5-performance-2-0-tfsie-s-tr-qt-hibrido/104380</g:url>
+      <g:image_link>https://cdn.spicedigital.com.br/vehicles/36/images/104380/spice-jrca-veiculos-d890ffe5-871239.png</g:image_link>
+      <g:price>289990.00 BRL</g:price>
+      <g:availability>in stock</g:availability>
+      <g:make>Audi</g:make>
+      <g:model>Q5</g:model>
+      <g:year>2024</g:year>
+      <g:state_of_vehicle>used</g:state_of_vehicle>
+    </item>
 
-  <entry>
-    <g:vehicle_id>104692</g:vehicle_id>
-    <g:title>BYD Dolphin EV GS 100% Elétrico 2026/2027</g:title>
-    <g:description>BYD Dolphin EV GS 100% Elétrico 2026/2027 com apenas 20 km (Zero KM).</g:description>
-    <g:url>https://www.jrcaseminovos.com.br/veiculo/byd-dolphin-ev-gs-eletrico/104692</g:url>
-    <g:image_link>https://cdn.spicedigital.com.br/vehicles/36/images/104692/spice-jrca-veiculos-382d7f58-ac80a3.png</g:image_link>
-    <g:price>149990.00 BRL</g:price>
-    <g:availability>in stock</g:availability>
-    <g:make>BYD</g:make>
-    <g:model>Dolphin</g:model>
-    <g:year>2027</g:year>
-    <g:state_of_vehicle>new</g:state_of_vehicle>
-  </entry>
-</feed>
+    <item>
+      <g:id>104692</g:id>
+      <g:vehicle_id>104692</g:vehicle_id>
+      <title>BYD Dolphin EV GS 100% Elétrico 2026/2027</title>
+      <description>BYD Dolphin EV GS 100% Elétrico 2026/2027 com apenas 20 km (Zero KM).</description>
+      <link>https://www.jrcaseminovos.com.br/veiculo/byd-dolphin-ev-gs-eletrico/104692</link>
+      <g:url>https://www.jrcaseminovos.com.br/veiculo/byd-dolphin-ev-gs-eletrico/104692</g:url>
+      <g:image_link>https://cdn.spicedigital.com.br/vehicles/36/images/104692/spice-jrca-veiculos-382d7f58-ac80a3.png</g:image_link>
+      <g:price>149990.00 BRL</g:price>
+      <g:availability>in stock</g:availability>
+      <g:make>BYD</g:make>
+      <g:model>Dolphin</g:model>
+      <g:year>2027</g:year>
+      <g:state_of_vehicle>new</g:state_of_vehicle>
+    </item>
+  </channel>
+</rss>

@@ -8,9 +8,9 @@ async function runMetaFeedTests() {
   console.log('🧪 Iniciando Bateria de Testes do Motor Meta Ads DAA e Endpoint Público...\n');
 
   // ============================================================================
-  // 1. Teste de Geração do XML Atom Meta DAA
+  // 1. Teste de Geração do XML RSS 2.0 Meta DAA
   // ============================================================================
-  console.log('📄 1. Teste de Geração Estrutural do XML Atom Meta DAA:');
+  console.log('📄 1. Teste de Geração Estrutural do XML RSS 2.0 Meta DAA:');
 
   const mockVehicles: any[] = [
     {
@@ -85,8 +85,23 @@ async function runMetaFeedTests() {
   console.log(`  ✅ Tamanho do XML: ${(generated.xml.length / 1024).toFixed(2)} KB`);
 
   // Validações de tags obrigatórias
-  if (!generated.xml.includes('<feed xmlns="http://www.w3.org/2005/Atom" xmlns:g="http://base.google.com/ns/1.0">')) {
-    throw new Error('Namespace do Feed Atom inválido.');
+  if (!generated.xml.includes('<rss version="2.0" xmlns:g="http://base.google.com/ns/1.0" xmlns:atom="http://www.w3.org/2005/Atom">')) {
+    throw new Error('Raiz RSS 2.0 inválida: namespace ou versão não encontrados.');
+  }
+  if (!generated.xml.includes('<channel>')) {
+    throw new Error('Nó <channel> não encontrado no RSS.');
+  }
+  if (!generated.xml.includes('</channel>') || !generated.xml.includes('</rss>')) {
+    throw new Error('Fechamento dos nós <channel>/<rss> inválido.');
+  }
+  if (!generated.xml.includes('<atom:link')) {
+    throw new Error('Nó <atom:link rel="self"> não encontrado.');
+  }
+  if (!generated.xml.includes('<item>') || !generated.xml.includes('</item>')) {
+    throw new Error('Nós <item> não encontrados no RSS.');
+  }
+  if (!generated.xml.includes('<g:id>')) {
+    throw new Error('Tag <g:id> (chave primária universal) não encontrada.');
   }
   if (!generated.xml.includes('<g:vehicle_id>mercedes-glc-300-vid-001</g:vehicle_id>')) {
     throw new Error('Vehicle ID não encontrado no XML.');
