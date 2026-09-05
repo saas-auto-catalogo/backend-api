@@ -79,10 +79,11 @@ export async function getMetaVehiclesFeedHandler(
     orderBy: { updatedAt: 'desc' }
   });
 
-  const fullFeedUrl = `${request.protocol}://${request.hostname}/api/v1/feeds/${token}/meta-vehicles.xml`;
+  const proto = (request.headers['x-forwarded-proto'] as string) || (request.hostname.includes('localhost') || request.hostname.includes('127.0.0.1') ? 'http' : 'https');
+  const fullFeedUrl = `${proto}://${request.hostname}/api/v1/feeds/${token}/meta-vehicles.xml`;
   const catalogName = `${feedConfig.workspace.name} - Catálogo Meta Automotive Ads`;
 
-  // 4. Gera o XML Atom Meta DAA
+  // 4. Gera o XML RSS 2.0 Meta DAA
   const result = MetaXmlFeedGenerator.generateFeed(vehicles as any, {
     feedUrl: fullFeedUrl,
     catalogName,

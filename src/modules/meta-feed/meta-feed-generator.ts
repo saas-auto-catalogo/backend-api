@@ -157,10 +157,13 @@ export class MetaXmlFeedGenerator {
 
     const xmlLines: string[] = [
       '<?xml version="1.0" encoding="UTF-8"?>',
-      '<feed xmlns="http://www.w3.org/2005/Atom" xmlns:g="http://base.google.com/ns/1.0">',
-      `  <title>${escapeXml(catalogTitle)}</title>`,
-      `  <link rel="self" href="${escapeXml(options.feedUrl)}" />`,
-      `  <updated>${nowIso}</updated>`
+      '<rss version="2.0" xmlns:g="http://base.google.com/ns/1.0" xmlns:atom="http://www.w3.org/2005/Atom">',
+      '  <channel>',
+      `    <title>${escapeXml(catalogTitle)}</title>`,
+      `    <link>${escapeXml(options.feedUrl)}</link>`,
+      `    <description>${escapeXml(catalogTitle)}</description>`,
+      `    <atom:link href="${escapeXml(options.feedUrl)}" rel="self" type="application/rss+xml" />`,
+      `    <lastBuildDate>${new Date(nowIso).toUTCString()}</lastBuildDate>`
     ];
 
     let validCount = 0;
@@ -186,12 +189,14 @@ export class MetaXmlFeedGenerator {
       const fuelTypeStr = mapFuelType(v.fuelType || FuelType.OUTRO);
       const labels = generateCustomLabels(v);
 
-      xmlLines.push('  <entry>');
-      xmlLines.push(`    <g:vehicle_id>${escapeXml(v.externalId)}</g:vehicle_id>`);
-      xmlLines.push(`    <g:title>${escapeXml(v.title || `${v.make} ${v.model}`)}</g:title>`);
-      xmlLines.push(`    <g:description>${escapeXml(v.description || v.title)}</g:description>`);
-      xmlLines.push(`    <g:url>${escapeXml(v.canonicalUrl || options.feedUrl)}</g:url>`);
-      xmlLines.push(`    <g:image_link>${escapeXml(v.heroImageUrl)}</g:image_link>`);
+      xmlLines.push('    <item>');
+      xmlLines.push(`      <g:id>${escapeXml(v.externalId)}</g:id>`);
+      xmlLines.push(`      <g:vehicle_id>${escapeXml(v.externalId)}</g:vehicle_id>`);
+      xmlLines.push(`      <title>${escapeXml(v.title || `${v.make} ${v.model}`)}</title>`);
+      xmlLines.push(`      <description>${escapeXml(v.description || v.title)}</description>`);
+      xmlLines.push(`      <link>${escapeXml(v.canonicalUrl || options.feedUrl)}</link>`);
+      xmlLines.push(`      <g:url>${escapeXml(v.canonicalUrl || options.feedUrl)}</g:url>`);
+      xmlLines.push(`      <g:image_link>${escapeXml(v.heroImageUrl)}</g:image_link>`);
 
       // Imagens adicionais da galeria (até 10 fotos)
       if (Array.isArray(v.images)) {
@@ -200,40 +205,40 @@ export class MetaXmlFeedGenerator {
           .slice(0, 10);
 
         for (const img of additionalImages) {
-          xmlLines.push(`    <g:additional_image_link>${escapeXml(img.url)}</g:additional_image_link>`);
+          xmlLines.push(`      <g:additional_image_link>${escapeXml(img.url)}</g:additional_image_link>`);
         }
       }
 
-      xmlLines.push(`    <g:price>${priceStr}</g:price>`);
+      xmlLines.push(`      <g:price>${priceStr}</g:price>`);
       if (salePriceStr) {
-        xmlLines.push(`    <g:sale_price>${salePriceStr}</g:sale_price>`);
+        xmlLines.push(`      <g:sale_price>${salePriceStr}</g:sale_price>`);
       }
 
-      xmlLines.push(`    <g:availability>${availability}</g:availability>`);
-      xmlLines.push(`    <g:make>${escapeXml(v.make)}</g:make>`);
-      xmlLines.push(`    <g:model>${escapeXml(v.model)}</g:model>`);
-      xmlLines.push(`    <g:year>${v.modelYear || v.manufactureYear || new Date().getFullYear()}</g:year>`);
+      xmlLines.push(`      <g:availability>${availability}</g:availability>`);
+      xmlLines.push(`      <g:make>${escapeXml(v.make)}</g:make>`);
+      xmlLines.push(`      <g:model>${escapeXml(v.model)}</g:model>`);
+      xmlLines.push(`      <g:year>${v.modelYear || v.manufactureYear || new Date().getFullYear()}</g:year>`);
 
-      xmlLines.push('    <g:mileage>');
-      xmlLines.push(`      <g:value>${v.mileage || 0}</g:value>`);
-      xmlLines.push('      <g:unit>KM</g:unit>');
-      xmlLines.push('    </g:mileage>');
+      xmlLines.push('      <g:mileage>');
+      xmlLines.push(`        <g:value>${v.mileage || 0}</g:value>`);
+      xmlLines.push('        <g:unit>KM</g:unit>');
+      xmlLines.push('      </g:mileage>');
 
-      xmlLines.push(`    <g:vin>${escapeXml(vinStr)}</g:vin>`);
-      xmlLines.push(`    <g:state_of_vehicle>${stateOfVehicle}</g:state_of_vehicle>`);
-      xmlLines.push(`    <g:body_style>${bodyStyleStr}</g:body_style>`);
-      xmlLines.push(`    <g:transmission>${transmissionStr}</g:transmission>`);
-      xmlLines.push(`    <g:fuel_type>${fuelTypeStr}</g:fuel_type>`);
-      xmlLines.push(`    <g:exterior_color>${escapeXml(v.exteriorColor || 'Não informada')}</g:exterior_color>`);
+      xmlLines.push(`      <g:vin>${escapeXml(vinStr)}</g:vin>`);
+      xmlLines.push(`      <g:state_of_vehicle>${stateOfVehicle}</g:state_of_vehicle>`);
+      xmlLines.push(`      <g:body_style>${bodyStyleStr}</g:body_style>`);
+      xmlLines.push(`      <g:transmission>${transmissionStr}</g:transmission>`);
+      xmlLines.push(`      <g:fuel_type>${fuelTypeStr}</g:fuel_type>`);
+      xmlLines.push(`      <g:exterior_color>${escapeXml(v.exteriorColor || 'Não informada')}</g:exterior_color>`);
 
       if (v.interiorColor) {
-        xmlLines.push(`    <g:interior_color>${escapeXml(v.interiorColor)}</g:interior_color>`);
+        xmlLines.push(`      <g:interior_color>${escapeXml(v.interiorColor)}</g:interior_color>`);
       }
 
-      xmlLines.push(`    <g:doors>${v.doors || 4}</g:doors>`);
+      xmlLines.push(`      <g:doors>${v.doors || 4}</g:doors>`);
 
       if (v.drivetrain) {
-        xmlLines.push(`    <g:drivetrain>${escapeXml(v.drivetrain.toLowerCase())}</g:drivetrain>`);
+        xmlLines.push(`      <g:drivetrain>${escapeXml(v.drivetrain.toLowerCase())}</g:drivetrain>`);
       }
 
       // Dados da Concessionária / Dealer
@@ -243,27 +248,28 @@ export class MetaXmlFeedGenerator {
         const dealerPhone = options.dealership.phone;
 
         if (dealerId) {
-          xmlLines.push(`    <g:dealer_id>${escapeXml(dealerId)}</g:dealer_id>`);
+          xmlLines.push(`      <g:dealer_id>${escapeXml(dealerId)}</g:dealer_id>`);
         }
         if (dealerName) {
-          xmlLines.push(`    <g:dealer_name>${escapeXml(dealerName)}</g:dealer_name>`);
+          xmlLines.push(`      <g:dealer_name>${escapeXml(dealerName)}</g:dealer_name>`);
         }
         if (dealerPhone) {
-          xmlLines.push(`    <g:dealer_phone>${escapeXml(dealerPhone)}</g:dealer_phone>`);
+          xmlLines.push(`      <g:dealer_phone>${escapeXml(dealerPhone)}</g:dealer_phone>`);
         }
       }
 
       // Custom Labels de Campanhas
-      xmlLines.push(`    <g:custom_label_0>${escapeXml(labels.custom_label_0)}</g:custom_label_0>`);
-      xmlLines.push(`    <g:custom_label_1>${escapeXml(labels.custom_label_1)}</g:custom_label_1>`);
-      xmlLines.push(`    <g:custom_label_2>${escapeXml(labels.custom_label_2)}</g:custom_label_2>`);
-      xmlLines.push(`    <g:custom_label_3>${escapeXml(labels.custom_label_3)}</g:custom_label_3>`);
-      xmlLines.push(`    <g:custom_label_4>${escapeXml(labels.custom_label_4)}</g:custom_label_4>`);
+      xmlLines.push(`      <g:custom_label_0>${escapeXml(labels.custom_label_0)}</g:custom_label_0>`);
+      xmlLines.push(`      <g:custom_label_1>${escapeXml(labels.custom_label_1)}</g:custom_label_1>`);
+      xmlLines.push(`      <g:custom_label_2>${escapeXml(labels.custom_label_2)}</g:custom_label_2>`);
+      xmlLines.push(`      <g:custom_label_3>${escapeXml(labels.custom_label_3)}</g:custom_label_3>`);
+      xmlLines.push(`      <g:custom_label_4>${escapeXml(labels.custom_label_4)}</g:custom_label_4>`);
 
-      xmlLines.push('  </entry>');
+      xmlLines.push('    </item>');
     }
 
-    xmlLines.push('</feed>');
+    xmlLines.push('  </channel>');
+    xmlLines.push('</rss>');
     const xml = xmlLines.join('\n');
 
     // Gera ETag SHA-256
