@@ -1,4 +1,4 @@
-﻿import { PrismaClient, VehicleStatus, SyncStatus, BodyStyle, FuelType, TransmissionType, VehicleCondition } from '@prisma/client';
+import { PrismaClient, VehicleStatus, SyncStatus, BodyStyle, FuelType, TransmissionType, VehicleCondition } from '@prisma/client';
 import { prisma as defaultPrisma } from '../../lib/prisma.js';
 import { feedCacheService } from '../../infra/cache/feed-cache.service.js';
 import { CanonicalVehicleOutput } from '../normalization/index.js';
@@ -150,15 +150,11 @@ export class StockSyncService {
         });
       }
 
-      // 3.3 Marcação de veículos que saíram do feed como VENDIDOS (Soft-Delete)
+      // 3.3 Exclusão de veículos que saíram do feed (Substituição de Estoque)
       if (diff.toRemove.length > 0) {
         const removeIds = diff.toRemove.map((r) => r.id);
-        await prisma.vehicle.updateMany({
-          where: { id: { in: removeIds } },
-          data: {
-            status: VehicleStatus.SOLD,
-            updatedAt: new Date()
-          }
+        await prisma.vehicle.deleteMany({
+          where: { id: { in: removeIds } }
         });
       }
 
@@ -194,15 +190,15 @@ export class StockSyncService {
         data: {
           lastSyncAt: new Date(),
           lastSyncStatus: syncStatus,
-          lastSyncMessage: `Sincronização concluída: +${diff.totalCreated} novos, ~${diff.totalUpdated} atualizados, -${diff.totalRemoved} vendidos, =${diff.totalUnchanged} inalterados (${durationMs}ms).`
+          lastSyncMessage: `Sincronização concluída: +${diff.totalCreated} novos, ~${diff.totalUpdated} atualizados, -${diff.totalRemoved} removidos, =${diff.totalUnchanged} inalterados (${durationMs}ms).`
         }
       });
 
 
       // 5.5 Mantém o MetaCatalog com contagens de estoque e exportação atualizadas
       const [totalVehiclesCount, eligibleVehiclesCount] = await Promise.all([
-        prisma.vehicle.count({ where: { workspaceId } }),
-        prisma.vehicle.count({ where: { workspaceId, eligibleForMetaAds: true } }),
+        prisma.vehicle.count({ where: { workspaceId, status: VehicleStatus.AVAILABLE } }),
+        prisma.vehicle.count({ where: { workspaceId, status: VehicleStatus.AVAILABLE, eligibleForMetaAds: true } }),
       ]);
       await prisma.metaCatalog.updateMany({
         where: { workspaceId },

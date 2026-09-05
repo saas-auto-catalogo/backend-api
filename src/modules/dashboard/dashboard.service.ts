@@ -428,17 +428,18 @@ export class DashboardService {
       lastSync,
       lastMetaCatalog,
     ] = await Promise.all([
-      prisma.vehicle.count({ where: { workspaceId } }),
       prisma.vehicle.count({ where: { workspaceId, status: VehicleStatus.AVAILABLE } }),
-      prisma.vehicle.count({ where: { workspaceId, eligibleForMetaAds: true } }),
+      prisma.vehicle.count({ where: { workspaceId, status: VehicleStatus.AVAILABLE } }),
+      prisma.vehicle.count({ where: { workspaceId, status: VehicleStatus.AVAILABLE, eligibleForMetaAds: true } }),
       prisma.vehicle.count({
         where: {
           workspaceId,
+          status: VehicleStatus.AVAILABLE,
           createdAt: { gte: startOfMonth },
         },
       }),
       prisma.vehicle.findMany({
-        where: { workspaceId },
+        where: { workspaceId, status: VehicleStatus.AVAILABLE },
         select: { validationWarnings: true, eligibleForMetaAds: true },
       }),
       prisma.syncHistory.findFirst({
@@ -533,6 +534,8 @@ export class DashboardService {
 
     if (query.status) {
       where.status = query.status;
+    } else {
+      where.status = VehicleStatus.AVAILABLE;
     }
 
     if (query.eligibleOnly) {
@@ -568,7 +571,7 @@ export class DashboardService {
 
     const rows = await prisma.vehicle.findMany({
 
-      where: { workspaceId },
+      where: { workspaceId, status: VehicleStatus.AVAILABLE },
 
       distinct: ['make'],
 
@@ -634,8 +637,8 @@ export class DashboardService {
     if (!feedConfig) return null;
 
     const [totalVehiclesCount, eligibleVehiclesCount] = await Promise.all([
-      prisma.vehicle.count({ where: { workspaceId } }),
-      prisma.vehicle.count({ where: { workspaceId, eligibleForMetaAds: true } }),
+      prisma.vehicle.count({ where: { workspaceId, status: VehicleStatus.AVAILABLE } }),
+      prisma.vehicle.count({ where: { workspaceId, status: VehicleStatus.AVAILABLE, eligibleForMetaAds: true } }),
     ]);
 
     const publicFeedUrl = baseUrl

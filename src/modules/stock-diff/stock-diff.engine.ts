@@ -94,8 +94,13 @@ export class StockDiffEngine {
   ): string[] {
     const changes: string[] = [];
 
-    // Se o hash do payload bruto for idêntico, garante que nada mudou
-    if (existing.rawPayloadHash && existing.rawPayloadHash === incoming.rawPayloadHash) {
+    // Se o hash do payload bruto for idêntico e os campos essenciais coincidirem, garante que nada mudou
+    if (
+      existing.rawPayloadHash &&
+      existing.rawPayloadHash === incoming.rawPayloadHash &&
+      existing.heroImageUrl === incoming.heroImageUrl &&
+      existing.eligibleForMetaAds === incoming.eligibleForMetaAds
+    ) {
       return changes;
     }
 
@@ -121,7 +126,7 @@ export class StockDiffEngine {
     }
 
     // Comparação de Foto de Capa
-    if (existing.heroImageUrl && existing.heroImageUrl !== incoming.heroImageUrl) {
+    if (existing.heroImageUrl !== undefined && existing.heroImageUrl !== incoming.heroImageUrl) {
       changes.push('heroImageUrl');
     }
 

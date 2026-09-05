@@ -215,7 +215,7 @@ export class AutoMatchingEngine {
     const interiorColor = (raw.corInterna || raw.interiorColor) ? String(raw.corInterna || raw.interiorColor).trim() : undefined;
 
     // 9. Mídia e Imagens
-    const rawPhotos = raw.photos || raw.images || raw.fotos || raw.imagens;
+    const rawPhotos = raw.photos || raw.images || raw.fotos || raw.imagens || raw.galleryMedium || raw.galleryLarge || raw.gallery || raw.gallerySmall;
     const media = normalizeImages(rawPhotos, raw.heroImage || raw.imagem_destaque, raw.image);
     if (media.warnings) warnings.push(...media.warnings);
 
@@ -225,11 +225,11 @@ export class AutoMatchingEngine {
     const notes = raw.notes ? String(raw.notes).trim() : undefined;
 
     const canonicalUrl = sanitizeCanonicalUrl(
-      raw.canonicalUrl || raw.url || raw.link_direto || raw.url_anuncio || raw.url_estoque,
+      raw.canonicalUrl || raw.url || raw.link_direto || raw.url_anuncio || raw.url_estoque || raw.slug,
       {
         sourceType: context.sourceType,
         fallbackBaseUrl: context.fallbackBaseUrl,
-        urlSlug: raw.urlSlug ? String(raw.urlSlug) : null,
+        urlSlug: raw.urlSlug ? String(raw.urlSlug) : (raw.slug ? String(raw.slug) : null),
       }
     );
 
