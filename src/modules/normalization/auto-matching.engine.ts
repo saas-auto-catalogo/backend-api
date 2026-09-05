@@ -55,6 +55,77 @@ export interface NormalizationContext {
 }
 
 /**
+ * Extrai o origin (protocolo + host, ex: https://www.4boss.com.br) de uma URL.
+ * Retorna undefined se a URL for inválida ou não tiver protocolo/host.
+ */
+export function extractOrigin(url?: string | null): string | undefined {
+  if (!url) return undefined;
+  try {
+    const parsed = new URL(url);
+    if (!parsed.protocol || !parsed.host) return undefined;
+    return parsed.origin;
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * Sanitiza a URL canônica de um veículo.
+ * - Normaliza o origin (remove caminhos legados como /api/vehicles quando presente).
+ * - Corrige rotas legadas (/api/vehicles/veiculo/, /api/vehicles/v/, /veiculo/) para /v/:urlSlug.
+ */
+export function sanitizeCanonicalUrl(
+  url?: string | null,
+  options?: { sourceType?: string; fallbackBaseUrl?: string; urlSlug?: string | null }
+): string | undefined {
+  let candidate = url && typeof url === 'string' ? url.trim() : undefined;
+
+  // 1. Um urlSlug + fallback garante uma URL determinística em /v/:slug.
+  if (!candidate && options?.urlSlug) {
+    const origin = extractOrigin(options.fallbackBaseUrl);
+    if (origin && options.sourceType === 'BASE44') {
+      return `${origin}/v/${encodeURIComponent(String(options.urlSlug))}`;
+    }
+  }
+
+  if (!candidate) return undefined;
+
+  // 2. Renormaliza o origin, descartando caminho profundo legado (ex: /api/vehicles).
+  const origin = extractOrigin(candidate);
+  if (!origin) return candidate;
+
+  // 3. Extrai o slug a partir de rotas legadas conhecidas da 4Boss/Base44.
+  const legacyPrefixes = [
+    /\/api\/vehicles\/veiculo\/(.+)/i,
+    /\/api\/vehicles\/v\/(.+)/i,
+    /\/veiculo\/(.+)/i,
+    /\/api\/vehicles\/(.+)/i,
+  ];
+  let slugFromLegacy: string | null = null;
+  for (const pattern of legacyPrefixes) {
+    const match = candidate.match(pattern);
+    if (match && match[1]) {
+      slugFromLegacy = match[1];
+      break;
+    }
+  }
+
+  // 4. Se encontrou padrão legado, devolve a URL no novo formato /v/:slug.
+  if (slugFromLegacy) {
+    return `${origin}/v/${encodeURIComponent(String(slugFromLegacy))}`;
+  }
+
+  // 5. Se o origin veio com caminho /api/vehicles, normaliza para o origin limpo.
+  const pathWithApi = candidate.slice(origin.length);
+  if (pathWithApi.startsWith('/api/vehicles')) {
+    // Sem slug disponível, mantém o origin base apenas.
+    return origin;
+  }
+
+  return candidate;
+}
+
+/**
  * Gera hash SHA-256 canônico a partir do payload bruto.
  */
 export function computeRawPayloadHash(rawPayload: Record<string, any>): string {
@@ -153,12 +224,14 @@ export class AutoMatchingEngine {
     const description = sanitizeDescription(rawDesc);
     const notes = raw.notes ? String(raw.notes).trim() : undefined;
 
-    let canonicalUrl = raw.canonicalUrl || raw.url || raw.link_direto || raw.url_anuncio || raw.url_estoque;
-    if (typeof canonicalUrl === 'string') {
-      canonicalUrl = canonicalUrl.trim();
-    } else if (raw.urlSlug && context.fallbackBaseUrl) {
-      canonicalUrl = `${context.fallbackBaseUrl.replace(/\/$/, '')}/veiculo/${raw.urlSlug}`;
-    }
+    const canonicalUrl = sanitizeCanonicalUrl(
+      raw.canonicalUrl || raw.url || raw.link_direto || raw.url_anuncio || raw.url_estoque,
+      {
+        sourceType: context.sourceType,
+        fallbackBaseUrl: context.fallbackBaseUrl,
+        urlSlug: raw.urlSlug ? String(raw.urlSlug) : null,
+      }
+    );
 
     // 11. Garantia
     const hasWarranty =

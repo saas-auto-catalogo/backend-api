@@ -133,6 +133,12 @@ async function runMetaFeedTests() {
   if (!generated.xml.includes('<component name="addr1">')) {
     throw new Error('Componente addr1 (street_address) não encontrado no bloco address.');
   }
+  if (!generated.xml.includes('<url>https://www.4boss.com.br/v/mercedes-benz-glc-300-2025</url>')) {
+    throw new Error('URL canônica não sanitizada para /v/:slug no nó <url>.');
+  }
+  if (generated.xml.includes('/api/vehicles/') || generated.xml.includes('/veiculo/')) {
+    throw new Error('XML contém URL legada com /api/vehicles/ ou /veiculo/.');
+  }
 
   console.log('  ✅ Todas as validações estruturais de tags oficiais Meta Automotive foram aprovadas!');
 

@@ -6,7 +6,7 @@ import { createRedisConnection } from '../../redis/redis-client.js';
 import { JOB_NAMES, QUEUE_NAMES, XmlIngestionJobData } from '../queue-types.js';
 import { downloadFeedStream } from '../../../modules/xml-ingestion/feed-downloader.js';
 import { ingestFeedStream } from '../../../modules/feeds/feed-format.parser.js';
-import { AutoMatchingEngine, CanonicalVehicleOutput } from '../../../modules/normalization/auto-matching.engine.js';
+import { AutoMatchingEngine, CanonicalVehicleOutput, extractOrigin } from '../../../modules/normalization/auto-matching.engine.js';
 import { StockSyncService } from '../../../modules/stock-diff/stock-sync.service.js';
 
 export const INGEST_PROGRESS_CEILING = 45;
@@ -47,6 +47,33 @@ async function ingestFeedStreamWithProgress(
   }
 }
 
+/**
+ * Resolve o origin base para montagem de URLs canônicas.
+ * Prioriza o site oficial da concessionária (dealership.websiteUrl) e,
+ * na ausência, extrai apenas o origin (protocolo+host) do feedUrl,
+ * descartando caminhos como /api/vehicles.
+ */
+async function resolveFallbackBaseUrl(
+  feedUrl: string,
+  dealershipId?: string
+): Promise<string> {
+  if (dealershipId) {
+    try {
+      const dealership = await prisma.dealership.findUnique({
+        where: { id: dealershipId },
+        select: { websiteUrl: true },
+      });
+      const websiteOrigin = extractOrigin(dealership?.websiteUrl);
+      if (websiteOrigin) {
+        return websiteOrigin;
+      }
+    } catch {
+      // Segue para o fallback do feedUrl em caso de falha na consulta.
+    }
+  }
+  return extractOrigin(feedUrl) || feedUrl;
+}
+
 async function processSyncFeedJob(job: Job<XmlIngestionJobData>): Promise<SyncFeedJobResult> {
   const data = job.data;
   validateJobData(data);
@@ -64,13 +91,15 @@ async function processSyncFeedJob(job: Job<XmlIngestionJobData>): Promise<SyncFe
 
   await job.updateProgress(50);
 
+  const fallbackBaseUrl = await resolveFallbackBaseUrl(feedUrl, dealershipId);
+
   const normalizedVehicles: CanonicalVehicleOutput[] = rawVehicles.map((raw) =>
     AutoMatchingEngine.normalize(raw, {
       workspaceId,
       feedConfigId,
       dealershipId,
       sourceType,
-      fallbackBaseUrl: feedUrl,
+      fallbackBaseUrl,
     })
   );
 

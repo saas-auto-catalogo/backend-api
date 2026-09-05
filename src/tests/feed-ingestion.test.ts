@@ -76,6 +76,17 @@ async function runFeedIngestionTestSuite() {
     'externalId derivado do campo vid',
     normalizedJson[0].externalId
   );
+  assert(
+    normalizedJson[0].canonicalUrl === 'https://www.4boss.com.br/v/MERCEDES-BENZ-GLC-300-2025',
+    'canonicalUrl normalizada para /v/:urlSlug (4boss)',
+    normalizedJson[0].canonicalUrl
+  );
+  assert(
+    normalizedJson.every(
+      (v) => v.canonicalUrl && !v.canonicalUrl.includes('/api/vehicles/') && !v.canonicalUrl.includes('/veiculo/')
+    ),
+    'Nenhum canonicalUrl contém caminho legado /api/vehicles/ ou /veiculo/'
+  );
 
   // ─────────────────────────────────────────────────────────────────────────
   // 2. Ramo de ingestão XML (Autocerto) — regressão

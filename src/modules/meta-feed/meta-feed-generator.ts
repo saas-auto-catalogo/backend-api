@@ -40,6 +40,47 @@ function formatPrice(val: unknown): string {
 }
 
 /**
+ * Sanitiza a URL canônica de um veículo no momento da geração do XML.
+ * Corrige dinamicamente URLs legadas da 4Boss/Base44 que ainda contenham
+ * /api/vehicles/veiculo/, /api/vehicles/v/ ou /veiculo/ para o formato
+ * oficial /v/:slug. Retorna o fallback informado quando não há URL utilizável.
+ */
+function sanitizeCanonicalUrl(url?: string | null, fallbackUrl = ''): string {
+  if (!url || typeof url !== 'string') {
+    return fallbackUrl;
+  }
+  const candidate = url.trim();
+  if (!candidate) {
+    return fallbackUrl;
+  }
+
+  let origin = '';
+  try {
+    origin = new URL(candidate).origin;
+  } catch {
+    return candidate;
+  }
+  if (!origin) {
+    return candidate;
+  }
+
+  const legacyPatterns = [
+    /\/api\/vehicles\/veiculo\/(.+)/i,
+    /\/api\/vehicles\/v\/(.+)/i,
+    /\/veiculo\/(.+)/i,
+    /\/api\/vehicles\/(.+)/i,
+  ];
+  for (const pattern of legacyPatterns) {
+    const match = candidate.match(pattern);
+    if (match && match[1]) {
+      return `${origin}/v/${encodeURIComponent(String(match[1]))}`;
+    }
+  }
+
+  return candidate;
+}
+
+/**
  * Mapeia BodyStyle do Prisma para a especificação oficial Meta Automotive (UPPERCASE).
  */
 function mapBodyStyleUpper(style?: BodyStyle | string | null): string {
@@ -175,7 +216,7 @@ export class MetaXmlFeedGenerator {
       const transmission = mapTransmissionUpper(v.transmission);
       const fuelType = mapFuelTypeUpper(v.fuelType);
       const vinStr = v.vin || v.licensePlate || v.externalId;
-      const link = v.canonicalUrl || options.feedUrl;
+      const link = sanitizeCanonicalUrl(v.canonicalUrl, options.feedUrl);
 
       xmlLines.push('    <listing>');
       xmlLines.push(`      <vehicle_id>${escapeXml(v.externalId)}</vehicle_id>`);

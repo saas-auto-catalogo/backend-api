@@ -45,6 +45,7 @@
     "worker:sync-feed": "tsx src/workers/start-sync-feed-worker.ts",
     "job:trial-lifecycle": "tsx --import dotenv/config src/workers/run-trial-lifecycle.ts",
     "job:legal-sync": "tsx --import dotenv/config src/workers/run-legal-sync.ts",
+    "script:fix-vehicle-urls": "tsx src/scripts/fix-vehicle-urls.ts",
     "test:legal": "tsx --import ./src/tests/setup-env.ts src/tests/legal-api.test.ts",
     "test:legal:smoke": "tsx --import ./src/tests/setup-env.ts src/tests/legal-funnel-smoke.test.ts",
     "test:all": "npm run test:qa && npm run test:vehicles && npm run test:db && npm run test:rbac && npm run test:auth && npm run test:dashboard && npm run test:email && npm run test:subscription && npm run test:feeds"
