@@ -414,7 +414,7 @@ model Subscription {
   id                   String   @id @default(uuid()) @db.Uuid
   workspaceId          String   @unique @map("workspace_id") @db.Uuid
   planTier             String   @map("plan_tier") @db.VarChar(50)
-  maxVehicles          Int      @default(100) @map("max_vehicles")
+  maxVehicles          Int      @default(50) @map("max_vehicles")
   status               String   @db.VarChar(50)
   currentPeriodEnd     DateTime @map("current_period_end")
   stripeCustomerId     String?  @unique @map("stripe_customer_id") @db.VarChar(255)

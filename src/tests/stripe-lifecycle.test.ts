@@ -50,13 +50,13 @@ async function runStripeLifecycleTestSuite() {
     section('1. Matriz de Limites e Configurações por Plano');
 
     // Starter
-    assert(PLAN_LIMITS.STARTER.maxVehicles === 100, 'Starter: limite de 100 veículos');
+    assert(PLAN_LIMITS.STARTER.maxVehicles === 50, 'Starter: limite de 50 veículos');
     assert(PLAN_LIMITS.STARTER.maxFeeds === 1, 'Starter: limite de 1 feed');
     assert(PLAN_LIMITS.STARTER.maxMembers === 2, 'Starter: limite de 2 membros');
     assert(!PLAN_LIMITS.STARTER.hasAiBlogWorker, 'Starter: sem acesso ao Worker IA');
 
     // Pro
-    assert(PLAN_LIMITS.PRO.maxVehicles === 500, 'Pro: limite de 500 veículos');
+    assert(PLAN_LIMITS.PRO.maxVehicles === 200, 'Pro: limite de 200 veículos');
     assert(PLAN_LIMITS.PRO.maxFeeds === 5, 'Pro: limite de 5 feeds');
     assert(PLAN_LIMITS.PRO.maxMembers === 10, 'Pro: limite de 10 membros');
     assert(PLAN_LIMITS.PRO.hasAiBlogWorker, 'Pro: com acesso ao Worker IA');
@@ -77,19 +77,19 @@ async function runStripeLifecycleTestSuite() {
     assert(hasPlanFeature('ENTERPRISE', 'prioritySupport'), 'Feature Gate: Enterprise com Suporte Prioritário');
     assert(!hasPlanFeature('PRO', 'prioritySupport'), 'Feature Gate: Pro sem Suporte Prioritário');
 
-    // Limites de Veículos no Starter
-    const limitStarterOk = isResourceLimitReached('STARTER', 'vehicles', 99);
-    assert(!limitStarterOk.reached, 'Starter: 99 veículos não atinge o limite');
+    // Limites de Veículos no Starter (50 veículos)
+    const limitStarterOk = isResourceLimitReached('STARTER', 'vehicles', 49);
+    assert(!limitStarterOk.reached, 'Starter: 49 veículos não atinge o limite');
 
-    const limitStarterFull = isResourceLimitReached('STARTER', 'vehicles', 100);
-    assert(limitStarterFull.reached, 'Starter: 100 veículos atinge o limite');
+    const limitStarterFull = isResourceLimitReached('STARTER', 'vehicles', 50);
+    assert(limitStarterFull.reached, 'Starter: 50 veículos atinge o limite');
 
-    // Limites de Veículos no Pro
-    const limitProOk = isResourceLimitReached('PRO', 'vehicles', 499);
-    assert(!limitProOk.reached, 'Pro: 499 veículos não atinge o limite');
+    // Limites de Veículos no Pro (200 veículos)
+    const limitProOk = isResourceLimitReached('PRO', 'vehicles', 199);
+    assert(!limitProOk.reached, 'Pro: 199 veículos não atinge o limite');
 
-    const limitProFull = isResourceLimitReached('PRO', 'vehicles', 500);
-    assert(limitProFull.reached, 'Pro: 500 veículos atinge o limite');
+    const limitProFull = isResourceLimitReached('PRO', 'vehicles', 200);
+    assert(limitProFull.reached, 'Pro: 200 veículos atinge o limite');
 
     // Limites no Enterprise (Ilimitado)
     const limitEnterprise = isResourceLimitReached('ENTERPRISE', 'vehicles', 15000);

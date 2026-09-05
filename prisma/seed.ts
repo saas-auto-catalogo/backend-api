@@ -184,7 +184,7 @@ async function main() {
     data: {
       workspaceId: workspace1.id,
       planTier: 'PRO',
-      maxVehicles: 500,
+      maxVehicles: 200,
       status: 'ACTIVE',
       currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
       stripeCustomerId: 'cus_seed_auto_elite',
@@ -723,7 +723,7 @@ async function main() {
     data: {
       workspaceId: workspace2.id,
       planTier: 'STARTER',
-      maxVehicles: 100,
+      maxVehicles: 50,
       status: 'ACTIVE',
       currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
     }

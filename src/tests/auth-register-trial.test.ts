@@ -62,7 +62,7 @@ async function runAuthRegisterTrialTests() {
     assert(!!workspaceId, 'workspaceId retornado');
     assert(trialBody.billing?.status === 'TRIALING', 'billing.status TRIALING', `got ${trialBody.billing?.status}`);
     assert(trialBody.billing?.planTier === 'PRO', 'billing.planTier PRO');
-    assert(trialBody.billing?.limits?.maxVehicles === 500, 'limites Pro aplicados');
+    assert(trialBody.billing?.limits?.maxVehicles === 200, 'limites Pro aplicados');
 
     const trialEnd = new Date(trialBody.billing.currentPeriodEnd);
     const expectedEnd = calculateTrialEndDate();
@@ -127,7 +127,7 @@ async function runAuthRegisterTrialTests() {
         subscription: {
           create: {
             planTier: 'PRO',
-            maxVehicles: 500,
+            maxVehicles: 200,
             status: 'TRIALING',
             currentPeriodEnd: calculateTrialEndDate(),
           },

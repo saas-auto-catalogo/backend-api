@@ -123,7 +123,7 @@ async function runCommercialE2ESmoke() {
     const billing = JSON.parse(billingRes.payload);
     assert(billing.status === 'ACTIVE', 'Subscription ACTIVE', `got ${billing.status}`);
     assert(billing.planTier === 'STARTER', 'Plano STARTER refletido');
-    assert(billing.limits?.maxVehicles === 100, 'Limites reais do STARTER');
+    assert(billing.limits?.maxVehicles === 50, 'Limites reais do STARTER');
 
     console.log('\n── Guardrails ──');
 

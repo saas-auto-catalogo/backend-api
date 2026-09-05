@@ -15,7 +15,7 @@ export interface PlanConfig {
 export const PLAN_LIMITS: Record<PlanType, PlanConfig> = {
   STARTER: {
     name: 'Starter Catalog',
-    maxVehicles: 100,
+    maxVehicles: 50,
     maxFeeds: 1,
     maxMembers: 2,
     maxMetaCatalogs: 1,
@@ -26,7 +26,7 @@ export const PLAN_LIMITS: Record<PlanType, PlanConfig> = {
   },
   PRO: {
     name: 'Pro Automotive',
-    maxVehicles: 500,
+    maxVehicles: 200,
     maxFeeds: 5,
     maxMembers: 10,
     maxMetaCatalogs: 3,

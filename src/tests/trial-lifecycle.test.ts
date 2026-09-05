@@ -76,7 +76,7 @@ async function createTrialFixture(suffix: string, currentPeriodEnd: Date) {
     data: {
       workspaceId: workspace.id,
       planTier: 'PRO',
-      maxVehicles: 500,
+      maxVehicles: 200,
       status: 'TRIALING',
       currentPeriodEnd,
     },
