@@ -136,8 +136,11 @@ async function runMetaFeedTests() {
   if (!generated.xml.includes('<url>https://www.4boss.com.br/v/mercedes-benz-glc-300-2025</url>')) {
     throw new Error('URL canônica não sanitizada para /v/:slug no nó <url>.');
   }
-  if (generated.xml.includes('/api/vehicles/') || generated.xml.includes('/veiculo/')) {
-    throw new Error('XML contém URL legada com /api/vehicles/ ou /veiculo/.');
+  if (generated.xml.includes('/api/vehicles/')) {
+    throw new Error('XML contém URL legada com /api/vehicles/.');
+  }
+  if (!generated.xml.includes('<url>https://www.jrcaseminovos.com.br/veiculo/byd-dolphin-ev/104692</url>')) {
+    throw new Error('URL canônica Spice Digital /veiculo/:slug deve ser preservada integralmente.');
   }
 
   console.log('  ✅ Todas as validações estruturais de tags oficiais Meta Automotive foram aprovadas!');

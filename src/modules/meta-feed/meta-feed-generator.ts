@@ -43,7 +43,9 @@ function formatPrice(val: unknown): string {
  * Sanitiza a URL canônica de um veículo no momento da geração do XML.
  * Corrige dinamicamente URLs legadas da 4Boss/Base44 que ainda contenham
  * /api/vehicles/veiculo/, /api/vehicles/v/ ou /veiculo/ para o formato
- * oficial /v/:slug. Retorna o fallback informado quando não há URL utilizável.
+ * oficial /v/:slug. Rotas reais /veiculo/:slug de outras plataformas
+ * (ex: Spice Digital / JR Casa Seminovos) são preservadas integralmente.
+ * Retorna o fallback informado quando não há URL utilizável.
  */
 function sanitizeCanonicalUrl(url?: string | null, fallbackUrl = ''): string {
   if (!url || typeof url !== 'string') {
@@ -61,6 +63,12 @@ function sanitizeCanonicalUrl(url?: string | null, fallbackUrl = ''): string {
     return candidate;
   }
   if (!origin) {
+    return candidate;
+  }
+
+  // Reescrita /veiculo/ -> /v/ somente para o domínio 4Boss/Base44.
+  // Demais domínios (ex: Spice Digital) preservam a rota real /veiculo/:slug.
+  if (!/4boss|base44/i.test(origin)) {
     return candidate;
   }
 

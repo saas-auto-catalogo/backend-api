@@ -32,8 +32,11 @@ export async function getMetaVehiclesFeedHandler(
 
   // Auto-invalidação de cache legado: se o XML armazenado em cache for de versões anteriores
   // (sem a estrutura oficial Meta Automotive <listings><listing>, com MOTORCYCLE não suportado,
-  // sem addr1/street_address ou com URLs canônicas legadas contendo /api/vehicles/ ou /veiculo/),
+  // sem addr1/street_address ou com URLs canônicas legadas contendo /api/vehicles/),
   // ou se for requisitado refresh explícito via ?refresh=true, ignoramos o cache antigo e forçamos a regeneração imediata.
+  // Observação: /veiculo/ é rota oficial de plataformas como Spice Digital (ex: JR Casa Seminovos),
+  // portanto só é tratada como legado quando a URL pertence ao domínio 4Boss/Base44
+  // (assinatura exata de URLs legadas: $host/veiculo/:slug).
   const isLegacyFeed = Boolean(
     cacheEntry &&
     (
@@ -42,7 +45,7 @@ export async function getMetaVehiclesFeedHandler(
       cacheEntry.xml.includes('<body_style>MOTORCYCLE</body_style>') ||
       !cacheEntry.xml.includes('<component name="addr1">') ||
       cacheEntry.xml.includes('/api/vehicles/') ||
-      cacheEntry.xml.includes('/veiculo/')
+      cacheEntry.xml.includes('4boss.com.br/veiculo/')
     )
   );
   const forceRefresh = Boolean(request.query?.refresh);

@@ -72,7 +72,9 @@ export function extractOrigin(url?: string | null): string | undefined {
 /**
  * Sanitiza a URL canônica de um veículo.
  * - Normaliza o origin (remove caminhos legados como /api/vehicles quando presente).
- * - Corrige rotas legadas (/api/vehicles/veiculo/, /api/vehicles/v/, /veiculo/) para /v/:urlSlug.
+ * - 4Boss/Base44: corrige rotas legadas (/api/vehicles/veiculo/, /api/vehicles/v/, /veiculo/) para /v/:urlSlug.
+ * - Spice Digital (ex: JR Casa Seminovos): garante o formato oficial ${origin}/veiculo/:slug.
+ * - Demais DMS: preserva a URL canônica completa informada pelo feed.
  */
 export function sanitizeCanonicalUrl(
   url?: string | null,
@@ -80,21 +82,38 @@ export function sanitizeCanonicalUrl(
 ): string | undefined {
   let candidate = url && typeof url === 'string' ? url.trim() : undefined;
 
-  // 1. Um urlSlug + fallback garante uma URL determinística em /v/:slug.
+  const fallbackHost = (extractOrigin(options?.fallbackBaseUrl) ?? String(options?.fallbackBaseUrl ?? '')).toLowerCase();
+  const isBase44 = options?.sourceType === 'BASE44' || /4boss|base44/i.test(fallbackHost);
+  const isSpiceDigital = options?.sourceType === 'SPICE_DIGITAL' || /spicedigital|jrcaseminovos/i.test(fallbackHost);
+
+  // 1. Um urlSlug + fallback garante uma URL determinística de anúncio,
+  //    mesmo quando a origem não informa url/slug/canonicalUrl no payload.
   if (options?.urlSlug) {
     const origin = extractOrigin(options.fallbackBaseUrl);
-    if (origin && options.sourceType === 'BASE44') {
-      return `${origin}/v/${encodeURIComponent(String(options.urlSlug))}`;
+    if (origin) {
+      if (isBase44) {
+        return `${origin}/v/${encodeURIComponent(String(options.urlSlug))}`;
+      }
+      if (isSpiceDigital) {
+        const cleanSlug = String(options.urlSlug).replace(/^\/?veiculo\/?/i, '').replace(/^\/+/, '');
+        return `${origin}/veiculo/${cleanSlug}`;
+      }
     }
   }
 
+  if (!candidate) return undefined;
+
   // 2. Um candidate sem protocolo (ex: bloco "slug" de feeds Spice Digital) é
   //    montado sobre o origin do fallback para gerar uma URL de anúncio válida.
-  if (candidate && options?.fallbackBaseUrl && !candidate.startsWith('http://') && !candidate.startsWith('https://')) {
+  if (options?.fallbackBaseUrl && !candidate.startsWith('http://') && !candidate.startsWith('https://')) {
     const origin = extractOrigin(options.fallbackBaseUrl);
     if (origin) {
+      const cleanPath = candidate.replace(/^\/+/, '');
+      if (isSpiceDigital) {
+        return `${origin}/veiculo/${cleanPath.replace(/^veiculo\/?/i, '')}`;
+      }
       const base = origin === options.fallbackBaseUrl ? options.fallbackBaseUrl.trim() : origin;
-      candidate = `${base.replace(/\/+$/, '')}/${candidate.replace(/^\/+/, '')}`;
+      candidate = `${base.replace(/\/+$/, '')}/${cleanPath}`;
     }
   }
 
@@ -104,13 +123,36 @@ export function sanitizeCanonicalUrl(
   const origin = extractOrigin(candidate);
   if (!origin) return candidate;
 
-  // 4. Extrai o slug a partir de rotas legadas conhecidas da 4Boss/Base44.
-  const legacyPrefixes = [
-    /\/api\/vehicles\/veiculo\/(.+)/i,
-    /\/api\/vehicles\/v\/(.+)/i,
-    /\/veiculo\/(.+)/i,
-    /\/api\/vehicles\/(.+)/i,
-  ];
+  const originHost = origin.toLowerCase();
+  const isFourBossHost = /4boss|base44/i.test(originHost);
+
+  // 4. Spice Digital: URLs absolutas do domínio sem o segmento /veiculo/ são
+  //    normalizadas inserindo-o (ex: /byd-.../107379 -> /veiculo/byd-.../107379).
+  if (isSpiceDigital) {
+    const path = candidate.slice(origin.length);
+    if (path && !path.startsWith('/veiculo')) {
+      const cleanPath = path.replace(/^\/+/, '').replace(/^veiculo\/?/i, '');
+      if (cleanPath) {
+        return `${origin}/veiculo/${cleanPath}`;
+      }
+    }
+    return originHost.startsWith('http') ? candidate : `${origin}${path || '/'}`;
+  }
+
+  // 5. Extrai o slug a partir de rotas legadas conhecidas da 4Boss/Base44.
+  const legacyPrefixes = isFourBossHost
+    ? [
+        /\/api\/vehicles\/veiculo\/(.+)/i,
+        /\/api\/vehicles\/v\/(.+)/i,
+        /\/veiculo\/(.+)/i,
+        /\/api\/vehicles\/(.+)/i,
+      ]
+    : [
+        /\/api\/vehicles\/veiculo\/(.+)/i,
+        /\/api\/vehicles\/v\/(.+)/i,
+        /\/api\/vehicles\/(.+)/i,
+      ];
+
   let slugFromLegacy: string | null = null;
   for (const pattern of legacyPrefixes) {
     const match = candidate.match(pattern);
@@ -120,15 +162,14 @@ export function sanitizeCanonicalUrl(
     }
   }
 
-  // 5. Se encontrou padrão legado, devolve a URL no novo formato /v/:slug.
+  // 6. Se encontrou padrão legado, devolve a URL no novo formato /v/:slug.
   if (slugFromLegacy) {
     return `${origin}/v/${encodeURIComponent(String(slugFromLegacy))}`;
   }
 
-  // 6. Se o origin veio com caminho /api/vehicles, normaliza para o origin limpo.
+  // 7. Se o origin veio com caminho /api/vehicles, normaliza para o origin limpo.
   const pathWithApi = candidate.slice(origin.length);
   if (pathWithApi.startsWith('/api/vehicles')) {
-    // Sem slug disponível, mantém o origin base apenas.
     return origin;
   }
 

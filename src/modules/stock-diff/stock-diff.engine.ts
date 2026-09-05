@@ -99,7 +99,8 @@ export class StockDiffEngine {
       existing.rawPayloadHash &&
       existing.rawPayloadHash === incoming.rawPayloadHash &&
       existing.heroImageUrl === incoming.heroImageUrl &&
-      existing.eligibleForMetaAds === incoming.eligibleForMetaAds
+      existing.eligibleForMetaAds === incoming.eligibleForMetaAds &&
+      existing.canonicalUrl === incoming.canonicalUrl
     ) {
       return changes;
     }
@@ -128,6 +129,11 @@ export class StockDiffEngine {
     // Comparação de Foto de Capa
     if (existing.heroImageUrl !== undefined && existing.heroImageUrl !== incoming.heroImageUrl) {
       changes.push('heroImageUrl');
+    }
+
+    // Comparação de URL Canônica (ex: atualização do formato /veiculo/:slug no Spice Digital)
+    if (existing.canonicalUrl !== undefined && existing.canonicalUrl !== incoming.canonicalUrl) {
+      changes.push(`canonicalUrl: "${existing.canonicalUrl}" -> "${incoming.canonicalUrl}"`);
     }
 
     // Comparação de Status

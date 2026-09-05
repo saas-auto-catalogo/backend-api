@@ -37,7 +37,13 @@ assert.equal(norm1.eligibleForMetaAds, true, 'Deve ser elegível para Meta Ads')
 assert.ok(norm1.heroImageUrl.startsWith('https://cdn.spicedigital.com.br/'), 'heroImageUrl deve apontar para o CDN');
 assert.equal(norm1.images.length, 1, 'Deve conter 1 imagem');
 assert.ok(!norm1.validationWarnings.includes(SPICE_WARNING), 'Não deve gerar aviso de falta de imagens');
+assert.equal(
+  norm1.canonicalUrl,
+  'https://www.jrcaseminovos.com.br/veiculo/byd-song-pro-gl-1-5-16v-aut-hibrido/107379',
+  'URL canônica Spice Digital deve usar o formato oficial /veiculo/:slug'
+);
 console.log('  ✅ galleryMedium extraído com sucesso, heroImageUrl válida e veículo elegível.');
+console.log(`  ✅ URL canônica: ${norm1.canonicalUrl}`);
 
 // 2. Teste com gallerySmall como fallback
 console.log('\n📸 2. Teste de extração via gallerySmall (quando galleryMedium ausente):');
@@ -117,7 +123,8 @@ const existingVehicleInDb = {
   heroImageUrl: null,
   status: VehicleStatus.AVAILABLE,
   rawPayloadHash: 'hash-antigo',
-  eligibleForMetaAds: false
+  eligibleForMetaAds: false,
+  canonicalUrl: 'https://www.jrcaseminovos.com.br/byd-song-pro-gl-1-5-16v-aut-hibrido/107379'
 };
 
 const diff = StockDiffEngine.computeDiff([existingVehicleInDb as any], [norm1]);
@@ -132,6 +139,10 @@ assert.ok(
   diff.toUpdate[0].changedFields.some((f) => f.includes('eligibleForMetaAds')),
   'Deve acusar mudança em eligibleForMetaAds'
 );
-console.log('  ✅ Motor de Diff detectou transição de foto e elegibilidade com sucesso.');
+assert.ok(
+  diff.toUpdate[0].changedFields.some((f) => f.includes('canonicalUrl')),
+  'Deve acusar mudança em canonicalUrl (formato /veiculo/:slug)'
+);
+console.log('  ✅ Motor de Diff detectou transição de foto, elegibilidade e canonicalUrl com sucesso.');
 
 console.log('\n🎉 Todos os testes de mídia para Spice Digital passaram com 100% de sucesso!');

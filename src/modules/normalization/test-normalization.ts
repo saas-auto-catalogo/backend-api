@@ -66,6 +66,11 @@ async function runNormalizationTests() {
     normJrca.canonicalUrl?.startsWith('https://'),
     `canonicalUrl deve ser uma URL absoluta HTTPS (recebido: "${normJrca.canonicalUrl}")`
   );
+  assert.equal(
+    normJrca.canonicalUrl,
+    'https://www.jrcaseminovos.com.br/veiculo/audi-q5-performance-2-0-tfsie-s-tr-qt-hibrido/104380',
+    'URL canônica JRCA deve usar o formato oficial /veiculo/:slug'
+  );
   assert.ok(normJrca.images.length > 0, 'Deve existir ao menos uma imagem na galeria');
 
   console.log('  ✅ [ASSERT] JRCA elegível, hero HTTPS, sem aviso de mídia e URL canônica absoluta.');

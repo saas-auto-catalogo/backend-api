@@ -52,7 +52,8 @@ export class StockSyncService {
           heroImageUrl: true,
           status: true,
           rawPayloadHash: true,
-          eligibleForMetaAds: true
+          eligibleForMetaAds: true,
+          canonicalUrl: true
         }
       });
 
