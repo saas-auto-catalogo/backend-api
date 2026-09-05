@@ -149,8 +149,9 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           fingerprint: SHA256:Y2xt7oRzNaWivQcaxk3a9G4YuUWE0aEsuGhjcYeqR8k
-          timeout: 2m
-          command_timeout: 20m
+          # Dial + overall client budget. Concurrency on a 2-vCPU VPS can exceed 2m.
+          timeout: 10m
+          command_timeout: 30m
           script: |
             set -euo pipefail
             /opt/autocatalogo/scripts/deploy-api.sh
