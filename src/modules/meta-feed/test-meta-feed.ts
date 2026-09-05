@@ -85,7 +85,7 @@ async function runMetaFeedTests() {
   console.log(`  ✅ Tamanho do XML: ${(generated.xml.length / 1024).toFixed(2)} KB`);
 
   // Validações de tags obrigatórias
-  if (!generated.xml.includes('<rss version="2.0" xmlns:g="http://base.google.com/ns/1.0" xmlns:atom="http://www.w3.org/2005/Atom">')) {
+  if (!generated.xml.includes('<rss xmlns:g="http://base.google.com/ns/1.0" version="2.0">')) {
     throw new Error('Raiz RSS 2.0 inválida: namespace ou versão não encontrados.');
   }
   if (!generated.xml.includes('<channel>')) {
@@ -94,23 +94,29 @@ async function runMetaFeedTests() {
   if (!generated.xml.includes('</channel>') || !generated.xml.includes('</rss>')) {
     throw new Error('Fechamento dos nós <channel>/<rss> inválido.');
   }
-  if (!generated.xml.includes('<atom:link')) {
-    throw new Error('Nó <atom:link rel="self"> não encontrado.');
-  }
   if (!generated.xml.includes('<item>') || !generated.xml.includes('</item>')) {
     throw new Error('Nós <item> não encontrados no RSS.');
   }
-  if (!generated.xml.includes('<g:id>')) {
+  if (!generated.xml.includes('<g:id>mercedes-glc-300-vid-001</g:id>')) {
     throw new Error('Tag <g:id> (chave primária universal) não encontrada.');
   }
-  if (!generated.xml.includes('<g:vehicle_id>mercedes-glc-300-vid-001</g:vehicle_id>')) {
-    throw new Error('Vehicle ID não encontrado no XML.');
+  if (!generated.xml.includes('<g:brand>MERCEDES-BENZ</g:brand>')) {
+    throw new Error('Marca <g:brand> não encontrada no XML.');
   }
-  if (!generated.xml.includes('<g:price>489700.00 BRL</g:price>')) {
-    throw new Error('Preço formatado BRL inválido.');
+  if (!generated.xml.includes('<g:google_product_category>1267</g:google_product_category>')) {
+    throw new Error('Categoria Google Product 1267 não encontrada.');
   }
-  if (!generated.xml.includes('<g:sale_price>479900.00 BRL</g:sale_price>')) {
+  if (!generated.xml.includes('<g:price>489700.00</g:price>')) {
+    throw new Error('Preço formatado numérico inválido.');
+  }
+  if (!generated.xml.includes('<g:sale_price>479900.00</g:sale_price>')) {
     throw new Error('Preço promocional não encontrado.');
+  }
+  if (!generated.xml.includes('<g:availability>In stock</g:availability>')) {
+    throw new Error('Disponibilidade In stock não encontrada.');
+  }
+  if (!generated.xml.includes('<g:condition>used</g:condition>')) {
+    throw new Error('Condição used não encontrada.');
   }
   if (!generated.xml.includes('<g:custom_label_0>Acima de 300k</g:custom_label_0>')) {
     throw new Error('Custom Label 0 inválida.');

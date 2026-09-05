@@ -30,10 +30,13 @@ export async function getMetaVehiclesFeedHandler(
   // 1. Consulta no Cache Distribuído Redis
   const cacheEntry = await feedCacheService.getFeedXml(token);
 
-  // Auto-invalidação de cache legado: se o XML armazenado em cache ainda for o Atom antigo
-  // (sem a tag raiz RSS 2.0) ou se for requisitado refresh explícito via ?refresh=true,
-  // ignoramos o cache antigo e forçamos a regeneração imediata em RSS 2.0.
-  const isLegacyFeed = Boolean(cacheEntry && !cacheEntry.xml.includes('<rss version="2.0"'));
+  // Auto-invalidação de cache legado: se o XML armazenado em cache for de versões anteriores
+  // (sem o padrão Leadfy / categoria Google 1267) ou se for requisitado refresh explícito via ?refresh=true,
+  // ignoramos o cache antigo e forçamos a regeneração imediata.
+  const isLegacyFeed = Boolean(
+    cacheEntry &&
+    (!cacheEntry.xml.includes('version="2.0"') || !cacheEntry.xml.includes('<g:google_product_category>1267</g:google_product_category>'))
+  );
   const forceRefresh = Boolean(request.query?.refresh);
 
   if (cacheEntry && !isLegacyFeed && !forceRefresh) {
