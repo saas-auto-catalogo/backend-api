@@ -233,7 +233,7 @@ export class StripePaymentService {
    */
   public async createPortalSession(
     customerId: string,
-    returnUrl: string = 'https://app.autocatalogo.com.br/settings/billing'
+    returnUrl: string = 'https://app.drivesync.me/settings/billing'
   ): Promise<StripePortalResponse> {
     if (isStripeMockMode()) {
       const portalSessionId = `bps_${Date.now()}_${Math.random().toString(36).substring(7)}`;

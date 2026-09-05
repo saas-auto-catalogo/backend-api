@@ -7,7 +7,7 @@ export interface WelcomeEmailData {
 }
 
 export function renderWelcomeEmail(data: WelcomeEmailData): { subject: string; html: string } {
-  const subject = `Bem-vindo ao SaaS Auto Catálogo, ${data.userName}! 🎉`;
+  const subject = `Bem-vindo ao DriveSync, ${data.userName}! 🎉`;
 
   const content = `
     <h1 style="color: #ffffff; font-size: 22px; margin-top: 0; margin-bottom: 16px;">
@@ -28,7 +28,7 @@ export function renderWelcomeEmail(data: WelcomeEmailData): { subject: string; h
     </div>
 
     <p style="font-size: 13px; color: #94a3b8;">
-      Se tiver alguma dúvida, nossa equipe de suporte está sempre à disposição através do email <a href="mailto:suporte@autocatalogo.com.br" style="color: #60a5fa;">suporte@autocatalogo.com.br</a>.
+      Se tiver alguma dúvida, nossa equipe de suporte está sempre à disposição através do email <a href="mailto:suporte@drivesync.me" style="color: #60a5fa;">suporte@drivesync.me</a>.
     </p>
   `;
 

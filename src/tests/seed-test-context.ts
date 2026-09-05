@@ -23,7 +23,7 @@ function fallbackContext(): IntegrationSeedContext {
     workspaceBId,
     superAdmin: {
       id: 'usr-super-admin-01',
-      email: 'admin@autocatalogo.com.br',
+      email: 'admin@drivesync.me',
       name: 'Super Admin',
       isSuperAdmin: true,
       role: 'SUPER_ADMIN',
@@ -96,7 +96,7 @@ export async function loadIntegrationSeedContext(): Promise<IntegrationSeedConte
         include: { dealerships: { take: 1 } },
       }),
       prisma.workspace.findFirst({ where: { slug: 'jr-casa-seminovos' } }),
-      prisma.user.findFirst({ where: { email: 'admin@autocatalogo.com.br' } }),
+      prisma.user.findFirst({ where: { email: 'admin@drivesync.me' } }),
       prisma.user.findFirst({
         where: { email: 'carlos.silva@autoelitemotors.com.br' },
         include: { memberships: true },

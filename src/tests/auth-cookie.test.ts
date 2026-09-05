@@ -33,7 +33,7 @@ function extractCookieValue(setCookieHeader: string | string[] | undefined, name
 async function runAuthCookieTestSuite() {
   console.log('╔══════════════════════════════════════════════════════════════╗');
   console.log('║   🍪 QA — Refresh Token httpOnly Cookie & CORS               ║');
-  console.log('║   SaaS Auto Catálogo Backend API                            ║');
+  console.log('║   DriveSync Backend API                            ║');
   console.log('╚══════════════════════════════════════════════════════════════╝');
 
   const app = await buildServer();

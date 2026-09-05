@@ -21,7 +21,7 @@ export async function getFeedByIdHandler(
 
   if (!feed) {
     return reply.status(404).send({
-      type: 'https://autocatalogo.com.br/errors/not-found',
+      type: 'https://drivesync.me/errors/not-found',
       title: 'Feed Não Encontrado',
       status: 404,
       detail: `O feed com identificador "${feedId}" não foi encontrado.`,
@@ -40,7 +40,7 @@ export async function createFeedHandler(
 
   if (!body.sourceType || !body.feedUrl) {
     return reply.status(400).send({
-      type: 'https://autocatalogo.com.br/errors/bad-request',
+      type: 'https://drivesync.me/errors/bad-request',
       title: 'Dados Incompletos',
       status: 400,
       detail: 'Os campos "sourceType" e "feedUrl" são obrigatórios.',
@@ -64,7 +64,7 @@ export async function updateFeedHandler(
   } catch (err) {
     if (err instanceof FeedNotFoundError) {
       return reply.status(404).send({
-        type: 'https://autocatalogo.com.br/errors/not-found',
+        type: 'https://drivesync.me/errors/not-found',
         title: 'Feed Não Encontrado',
         status: 404,
         detail: err.message,
@@ -86,7 +86,7 @@ export async function deleteFeedHandler(
   } catch (err) {
     if (err instanceof FeedNotFoundError) {
       return reply.status(404).send({
-        type: 'https://autocatalogo.com.br/errors/not-found',
+        type: 'https://drivesync.me/errors/not-found',
         title: 'Feed Não Encontrado',
         status: 404,
         detail: err.message,
@@ -109,7 +109,7 @@ export async function triggerFeedSyncHandler(
   } catch (err) {
     if (err instanceof FeedNotFoundError) {
       return reply.status(404).send({
-        type: 'https://autocatalogo.com.br/errors/not-found',
+        type: 'https://drivesync.me/errors/not-found',
         title: 'Feed Não Encontrado',
         status: 404,
         detail: err.message,
@@ -131,7 +131,7 @@ export async function getFeedSyncJobStatusHandler(
   } catch (err) {
     if (err instanceof SyncJobNotFoundError) {
       return reply.status(404).send({
-        type: 'https://autocatalogo.com.br/errors/not-found',
+        type: 'https://drivesync.me/errors/not-found',
         title: 'Job de Sincronização Não Encontrado',
         status: 404,
         detail: err.message,

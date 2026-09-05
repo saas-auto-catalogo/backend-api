@@ -15,14 +15,14 @@ export async function createStripePortalSessionHandler(
   const user = request.user;
   if (!user || !user.workspaceId) {
     return reply.status(401).send({
-      type: 'https://autocatalogo.com.br/errors/unauthorized',
+      type: 'https://drivesync.me/errors/unauthorized',
       title: 'Não Autorizado',
       status: 401,
       detail: 'Autenticação necessária para acessar o portal de faturamento.',
     });
   }
 
-  const returnUrl = request.body?.returnUrl || 'https://app.autocatalogo.com.br/settings/billing';
+  const returnUrl = request.body?.returnUrl || 'https://app.drivesync.me/settings/billing';
 
   const sub = await prisma.subscription.findUnique({
     where: { workspaceId: user.workspaceId },
@@ -30,7 +30,7 @@ export async function createStripePortalSessionHandler(
 
   if (!sub?.stripeCustomerId) {
     return reply.status(404).send({
-      type: 'https://autocatalogo.com.br/errors/subscription-not-found',
+      type: 'https://drivesync.me/errors/subscription-not-found',
       title: 'Assinatura não encontrada',
       status: 404,
       detail: 'Nenhuma assinatura Stripe vinculada a este workspace.',

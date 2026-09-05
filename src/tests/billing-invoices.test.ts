@@ -27,7 +27,7 @@ function section(title: string): void {
 async function runBillingInvoicesTestSuite() {
   console.log('╔══════════════════════════════════════════════════════════════╗');
   console.log('║   🧾 QA — Histórico de Faturas Stripe (billing/invoices)     ║');
-  console.log('║   SaaS Auto Catálogo Backend API                            ║');
+  console.log('║   DriveSync Backend API                            ║');
   console.log('╚══════════════════════════════════════════════════════════════╝');
 
   const app = await buildServer();

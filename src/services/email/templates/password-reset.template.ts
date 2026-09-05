@@ -8,14 +8,14 @@ export interface PasswordResetEmailData {
 
 export function renderPasswordResetEmail(data: PasswordResetEmailData): { subject: string; html: string } {
   const expiresIn = data.expiresInMinutes || 60;
-  const subject = 'Recuperação de Senha — SaaS Auto Catálogo 🔑';
+  const subject = 'Recuperação de Senha — DriveSync 🔑';
 
   const content = `
     <h1 style="color: #ffffff; font-size: 22px; margin-top: 0; margin-bottom: 16px;">
       Redefinição de Senha
     </h1>
     <p>Olá <strong>${data.userName}</strong>,</p>
-    <p>Recebemos uma solicitação para redefinir a senha da sua conta no SaaS Auto Catálogo.</p>
+    <p>Recebemos uma solicitação para redefinir a senha da sua conta no DriveSync.</p>
     
     <div class="highlight-box">
       <p style="margin: 0; font-size: 14px;">

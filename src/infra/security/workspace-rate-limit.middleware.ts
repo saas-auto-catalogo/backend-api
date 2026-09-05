@@ -31,7 +31,7 @@ export function workspaceRateLimit(
 
     if (!result.allowed) {
       reply.status(429).send({
-        type: 'https://autocatalogo.com.br/errors/rate-limited',
+        type: 'https://drivesync.me/errors/rate-limited',
         title: 'Limite de Requisicoes Excedido',
         status: 429,
         detail: 'Limite de requisicoes do workspace excedido. Tente novamente em instantes.',

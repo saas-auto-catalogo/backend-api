@@ -33,7 +33,7 @@ function section(title: string): void {
 async function runEmailTestSuite() {
   console.log('╔══════════════════════════════════════════════════════════════╗');
   console.log('║   📧 QA — Suíte de Testes de Emails Transacionais (Resend)   ║');
-  console.log('║   SaaS Auto Catálogo Backend API                            ║');
+  console.log('║   DriveSync Backend API                            ║');
   console.log('╚══════════════════════════════════════════════════════════════╝');
 
   const startTime = Date.now();
@@ -51,7 +51,7 @@ async function runEmailTestSuite() {
     });
 
     assert(baseHtml.includes('<!DOCTYPE html>'), 'Layout contém DOCTYPE html');
-    assert(baseHtml.includes('SaaS Auto Catálogo'), 'Layout contém cabeçalho com marca do SaaS');
+    assert(baseHtml.includes('DriveSync'), 'Layout contém cabeçalho com marca do SaaS');
     assert(baseHtml.includes('Preheader de Teste'), 'Layout inclui preheader invisível');
     assert(baseHtml.includes('<p>Conteúdo de teste</p>'), 'Layout renderiza conteúdo filho');
     assert(baseHtml.includes('Todos os direitos reservados'), 'Layout contém footer com copyright');
@@ -64,12 +64,12 @@ async function runEmailTestSuite() {
     const welcome = renderWelcomeEmail({
       userName: 'Carlos Silva',
       workspaceName: 'Auto Elite Motors',
-      loginUrl: 'https://app.autocatalogo.com.br/login',
+      loginUrl: 'https://app.drivesync.me/login',
     });
 
     assert(welcome.subject.includes('Carlos Silva'), 'Assunto contém o nome do usuário');
     assert(welcome.html.includes('Auto Elite Motors'), 'HTML contém o nome da revenda/workspace');
-    assert(welcome.html.includes('https://app.autocatalogo.com.br/login'), 'HTML contém link correto de login');
+    assert(welcome.html.includes('https://app.drivesync.me/login'), 'HTML contém link correto de login');
     assert(welcome.html.includes('Conecte seu Estoque'), 'HTML contém chamada de onboarding');
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -79,7 +79,7 @@ async function runEmailTestSuite() {
 
     const reset = renderPasswordResetEmail({
       userName: 'Carlos Silva',
-      resetUrl: 'https://app.autocatalogo.com.br/reset-password?token=sec_tok_991823',
+      resetUrl: 'https://app.drivesync.me/reset-password?token=sec_tok_991823',
       expiresInMinutes: 60,
     });
 
@@ -98,7 +98,7 @@ async function runEmailTestSuite() {
       amountFormatted: 'R$ 297,00/mês',
       paymentMethod: 'Pix',
       nextBillingDate: '30/09/2026',
-      dashboardUrl: 'https://app.autocatalogo.com.br/dashboard',
+      dashboardUrl: 'https://app.drivesync.me/dashboard',
     });
 
     assert(payment.subject.includes('Pagamento Confirmado'), 'Assunto correto de pagamento');
@@ -118,7 +118,7 @@ async function runEmailTestSuite() {
       sourceType: 'AUTOCERTO (XML SAX Stream)',
       errorMessage: 'HTTP 403 Forbidden: Token de integração do DMS revogado pelo servidor remoto',
       failedAt: '31/08/2026 às 23:10',
-      diagnosticsUrl: 'https://app.autocatalogo.com.br/feeds/feed-123/diagnostics',
+      diagnosticsUrl: 'https://app.drivesync.me/feeds/feed-123/diagnostics',
     });
 
     assert(syncFail.subject.includes('Falha na Sincronização'), 'Assunto com alerta de falha');
@@ -135,7 +135,7 @@ async function runEmailTestSuite() {
       userName: 'Carlos Silva',
       planName: 'Plano Pro',
       accessUntilDate: '30/09/2026',
-      reactivateUrl: 'https://app.autocatalogo.com.br/settings/billing',
+      reactivateUrl: 'https://app.drivesync.me/settings/billing',
     });
 
     assert(canceled.subject.includes('Assinatura Cancelada'), 'Assunto de cancelamento');
@@ -171,7 +171,7 @@ async function runEmailTestSuite() {
       userName: 'Carlos Silva',
       planName: 'Plano PRO',
       trialEndDate: '05/09/2026',
-      upgradeUrl: 'https://app.autocatalogo.com.br/settings/billing',
+      upgradeUrl: 'https://app.drivesync.me/settings/billing',
     });
 
     assert(trialEnding.subject.includes('trial'), 'Assunto menciona trial');
@@ -189,7 +189,7 @@ async function runEmailTestSuite() {
     const res1 = await emailService.sendWelcomeEmail(targetEmail, {
       userName: 'Carlos Silva',
       workspaceName: 'Auto Elite Motors',
-      loginUrl: 'https://app.autocatalogo.com.br/login',
+      loginUrl: 'https://app.drivesync.me/login',
     });
     assert(res1.success, 'Disparo de email de boas-vindas com sucesso');
     assert(res1.recipient === targetEmail, `Destinatário correto: ${res1.recipient}`);
@@ -199,7 +199,7 @@ async function runEmailTestSuite() {
     // 8.2 Reset de Senha
     const res2 = await emailService.sendPasswordResetEmail(targetEmail, {
       userName: 'Carlos Silva',
-      resetUrl: 'https://app.autocatalogo.com.br/reset-password?token=sec_123',
+      resetUrl: 'https://app.drivesync.me/reset-password?token=sec_123',
     });
     assert(res2.success, 'Disparo de email de reset de senha com sucesso');
 
@@ -209,7 +209,7 @@ async function runEmailTestSuite() {
       planName: 'Plano Pro',
       amountFormatted: 'R$ 297,00/mês',
       paymentMethod: 'Cartão de Crédito',
-      dashboardUrl: 'https://app.autocatalogo.com.br/dashboard',
+      dashboardUrl: 'https://app.drivesync.me/dashboard',
     });
     assert(res3.success, 'Disparo de email de pagamento aprovado com sucesso');
 
@@ -220,7 +220,7 @@ async function runEmailTestSuite() {
       sourceType: 'AUTOCERTO',
       errorMessage: 'Timeout após 15000ms',
       failedAt: '31/08/2026 23:15',
-      diagnosticsUrl: 'https://app.autocatalogo.com.br/feeds/1/diagnostics',
+      diagnosticsUrl: 'https://app.drivesync.me/feeds/1/diagnostics',
     });
     assert(res4.success, 'Disparo de email de alerta de falha de sync com sucesso');
 
@@ -229,7 +229,7 @@ async function runEmailTestSuite() {
       userName: 'Carlos Silva',
       planName: 'Plano Pro',
       accessUntilDate: '30/09/2026',
-      reactivateUrl: 'https://app.autocatalogo.com.br/settings/billing',
+      reactivateUrl: 'https://app.drivesync.me/settings/billing',
     });
     assert(res5.success, 'Disparo de email de cancelamento de assinatura com sucesso');
 
@@ -247,7 +247,7 @@ async function runEmailTestSuite() {
       userName: 'Carlos Silva',
       planName: 'Plano PRO',
       trialEndDate: '05/09/2026',
-      upgradeUrl: 'https://app.autocatalogo.com.br/settings/billing',
+      upgradeUrl: 'https://app.drivesync.me/settings/billing',
     });
     assert(res7.success, 'Disparo de email de aviso de fim de trial com sucesso');
   } catch (err) {

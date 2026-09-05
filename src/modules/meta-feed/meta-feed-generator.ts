@@ -153,7 +153,7 @@ export class MetaXmlFeedGenerator {
     options: MetaFeedGeneratorOptions
   ): GeneratedFeedResult {
     const nowIso = new Date().toISOString();
-    const catalogTitle = options.catalogName || 'SaaS Auto Catálogo - Feed Meta Automotive Inventory Ads';
+    const catalogTitle = options.catalogName || 'DriveSync - Feed Meta Automotive Inventory Ads';
 
     const xmlLines: string[] = [
       '<?xml version="1.0" encoding="UTF-8"?>',

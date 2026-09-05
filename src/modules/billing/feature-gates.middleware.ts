@@ -17,7 +17,7 @@ export function requirePlanFeature(feature: PlanFeatureKey) {
     const user = request.user;
     if (!user) {
       reply.status(401).send({
-        type: 'https://autocatalogo.com.br/errors/unauthorized',
+        type: 'https://drivesync.me/errors/unauthorized',
         title: 'Não Autenticado',
         status: 401,
         detail: 'Autenticação necessária para validar plano de assinatura.',
@@ -34,7 +34,7 @@ export function requirePlanFeature(feature: PlanFeatureKey) {
     const workspaceId = user.workspaceId;
     if (!workspaceId) {
       reply.status(403).send({
-        type: 'https://autocatalogo.com.br/errors/no-workspace',
+        type: 'https://drivesync.me/errors/no-workspace',
         title: 'Workspace Não Vinculado',
         status: 403,
         detail: 'Usuário não possui um workspace vinculado para verificar o plano.',
@@ -60,7 +60,7 @@ export function requirePlanFeature(feature: PlanFeatureKey) {
 
     if (!hasPlanFeature(userPlan, feature)) {
       reply.status(403).send({
-        type: 'https://autocatalogo.com.br/errors/plan-feature-upgrade-required',
+        type: 'https://drivesync.me/errors/plan-feature-upgrade-required',
         title: 'Recurso Não Disponível no Seu Plano',
         status: 403,
         detail: `O recurso "${feature}" não está disponível no plano ${userPlan}. Faça o upgrade para o plano PRO ou ENTERPRISE para desbloquear este recurso.`,

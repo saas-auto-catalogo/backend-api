@@ -72,7 +72,7 @@ export async function createStripeCheckoutSessionHandler(
   } catch (error) {
     if (error instanceof StripePriceConfigError) {
       reply.status(503).send({
-        type: 'https://autocatalogo.com.br/errors/stripe-config-error',
+        type: 'https://drivesync.me/errors/stripe-config-error',
         title: 'Stripe Configuration Error',
         status: 503,
         detail: error.message,
@@ -93,7 +93,7 @@ export async function createWorkspaceStripeCheckoutSessionHandler(
   const user = request.user;
   if (!user?.email) {
     reply.status(401).send({
-      type: 'https://autocatalogo.com.br/errors/unauthorized',
+      type: 'https://drivesync.me/errors/unauthorized',
       title: 'Não Autorizado',
       status: 401,
       detail: 'Autenticação necessária para iniciar checkout.',
@@ -108,7 +108,7 @@ export async function createWorkspaceStripeCheckoutSessionHandler(
 
   if (subscription?.status === 'ACTIVE') {
     reply.status(409).send({
-      type: 'https://autocatalogo.com.br/errors/subscription-already-active',
+      type: 'https://drivesync.me/errors/subscription-already-active',
       title: 'Assinatura já ativa',
       status: 409,
       detail: 'Este workspace já possui uma assinatura ativa. Use o portal de faturamento para gerenciar o plano.',
@@ -136,7 +136,7 @@ export async function createWorkspaceStripeCheckoutSessionHandler(
   } catch (error) {
     if (error instanceof LegalAcceptanceMismatchError) {
       reply.status(422).send({
-        type: 'https://autocatalogo.com.br/errors/validation-error',
+        type: 'https://drivesync.me/errors/validation-error',
         title: 'Validation Error',
         status: 422,
         detail: error.message,
@@ -146,7 +146,7 @@ export async function createWorkspaceStripeCheckoutSessionHandler(
     }
     if (error instanceof StripePriceConfigError) {
       reply.status(503).send({
-        type: 'https://autocatalogo.com.br/errors/stripe-config-error',
+        type: 'https://drivesync.me/errors/stripe-config-error',
         title: 'Stripe Configuration Error',
         status: 503,
         detail: error.message,
@@ -162,7 +162,7 @@ export async function getStripeCheckoutSessionStatusHandler(
   reply: FastifyReply,
 ): Promise<void> {
   reply.status(410).send({
-    type: 'https://autocatalogo.com.br/errors/checkout-session-status-deprecated',
+    type: 'https://drivesync.me/errors/checkout-session-status-deprecated',
     title: 'Endpoint descontinuado',
     status: 410,
     detail: 'Use GET /workspaces/:id/billing após login para verificar assinatura.',
@@ -181,7 +181,7 @@ export async function stripeWebhookHandler(
     reply.status(200).send(result);
   } catch (error) {
     reply.status(400).send({
-      type: 'https://autocatalogo.com.br/errors/stripe-webhook-invalid',
+      type: 'https://drivesync.me/errors/stripe-webhook-invalid',
       title: 'Invalid Stripe Webhook',
       status: 400,
       detail: error instanceof Error ? error.message : 'Invalid webhook payload',

@@ -50,7 +50,7 @@ export async function downloadFeedStream(
 
   // 2. Montagem dos Headers HTTP de Autenticação
   const headers: Record<string, string> = {
-    'User-Agent': 'SaaS-Auto-Catalogo-Feed-Ingestor/1.0 (+https://autocatalogo.com.br)',
+    'User-Agent': 'SaaS-Auto-Catalogo-Feed-Ingestor/1.0 (+https://drivesync.me)',
     'Accept': 'application/xml, text/xml, application/zip, application/x-gzip, */*;q=0.8',
     'Accept-Encoding': 'gzip, deflate',
     ...(options.auth?.customHeaders || {})

@@ -6,15 +6,15 @@ export interface BaseEmailLayoutOptions {
 }
 
 /**
- * Layout HTML Responsivo Base para Emails Transacionais do SaaS Auto Catálogo
+ * Layout HTML Responsivo Base para Emails Transacionais do DriveSync
  * Estilo moderno, dark mode clean e compatível com os principais clientes de email.
  */
 export function renderBaseLayout(options: BaseEmailLayoutOptions): string {
   const {
     title,
-    preheader = 'SaaS Auto Catálogo — Plataforma de Gestão e Anúncios de Veículos',
+    preheader = 'DriveSync — Plataforma de Gestão e Anúncios de Veículos',
     content,
-    footerText = 'Você recebeu este email porque possui uma conta ativa no SaaS Auto Catálogo.',
+    footerText = 'Você recebeu este email porque possui uma conta ativa no DriveSync.',
   } = options;
 
   return `<!DOCTYPE html>
@@ -127,7 +127,7 @@ export function renderBaseLayout(options: BaseEmailLayoutOptions): string {
           <!-- Cabeçalho / Logo -->
           <tr>
             <td class="header">
-              <span class="logo-badge">🚗 SaaS Auto Catálogo</span>
+              <span class="logo-badge">🚗 DriveSync</span>
             </td>
           </tr>
 
@@ -142,7 +142,7 @@ export function renderBaseLayout(options: BaseEmailLayoutOptions): string {
           <tr>
             <td class="footer">
               <p style="margin: 0 0 8px;">${footerText}</p>
-              <p style="margin: 0;">© ${new Date().getFullYear()} SaaS Auto Catálogo Ltda. Todos os direitos reservados.</p>
+              <p style="margin: 0;">© ${new Date().getFullYear()} DriveSync Ltda. Todos os direitos reservados.</p>
             </td>
           </tr>
         </table>

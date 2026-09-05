@@ -88,7 +88,7 @@ function stripeProductionEnv(): Record<string, string> {
 async function runEnvValidationTestSuite() {
   console.log('╔══════════════════════════════════════════════════════════════╗');
   console.log('║   🔧 QA — Validação de Variáveis de Ambiente                 ║');
-  console.log('║   SaaS Auto Catálogo Backend API                            ║');
+  console.log('║   DriveSync Backend API                            ║');
   console.log('╚══════════════════════════════════════════════════════════════╝');
 
   const startTime = Date.now();

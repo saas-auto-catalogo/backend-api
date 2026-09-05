@@ -17,7 +17,7 @@ export function validate(schema: ZodSchema<any>, source: Source = 'body') {
         }));
 
         const problem = {
-          type: 'https://autocatalogo.com.br/errors/validation-error',
+          type: 'https://drivesync.me/errors/validation-error',
           title: 'Validation Error',
           status: 422,
           detail: errors.map((e) => `${e.path}: ${e.message}`).join('; '),

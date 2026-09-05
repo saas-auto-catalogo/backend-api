@@ -17,7 +17,7 @@ export function renderPaymentApprovedEmail(data: PaymentApprovedEmailData): { su
       Pagamento Aprovado com Sucesso!
     </h1>
     <p>Olá <strong>${data.userName}</strong>,</p>
-    <p>Confirmamos o recebimento do seu pagamento para a assinatura do SaaS Auto Catálogo.</p>
+    <p>Confirmamos o recebimento do seu pagamento para a assinatura do DriveSync.</p>
     
     <div class="highlight-box">
       <table style="width: 100%; font-size: 14px; color: #cbd5e1;" cellpadding="4">

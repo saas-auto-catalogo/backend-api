@@ -1,5 +1,5 @@
 // ==============================================================================
-// SaaS Auto Catálogo - Módulo de Normalização Canônica e Auto-Matching De/Para
+// DriveSync - Módulo de Normalização Canônica e Auto-Matching De/Para
 // ==============================================================================
 
 export * from './normalizers/string-normalizer.js';

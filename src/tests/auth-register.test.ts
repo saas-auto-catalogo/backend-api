@@ -27,7 +27,7 @@ function section(title: string): void {
 async function runAuthRegisterTestSuite() {
   console.log('╔══════════════════════════════════════════════════════════════╗');
   console.log('║   🔐 QA — Cadastro de Usuário (POST /auth/register)          ║');
-  console.log('║   SaaS Auto Catálogo Backend API                            ║');
+  console.log('║   DriveSync Backend API                            ║');
   console.log('╚══════════════════════════════════════════════════════════════╝');
 
   const app = await buildServer();

@@ -24,7 +24,7 @@ export class EmailService {
 
   constructor() {
     const apiKey = process.env.RESEND_API_KEY;
-    this.fromEmail = process.env.EMAIL_FROM || 'SaaS Auto Catálogo <noreply@autocatalogo.com.br>';
+    this.fromEmail = process.env.EMAIL_FROM || 'DriveSync <noreply@drivesync.me>';
 
     if (apiKey && apiKey.startsWith('re_') && !apiKey.includes('your_resend_api_key')) {
       this.resendClient = new Resend(apiKey);

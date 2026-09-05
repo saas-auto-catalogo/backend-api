@@ -70,7 +70,7 @@ async function runMetaFeedTests() {
   ];
 
   const generated = MetaXmlFeedGenerator.generateFeed(mockVehicles, {
-    feedUrl: 'https://api.autocatalogo.com.br/api/v1/feeds/token-teste-123/meta-vehicles.xml',
+    feedUrl: 'https://api.drivesync.me/api/v1/feeds/token-teste-123/meta-vehicles.xml',
     catalogName: '4Boss Motors - Catálogo Meta Automotive Ads',
     dealership: {
       id: 'dealer-001',

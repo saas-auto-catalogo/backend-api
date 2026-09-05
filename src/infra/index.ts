@@ -1,5 +1,5 @@
 // ==============================================================================
-// SaaS Auto Catálogo - Exportações do Módulo de Infraestrutura (Redis, Queues & Cache)
+// DriveSync - Exportações do Módulo de Infraestrutura (Redis, Queues & Cache)
 // ==============================================================================
 
 export * from './redis/redis-client.js';

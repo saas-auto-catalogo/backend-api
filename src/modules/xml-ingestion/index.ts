@@ -1,5 +1,5 @@
 // ==============================================================================
-// SaaS Auto Catálogo - Módulo de Ingestão de Feeds XML / Streaming Parser
+// DriveSync - Módulo de Ingestão de Feeds XML / Streaming Parser
 // ==============================================================================
 
 export * from './stream-parser.js';

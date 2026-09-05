@@ -367,7 +367,7 @@ export class AuthService {
       },
     });
 
-    const loginUrl = `${process.env.FRONTEND_URL || 'https://app.autocatalogo.com.br'}/login`;
+    const loginUrl = `${process.env.FRONTEND_URL || 'https://app.drivesync.me'}/login`;
     emailService.sendWelcomeEmail(user.email, {
       userName: user.name,
       workspaceName: membership.workspace.name,
@@ -484,7 +484,7 @@ export class AuthService {
 
     await redisClient.set(redisKey, user.id, 'EX', RESET_TOKEN_TTL_SECONDS);
 
-    const resetUrl = `${process.env.FRONTEND_URL || 'https://app.autocatalogo.com.br'}/reset-password?token=${resetToken}`;
+    const resetUrl = `${process.env.FRONTEND_URL || 'https://app.drivesync.me'}/reset-password?token=${resetToken}`;
 
     await emailService.sendPasswordResetEmail(user.email, {
       userName: user.name,
@@ -661,7 +661,7 @@ export function createAuthError(detail: string, status: number): Error & { probl
   const err = new Error(detail) as any;
   err.statusCode = status;
   err.problem = {
-    type: `https://autocatalogo.com.br/errors/${typeMap[status] || 'internal-error'}`,
+    type: `https://drivesync.me/errors/${typeMap[status] || 'internal-error'}`,
     title: titleMap[status] || 'Erro',
     status,
     detail,

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom" xmlns:g="http://base.google.com/ns/1.0">
-  <title>SaaS Auto Catálogo - Feed Meta Automotive Inventory Ads</title>
-  <link rel="self" href="https://api.autocatalogo.com.br/api/v1/feeds/sample-token/meta-vehicles.xml" />
+  <title>DriveSync - Feed Meta Automotive Inventory Ads</title>
+  <link rel="self" href="https://api.drivesync.me/api/v1/feeds/sample-token/meta-vehicles.xml" />
   <updated>2026-08-31T20:30:00Z</updated>
 
   <entry>
