@@ -1,5 +1,6 @@
 import { PrismaClient, Role, WorkspaceStatus, FeedSourceType, SyncStatus, VehicleStatus, VehicleCondition, FuelType, TransmissionType, BodyStyle } from '@prisma/client';
 import crypto from 'crypto';
+import { legalSyncService } from '../src/modules/legal/legal-sync.service.js';
 
 const prisma = new PrismaClient();
 
@@ -21,10 +22,16 @@ async function main() {
   await prisma.checkoutProvision.deleteMany();
   await prisma.stripeWebhookEvent.deleteMany();
   await prisma.subscription.deleteMany();
+  await prisma.legalAcceptance.deleteMany();
   await prisma.workspaceMember.deleteMany();
   await prisma.user.deleteMany();
   await prisma.workspace.deleteMany();
   await prisma.adminSetting.deleteMany();
+
+  // 1b. Documentos jurídicos vigentes (manifesto oficial legal-docs)
+  console.log('📜 Sincronizando documentos jurídicos vigentes...');
+  const legalSync = await legalSyncService.syncFromUrl();
+  console.log(`   → ${legalSync.upserted} documentos: ${legalSync.currentSlugs.join(', ')}`);
 
   // 2. Criação de Configurações Administrativas Globais
   console.log('⚙️ Criando configurações globais (AdminSettings)...');
@@ -1302,6 +1309,7 @@ async function main() {
   console.log('  - 2 Concessionárias e 2 FeedConfigs');
   console.log('  - 20 Veículos canônicos completos (10 por workspace)');
   console.log('  - 2 Catálogos Meta DAA e Históricos de Sincronização');
+  console.log('  - Documentos jurídicos vigentes sincronizados do manifesto legal-docs');
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 }
 

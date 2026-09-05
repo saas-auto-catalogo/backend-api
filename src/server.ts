@@ -36,6 +36,7 @@ import {
 } from './modules/auth/index.js';
 import { registerAuthRoutes } from './modules/auth/auth.routes.js';
 import { registerLegalRoutes } from './modules/legal/index.js';
+import { ensureCurrentLegalDocumentsSynced } from './modules/legal/legal-sync.service.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { validate } from './middleware/validation.js';
 import { feedParamsSchema } from './schemas/feeds.js';
@@ -208,6 +209,19 @@ export async function startServer(port: number = 3333, host: string = '0.0.0.0')
   try {
     const address = await server.listen({ port, host });
     console.log(`SaaS Auto Catalogo Backend API rodando em ${address}`);
+
+    // Non-blocking: provision current legal docs if the catalog is empty (e.g. fresh deploy).
+    void ensureCurrentLegalDocumentsSynced()
+      .then((result) => {
+        if (result) {
+          server.log.info({ result }, '[LegalSync] Documentos jurídicos sincronizados no startup');
+        }
+      })
+      .catch((err) => {
+        server.log.error(err, '[LegalSync] Falha no sync automático no startup');
+        Sentry.captureException(err);
+      });
+
     if (process.env.SENTRY_SEND_TEST_EVENT === 'true') {
       Sentry.captureMessage('drivesync-backend sentry smoke test', 'info');
       await Sentry.flush(2000);

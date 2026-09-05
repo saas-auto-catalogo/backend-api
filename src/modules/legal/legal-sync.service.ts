@@ -100,8 +100,28 @@ export async function syncFromUrl(url: string = getLegalDocsManifestUrl()): Prom
   return applyManifest(payload);
 }
 
+/**
+ * If no current legal documents exist, sync from the official manifest.
+ * Used on API startup so production never boots with an empty legal catalog.
+ * Returns null when documents already exist (no-op).
+ */
+export async function ensureCurrentLegalDocumentsSynced(
+  url: string = getLegalDocsManifestUrl(),
+): Promise<LegalSyncResult | null> {
+  const currentCount = await prisma.legalDocument.count({
+    where: { isCurrent: true },
+  });
+
+  if (currentCount > 0) {
+    return null;
+  }
+
+  return syncFromUrl(url);
+}
+
 export const legalSyncService = {
   applyManifest,
   syncFromUrl,
+  ensureCurrentLegalDocumentsSynced,
   getLegalDocsManifestUrl,
 };
