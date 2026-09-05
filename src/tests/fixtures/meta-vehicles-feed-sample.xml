@@ -26,6 +26,7 @@
       <condition>EXCELLENT</condition>
       <price>489700 BRL</price>
       <address format="simple">
+        <component name="addr1">Avenida Europa, 1200 - Jardins</component>
         <component name="city">São Paulo</component>
         <component name="region">SP</component>
         <component name="country">BR</component>
@@ -58,6 +59,7 @@
       <condition>EXCELLENT</condition>
       <price>149990 BRL</price>
       <address format="simple">
+        <component name="addr1">Avenida Europa, 1200 - Jardins</component>
         <component name="city">São Paulo</component>
         <component name="region">SP</component>
         <component name="country">BR</component>

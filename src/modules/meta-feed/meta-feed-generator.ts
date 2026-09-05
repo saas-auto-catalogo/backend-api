@@ -63,9 +63,9 @@ function mapBodyStyleUpper(style?: BodyStyle | string | null): string {
     case BodyStyle.WAGON:
     case 'WAGON': return 'WAGON';
     case BodyStyle.COMMERCIAL:
-    case 'COMMERCIAL': return 'COMMERCIAL';
+    case 'COMMERCIAL': return 'TRUCK';
     case BodyStyle.MOTORCYCLE:
-    case 'MOTORCYCLE': return 'MOTORCYCLE';
+    case 'MOTORCYCLE': return 'OTHER';
     default: return 'OTHER';
   }
 }
@@ -218,23 +218,20 @@ export class MetaXmlFeedGenerator {
         xmlLines.push(`      <sale_price>${salePriceStr}</sale_price>`);
       }
 
-      if (options.dealership && (options.dealership.city || options.dealership.address || options.dealership.state)) {
-        xmlLines.push('      <address format="simple">');
-        if (options.dealership.address) {
-          xmlLines.push(`        <component name="addr1">${escapeXml(options.dealership.address)}</component>`);
-        }
-        if (options.dealership.city) {
-          xmlLines.push(`        <component name="city">${escapeXml(options.dealership.city)}</component>`);
-        }
-        if (options.dealership.state) {
-          xmlLines.push(`        <component name="region">${escapeXml(options.dealership.state)}</component>`);
-        }
-        if (options.dealership.postalCode) {
-          xmlLines.push(`        <component name="postal_code">${escapeXml(options.dealership.postalCode)}</component>`);
-        }
-        xmlLines.push('        <component name="country">BR</component>');
-        xmlLines.push('      </address>');
+      const city = options.dealership?.city || options.workspace?.city || 'São Paulo';
+      const state = options.dealership?.state || options.workspace?.state || 'SP';
+      const addr1 = options.dealership?.address?.trim() || `${options.dealership?.tradeName || options.workspace?.name || 'Loja Principal'}, Centro`;
+      const postalCode = options.dealership?.postalCode;
+
+      xmlLines.push('      <address format="simple">');
+      xmlLines.push(`        <component name="addr1">${escapeXml(addr1)}</component>`);
+      xmlLines.push(`        <component name="city">${escapeXml(city)}</component>`);
+      xmlLines.push(`        <component name="region">${escapeXml(state)}</component>`);
+      if (postalCode) {
+        xmlLines.push(`        <component name="postal_code">${escapeXml(postalCode)}</component>`);
       }
+      xmlLines.push('        <component name="country">BR</component>');
+      xmlLines.push('      </address>');
 
       xmlLines.push(`      <exterior_color>${escapeXml(v.exteriorColor || 'Branco')}</exterior_color>`);
       xmlLines.push(`      <availability>${availability}</availability>`);

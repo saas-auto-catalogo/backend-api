@@ -130,8 +130,8 @@ async function runMetaFeedTests() {
   if (!generated.xml.includes('<transmission>AUTOMATIC</transmission>')) {
     throw new Error('transmission AUTOMATIC não encontrado.');
   }
-  if (!generated.xml.includes('<mileage>')) {
-    throw new Error('bloco mileage não encontrado.');
+  if (!generated.xml.includes('<component name="addr1">')) {
+    throw new Error('Componente addr1 (street_address) não encontrado no bloco address.');
   }
 
   console.log('  ✅ Todas as validações estruturais de tags oficiais Meta Automotive foram aprovadas!');

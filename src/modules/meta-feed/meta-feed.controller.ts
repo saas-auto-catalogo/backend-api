@@ -31,11 +31,16 @@ export async function getMetaVehiclesFeedHandler(
   const cacheEntry = await feedCacheService.getFeedXml(token);
 
   // Auto-invalidação de cache legado: se o XML armazenado em cache for de versões anteriores
-  // (sem a estrutura oficial Meta Automotive <listings><listing>) ou se for requisitado refresh explícito via ?refresh=true,
-  // ignoramos o cache antigo e forçamos a regeneração imediata.
+  // (sem a estrutura oficial Meta Automotive <listings><listing>, com MOTORCYCLE não suportado ou sem addr1/street_address)
+  // ou se for requisitado refresh explícito via ?refresh=true, ignoramos o cache antigo e forçamos a regeneração imediata.
   const isLegacyFeed = Boolean(
     cacheEntry &&
-    (!cacheEntry.xml.includes('<listings>') || !cacheEntry.xml.includes('<listing>'))
+    (
+      !cacheEntry.xml.includes('<listings>') ||
+      !cacheEntry.xml.includes('<listing>') ||
+      cacheEntry.xml.includes('<body_style>MOTORCYCLE</body_style>') ||
+      !cacheEntry.xml.includes('<component name="addr1">')
+    )
   );
   const forceRefresh = Boolean(request.query?.refresh);
 
