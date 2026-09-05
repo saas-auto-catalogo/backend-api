@@ -1,50 +1,69 @@
-<?xml version="1.0"?>
-<rss xmlns:g="http://base.google.com/ns/1.0" version="2.0">
-    <channel>
-        <title>DriveSync - Feed Estoque</title>
-        <description>DriveSync - Feed Estoque</description>
-        <link>https://api.drivesync.me/api/v1/feeds/sample-token/meta-vehicles.xml</link>
-        <item>
-            <g:id>mercedes-benz-glc-300-2-0-mhev-amg-line-coupe-4matic-9g-tronic-6a8f5a9e935cc12118419802</g:id>
-            <g:title><![CDATA[Mercedes-Benz GLC 300 2.0 MHEV AMG Line Coupé 2025/2026]]></g:title>
-            <g:description><![CDATA[Mercedes-Benz GLC 300 2.0 MHEV AMG Line Coupé 2025/2026 com 4.686 km.]]></g:description>
-            <g:availability>In stock</g:availability>
-            <g:condition>used</g:condition>
-            <g:link>https://www.4boss.com.br/veiculo/mercedes-benz-glc-300-2025</g:link>
-            <g:image_link>https://base44.app/api/apps/68c89c3cdd78df273c3177d4/files/mp/public/68c89c3cdd78df273c3177d4/6f04c9088_2A8A7948.jpg</g:image_link>
-            <g:brand>MERCEDES-BENZ</g:brand>
-            <g:color>Preto</g:color>
-            <g:google_product_category>1267</g:google_product_category>
-            <g:price>489700.00</g:price>
-            <g:size>SUV</g:size>
-        </item>
-        <item>
-            <g:id>104380</g:id>
-            <g:title><![CDATA[Audi Q5 Performance 2.0 TFSIe S.Tr. Qt Híbrido 2023/2024]]></g:title>
-            <g:description><![CDATA[Audi Q5 Performance 2.0 TFSIe S-Tronic Quattro Híbrido Plug-in 2023/2024 com 17.881 km.]]></g:description>
-            <g:availability>In stock</g:availability>
-            <g:condition>used</g:condition>
-            <g:link>https://www.jrcaseminovos.com.br/veiculo/audi-q5-performance-2-0-tfsie-s-tr-qt-hibrido/104380</g:link>
-            <g:image_link>https://cdn.spicedigital.com.br/vehicles/36/images/104380/spice-jrca-veiculos-d890ffe5-871239.png</g:image_link>
-            <g:brand>AUDI</g:brand>
-            <g:color>Cinza</g:color>
-            <g:google_product_category>1267</g:google_product_category>
-            <g:price>289990.00</g:price>
-            <g:size>SUV</g:size>
-        </item>
-        <item>
-            <g:id>104692</g:id>
-            <g:title><![CDATA[BYD Dolphin EV GS 100% Elétrico 2026/2027]]></g:title>
-            <g:description><![CDATA[BYD Dolphin EV GS 100% Elétrico 2026/2027 com apenas 20 km (Zero KM).]]></g:description>
-            <g:availability>In stock</g:availability>
-            <g:condition>new</g:condition>
-            <g:link>https://www.jrcaseminovos.com.br/veiculo/byd-dolphin-ev-gs-eletrico/104692</g:link>
-            <g:image_link>https://cdn.spicedigital.com.br/vehicles/36/images/104692/spice-jrca-veiculos-382d7f58-ac80a3.png</g:image_link>
-            <g:brand>BYD</g:brand>
-            <g:color>Branco</g:color>
-            <g:google_product_category>1267</g:google_product_category>
-            <g:price>149990.00</g:price>
-            <g:size>Hatchback</g:size>
-        </item>
-    </channel>
-</rss>
+<?xml version="1.0" encoding="UTF-8"?>
+<listings>
+    <title>DriveSync - Vehicles Feed</title>
+    <link rel="self" href="https://api.drivesync.me/api/v1/feeds/sample-token/meta-vehicles.xml"/>
+    <listing>
+      <vehicle_id>mercedes-benz-glc-300-2-0-mhev-amg-line-coupe-4matic-9g-tronic-6a8f5a9e935cc12118419802</vehicle_id>
+      <title>Mercedes-Benz GLC 300 2.0 MHEV AMG Line Coupé 2025/2026</title>
+      <description>Mercedes-Benz GLC 300 2.0 MHEV AMG Line Coupé 2025/2026 com 4.686 km.</description>
+      <url>https://www.4boss.com.br/veiculo/mercedes-benz-glc-300-2025</url>
+      <make>Mercedes-Benz</make>
+      <image>
+        <url>https://base44.app/api/apps/68c89c3cdd78df273c3177d4/files/mp/public/68c89c3cdd78df273c3177d4/6f04c9088_2A8A7948.jpg</url>
+        <tag>Exterior</tag>
+      </image>
+      <model>GLC 300</model>
+      <year>2026</year>
+      <mileage>
+        <value>4686</value>
+        <unit>KM</unit>
+      </mileage>
+      <drivetrain>AWD</drivetrain>
+      <vin>TYN9F21</vin>
+      <body_style>SUV</body_style>
+      <fuel_type>HYBRID</fuel_type>
+      <transmission>AUTOMATIC</transmission>
+      <condition>EXCELLENT</condition>
+      <price>489700 BRL</price>
+      <address format="simple">
+        <component name="city">São Paulo</component>
+        <component name="region">SP</component>
+        <component name="country">BR</component>
+      </address>
+      <exterior_color>Preto</exterior_color>
+      <availability>AVAILABLE</availability>
+      <state_of_vehicle>USED</state_of_vehicle>
+    </listing>
+    <listing>
+      <vehicle_id>104692</vehicle_id>
+      <title>BYD Dolphin EV GS 100% Elétrico 2026/2027</title>
+      <description>BYD Dolphin EV GS 100% Elétrico 2026/2027 com apenas 20 km (Zero KM).</description>
+      <url>https://www.jrcaseminovos.com.br/veiculo/byd-dolphin-ev-gs-eletrico/104692</url>
+      <make>BYD</make>
+      <image>
+        <url>https://cdn.spicedigital.com.br/vehicles/36/images/104692/spice-jrca-veiculos-382d7f58-ac80a3.png</url>
+        <tag>Exterior</tag>
+      </image>
+      <model>Dolphin</model>
+      <year>2027</year>
+      <mileage>
+        <value>20</value>
+        <unit>KM</unit>
+      </mileage>
+      <drivetrain>FWD</drivetrain>
+      <vin>JRCA-104692</vin>
+      <body_style>HATCHBACK</body_style>
+      <fuel_type>ELECTRIC</fuel_type>
+      <transmission>AUTOMATIC</transmission>
+      <condition>EXCELLENT</condition>
+      <price>149990 BRL</price>
+      <address format="simple">
+        <component name="city">São Paulo</component>
+        <component name="region">SP</component>
+        <component name="country">BR</component>
+      </address>
+      <exterior_color>Branco</exterior_color>
+      <availability>AVAILABLE</availability>
+      <state_of_vehicle>NEW</state_of_vehicle>
+    </listing>
+</listings>

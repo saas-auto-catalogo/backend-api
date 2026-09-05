@@ -84,48 +84,57 @@ async function runMetaFeedTests() {
   console.log(`  ✅ ETag gerado: ${generated.etag}`);
   console.log(`  ✅ Tamanho do XML: ${(generated.xml.length / 1024).toFixed(2)} KB`);
 
-  // Validações de tags obrigatórias
-  if (!generated.xml.includes('<rss xmlns:g="http://base.google.com/ns/1.0" version="2.0">')) {
-    throw new Error('Raiz RSS 2.0 inválida: namespace ou versão não encontrados.');
+  // Validações de tags obrigatórias do padrão oficial Meta Automotive
+  if (!generated.xml.includes('<listings>')) {
+    throw new Error('Raiz <listings> não encontrada.');
   }
-  if (!generated.xml.includes('<channel>')) {
-    throw new Error('Nó <channel> não encontrado no RSS.');
+  if (!generated.xml.includes('<listing>')) {
+    throw new Error('Nós <listing> não encontrados.');
   }
-  if (!generated.xml.includes('</channel>') || !generated.xml.includes('</rss>')) {
-    throw new Error('Fechamento dos nós <channel>/<rss> inválido.');
+  if (!generated.xml.includes('</listing>') || !generated.xml.includes('</listings>')) {
+    throw new Error('Fechamento dos nós <listing>/<listings> inválido.');
   }
-  if (!generated.xml.includes('<item>') || !generated.xml.includes('</item>')) {
-    throw new Error('Nós <item> não encontrados no RSS.');
+  if (!generated.xml.includes('<vehicle_id>mercedes-glc-300-vid-001</vehicle_id>')) {
+    throw new Error('Tag <vehicle_id> (chave primária) não encontrada.');
   }
-  if (!generated.xml.includes('<g:id>mercedes-glc-300-vid-001</g:id>')) {
-    throw new Error('Tag <g:id> (chave primária universal) não encontrada.');
+  if (!generated.xml.includes('<make>Mercedes-Benz</make>')) {
+    throw new Error('Marca <make> não encontrada no XML.');
   }
-  if (!generated.xml.includes('<g:brand>MERCEDES-BENZ</g:brand>')) {
-    throw new Error('Marca <g:brand> não encontrada no XML.');
+  if (!generated.xml.includes('<model>GLC 300</model>')) {
+    throw new Error('Modelo <model> não encontrado.');
   }
-  if (!generated.xml.includes('<g:google_product_category>1267</g:google_product_category>')) {
-    throw new Error('Categoria Google Product 1267 não encontrada.');
-  }
-  if (!generated.xml.includes('<g:price>489700.00</g:price>')) {
+  if (!generated.xml.includes('<price>489700 BRL</price>')) {
     throw new Error('Preço formatado numérico inválido.');
   }
-  if (!generated.xml.includes('<g:sale_price>479900.00</g:sale_price>')) {
+  if (!generated.xml.includes('<sale_price>479900 BRL</sale_price>')) {
     throw new Error('Preço promocional não encontrado.');
   }
-  if (!generated.xml.includes('<g:availability>In stock</g:availability>')) {
-    throw new Error('Disponibilidade In stock não encontrada.');
+  if (!generated.xml.includes('<availability>AVAILABLE</availability>')) {
+    throw new Error('Disponibilidade AVAILABLE não encontrada.');
   }
-  if (!generated.xml.includes('<g:condition>used</g:condition>')) {
-    throw new Error('Condição used não encontrada.');
+  if (!generated.xml.includes('<state_of_vehicle>USED</state_of_vehicle>')) {
+    throw new Error('Estado do veículo USED não encontrado.');
   }
-  if (!generated.xml.includes('<g:custom_label_0>Acima de 300k</g:custom_label_0>')) {
-    throw new Error('Custom Label 0 inválida.');
+  if (!generated.xml.includes('<state_of_vehicle>NEW</state_of_vehicle>')) {
+    throw new Error('Estado do veículo NEW não encontrado.');
   }
-  if (!generated.xml.includes('<g:custom_label_2>100% Elétrico</g:custom_label_2>')) {
-    throw new Error('Custom Label 2 (100% Elétrico) não encontrada.');
+  if (!generated.xml.includes('<body_style>SUV</body_style>')) {
+    throw new Error('body_style SUV não encontrado.');
+  }
+  if (!generated.xml.includes('<fuel_type>HYBRID</fuel_type>')) {
+    throw new Error('fuel_type HYBRID não encontrado.');
+  }
+  if (!generated.xml.includes('<fuel_type>ELECTRIC</fuel_type>')) {
+    throw new Error('fuel_type ELECTRIC não encontrado.');
+  }
+  if (!generated.xml.includes('<transmission>AUTOMATIC</transmission>')) {
+    throw new Error('transmission AUTOMATIC não encontrado.');
+  }
+  if (!generated.xml.includes('<mileage>')) {
+    throw new Error('bloco mileage não encontrado.');
   }
 
-  console.log('  ✅ Todas as validações estruturais de tags Meta DAA foram aprovadas!');
+  console.log('  ✅ Todas as validações estruturais de tags oficiais Meta Automotive foram aprovadas!');
 
   // ============================================================================
   // 2. Teste do Servidor HTTP Fastify & Rota Pública via server.inject()

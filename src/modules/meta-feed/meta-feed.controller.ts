@@ -31,11 +31,11 @@ export async function getMetaVehiclesFeedHandler(
   const cacheEntry = await feedCacheService.getFeedXml(token);
 
   // Auto-invalidação de cache legado: se o XML armazenado em cache for de versões anteriores
-  // (sem o padrão Leadfy / categoria Google 1267) ou se for requisitado refresh explícito via ?refresh=true,
+  // (sem a estrutura oficial Meta Automotive <listings><listing>) ou se for requisitado refresh explícito via ?refresh=true,
   // ignoramos o cache antigo e forçamos a regeneração imediata.
   const isLegacyFeed = Boolean(
     cacheEntry &&
-    (!cacheEntry.xml.includes('version="2.0"') || !cacheEntry.xml.includes('<g:google_product_category>1267</g:google_product_category>'))
+    (!cacheEntry.xml.includes('<listings>') || !cacheEntry.xml.includes('<listing>'))
   );
   const forceRefresh = Boolean(request.query?.refresh);
 

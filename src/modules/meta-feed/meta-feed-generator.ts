@@ -6,7 +6,7 @@ export interface MetaFeedGeneratorOptions {
   feedUrl: string;
   catalogName?: string;
   workspace?: Partial<Workspace>;
-  dealership?: Partial<Dealership> & { name?: string; externalCode?: string };
+  dealership?: Partial<Dealership> & { name?: string; externalCode?: string; tradeName?: string };
 }
 
 export interface GeneratedFeedResult {
@@ -32,134 +32,126 @@ function escapeXml(unsafe: unknown): string {
 }
 
 /**
- * Mapeia BodyStyle do Prisma para os valores esperados pelo Meta DAA (minúsculo).
+ * Formata valor monetário com moeda ISO 4217 (ex: '18000 BRL' ou '18000.50 BRL').
  */
-function mapBodyStyle(style: BodyStyle | string): string {
+function formatPrice(val: unknown): string {
+  const num = Number(val);
+  return num % 1 === 0 ? `${num.toFixed(0)} BRL` : `${num.toFixed(2)} BRL`;
+}
+
+/**
+ * Mapeia BodyStyle do Prisma para a especificação oficial Meta Automotive (UPPERCASE).
+ */
+function mapBodyStyleUpper(style?: BodyStyle | string | null): string {
   switch (style) {
-    case BodyStyle.SUV: return 'suv';
-    case BodyStyle.SEDAN: return 'sedan';
-    case BodyStyle.HATCHBACK: return 'hatchback';
-    case BodyStyle.PICKUP: return 'pickup';
-    case BodyStyle.COUPE: return 'coupe';
-    case BodyStyle.CONVERTIBLE: return 'convertible';
-    case BodyStyle.MINIVAN: return 'minivan';
-    case BodyStyle.VAN: return 'van';
-    case BodyStyle.WAGON: return 'wagon';
-    default: return 'other';
+    case BodyStyle.SUV:
+    case 'SUV': return 'SUV';
+    case BodyStyle.SEDAN:
+    case 'SEDAN': return 'SEDAN';
+    case BodyStyle.HATCHBACK:
+    case 'HATCHBACK': return 'HATCHBACK';
+    case BodyStyle.PICKUP:
+    case 'PICKUP': return 'PICKUP';
+    case BodyStyle.COUPE:
+    case 'COUPE': return 'COUPE';
+    case BodyStyle.CONVERTIBLE:
+    case 'CONVERTIBLE': return 'CONVERTIBLE';
+    case BodyStyle.MINIVAN:
+    case 'MINIVAN': return 'MINIVAN';
+    case BodyStyle.VAN:
+    case 'VAN': return 'VAN';
+    case BodyStyle.WAGON:
+    case 'WAGON': return 'WAGON';
+    case BodyStyle.COMMERCIAL:
+    case 'COMMERCIAL': return 'COMMERCIAL';
+    case BodyStyle.MOTORCYCLE:
+    case 'MOTORCYCLE': return 'MOTORCYCLE';
+    default: return 'OTHER';
   }
 }
 
 /**
- * Mapeia FuelType do Prisma para os valores aceitos pelo Meta DAA.
+ * Mapeia FuelType do Prisma para a especificação oficial Meta Automotive (UPPERCASE).
  */
-function mapFuelType(fuel: FuelType | string): string {
+function mapFuelTypeUpper(fuel?: FuelType | string | null): string {
   switch (fuel) {
-    case FuelType.FLEX: return 'flex';
-    case FuelType.GASOLINA: return 'gasoline';
-    case FuelType.DIESEL: return 'diesel';
-    case FuelType.ELETRICO: return 'electric';
+    case FuelType.FLEX:
+    case 'FLEX': return 'FLEX';
+    case FuelType.GASOLINA:
+    case 'GASOLINA': return 'GASOLINE';
+    case FuelType.DIESEL:
+    case 'DIESEL': return 'DIESEL';
+    case FuelType.ELETRICO:
+    case 'ELETRICO': return 'ELECTRIC';
     case FuelType.HIBRIDO:
-    case FuelType.MHEV_HIBRIDO_LEVE: return 'hybrid';
-    case FuelType.HIBRIDO_PLUG_IN: return 'plugin_hybrid';
-    default: return 'other';
+    case FuelType.MHEV_HIBRIDO_LEVE:
+    case 'HIBRIDO':
+    case 'MHEV_HIBRIDO_LEVE': return 'HYBRID';
+    case FuelType.HIBRIDO_PLUG_IN:
+    case 'HIBRIDO_PLUG_IN': return 'PLUGIN_HYBRID';
+    case FuelType.ETANOL:
+    case 'ETANOL': return 'ETHANOL';
+    case FuelType.GNV:
+    case 'GNV': return 'NATURAL_GAS';
+    default: return 'OTHER';
   }
 }
 
 /**
- * Mapeia TransmissionType do Prisma para o Meta DAA.
+ * Mapeia TransmissionType do Prisma para a especificação oficial Meta Automotive.
  */
-function mapTransmission(transmission: TransmissionType | string): string {
+function mapTransmissionUpper(transmission?: TransmissionType | string | null): string {
   switch (transmission) {
+    case TransmissionType.MANUAL:
+    case 'MANUAL': return 'MANUAL';
     case TransmissionType.AUTOMATICO:
     case TransmissionType.CVT:
     case TransmissionType.DUPLA_EMBREAGEM:
     case TransmissionType.AUTOMATIZADO:
     case TransmissionType.SEMI_AUTOMATICO:
-      return 'automatic';
-    case TransmissionType.MANUAL:
-      return 'manual';
-    default:
-      return 'other';
+    case 'AUTOMATICO':
+    case 'CVT':
+    case 'DUPLA_EMBREAGEM':
+    case 'AUTOMATIZADO':
+    case 'SEMI_AUTOMATICO':
+      return 'AUTOMATIC';
+    default: return 'AUTOMATIC';
   }
 }
 
 /**
- * Mapeia Condition para o padrão Google/Meta Product Catalog ('new' ou 'used').
+ * Mapeia estado de conservação do veículo: NEW, USED, CPO.
  */
-function mapCondition(condition: VehicleCondition | string): string {
+function mapStateOfVehicle(condition?: VehicleCondition | string | null, hasWarranty?: boolean): string {
   if (condition === VehicleCondition.NOVO || condition === 'NOVO' || condition === 'new') {
-    return 'new';
+    return 'NEW';
   }
-  return 'used';
+  if (hasWarranty) {
+    return 'CPO';
+  }
+  return 'USED';
 }
 
 /**
- * Gera as Custom Labels para segmentação inteligente no Gerenciador de Anúncios da Meta.
- */
-function generateCustomLabels(vehicle: Partial<Vehicle>): { [key: string]: string } {
-  const price = Number(vehicle.price || 0);
-
-  // Label 0: Faixa de Preço
-  let label0 = 'Abaixo de 50k';
-  if (price >= 300000) label0 = 'Acima de 300k';
-  else if (price >= 200000) label0 = '200k a 300k';
-  else if (price >= 100000) label0 = '100k a 200k';
-  else if (price >= 50000) label0 = '50k a 100k';
-
-  // Label 1: Carroceria / Estilo
-  const label1 = mapBodyStyle(vehicle.bodyStyle || BodyStyle.OTHER).toUpperCase();
-
-  // Label 2: Propulsão
-  let label2 = 'Combustão';
-  if (vehicle.fuelType === FuelType.ELETRICO) label2 = '100% Elétrico';
-  else if (
-    vehicle.fuelType === FuelType.HIBRIDO ||
-    vehicle.fuelType === FuelType.HIBRIDO_PLUG_IN ||
-    vehicle.fuelType === FuelType.MHEV_HIBRIDO_LEVE
-  ) {
-    label2 = 'Eletrificado';
-  }
-
-  // Label 3: Destaques (Garantia / Blindado)
-  let label3 = 'Sem Blindagem';
-  if (vehicle.armored) label3 = 'Blindado';
-  else if (vehicle.hasWarranty) label3 = 'Com Garantia';
-  else if (vehicle.mileage !== undefined && vehicle.mileage <= 100) label3 = 'Zero KM';
-
-  // Label 4: Disponibilidade
-  const label4 = vehicle.status === VehicleStatus.AVAILABLE ? 'Disponível' : 'Vendido';
-
-  return {
-    custom_label_0: label0,
-    custom_label_1: label1,
-    custom_label_2: label2,
-    custom_label_3: label3,
-    custom_label_4: label4
-  };
-}
-
-/**
- * Gerador de Feed XML em conformidade estrita com o padrão de Catálogo Meta Commerce Manager / Google Shopping.
- * Estrutura baseada na especificação canônica aceita para estoques automotivos no Brasil.
+ * Gerador de Feed XML oficial da Meta para Catálogo de Veículos (Automotive Inventory Ads).
+ * Emite a estrutura canônica <listings><listing>... validada pelo Meta Commerce Manager.
  */
 export class MetaXmlFeedGenerator {
   /**
-   * Gera o payload XML completo do catálogo Meta Ads a partir de uma lista de veículos.
+   * Gera o payload XML oficial do catálogo Meta Automotive a partir de uma lista de veículos.
    */
   static generateFeed(
     vehicles: Partial<Vehicle>[],
     options: MetaFeedGeneratorOptions
   ): GeneratedFeedResult {
     const nowIso = new Date().toISOString();
-    const catalogTitle = options.catalogName || 'DriveSync - Feed Estoque';
+    const catalogTitle = options.catalogName || 'DriveSync - Vehicles Feed';
 
     const xmlLines: string[] = [
-      '<?xml version="1.0"?>',
-      '<rss xmlns:g="http://base.google.com/ns/1.0" version="2.0">',
-      '    <channel>',
-      `        <title>${escapeXml(catalogTitle)}</title>`,
-      `        <description>${escapeXml(catalogTitle)}</description>`,
-      `        <link>${escapeXml(options.feedUrl)}</link>`
+      '<?xml version="1.0" encoding="UTF-8"?>',
+      '<listings>',
+      `    <title>${escapeXml(catalogTitle)}</title>`,
+      `    <link rel="self" href="${escapeXml(options.feedUrl)}"/>`
     ];
 
     let validCount = 0;
@@ -172,60 +164,93 @@ export class MetaXmlFeedGenerator {
 
       validCount++;
 
-      const priceStr = `${Number(v.price).toFixed(2)}`;
+      const priceStr = formatPrice(v.price);
       const salePriceStr = v.promotionalPrice && Number(v.promotionalPrice) > 0 && Number(v.promotionalPrice) < Number(v.price)
-        ? `${Number(v.promotionalPrice).toFixed(2)}`
+        ? formatPrice(v.promotionalPrice)
         : undefined;
 
-      const availability = v.status === VehicleStatus.AVAILABLE ? 'In stock' : 'Out of stock';
-      const condition = mapCondition(v.condition || VehicleCondition.USADO);
-      const brand = (v.make || 'OUTRO').toUpperCase();
-      const color = v.exteriorColor || 'Não informada';
-      const bodyStyleStr = mapBodyStyle(v.bodyStyle || BodyStyle.OTHER);
+      const availability = v.status === VehicleStatus.AVAILABLE ? 'AVAILABLE' : 'SOLD';
+      const stateOfVehicle = mapStateOfVehicle(v.condition, v.armored ? false : v.hasWarranty);
+      const bodyStyle = mapBodyStyleUpper(v.bodyStyle);
+      const transmission = mapTransmissionUpper(v.transmission);
+      const fuelType = mapFuelTypeUpper(v.fuelType);
+      const vinStr = v.vin || v.licensePlate || v.externalId;
       const link = v.canonicalUrl || options.feedUrl;
-      const labels = generateCustomLabels(v);
 
-      xmlLines.push('        <item>');
-      xmlLines.push(`            <g:id>${escapeXml(v.externalId)}</g:id>`);
-      xmlLines.push(`            <g:title><![CDATA[${v.title || `${v.make} ${v.model}`}]]></g:title>`);
-      xmlLines.push(`            <g:description><![CDATA[${v.description || v.title || `${v.make} ${v.model}`}]]></g:description>`);
-      xmlLines.push(`            <g:availability>${availability}</g:availability>`);
-      xmlLines.push(`            <g:condition>${condition}</g:condition>`);
-      xmlLines.push(`            <g:link>${escapeXml(link)}</g:link>`);
-      xmlLines.push(`            <g:image_link>${escapeXml(v.heroImageUrl)}</g:image_link>`);
+      xmlLines.push('    <listing>');
+      xmlLines.push(`      <vehicle_id>${escapeXml(v.externalId)}</vehicle_id>`);
+      xmlLines.push(`      <title>${escapeXml(v.title || `${v.make} ${v.model}`)}</title>`);
+      xmlLines.push(`      <description>${escapeXml(v.description || v.title || `${v.make} ${v.model}`)}</description>`);
+      xmlLines.push(`      <url>${escapeXml(link)}</url>`);
+      xmlLines.push(`      <make>${escapeXml(v.make || 'Outro')}</make>`);
+      xmlLines.push('      <image>');
+      xmlLines.push(`        <url>${escapeXml(v.heroImageUrl)}</url>`);
+      xmlLines.push('        <tag>Exterior</tag>');
+      xmlLines.push('      </image>');
 
       // Imagens adicionais da galeria (até 10 fotos)
       if (Array.isArray(v.images)) {
         const additionalImages = (v.images as unknown as VehicleImage[])
-          .filter((img) => img.url && img.url !== v.heroImageUrl)
+          .filter((img) => img && img.url && img.url !== v.heroImageUrl)
           .slice(0, 10);
 
         for (const img of additionalImages) {
-          xmlLines.push(`            <g:additional_image_link>${escapeXml(img.url)}</g:additional_image_link>`);
+          xmlLines.push('      <image>');
+          xmlLines.push(`        <url>${escapeXml(img.url)}</url>`);
+          xmlLines.push('      </image>');
         }
       }
 
-      xmlLines.push(`            <g:brand>${escapeXml(brand)}</g:brand>`);
-      xmlLines.push(`            <g:color>${escapeXml(color)}</g:color>`);
-      xmlLines.push('            <g:google_product_category>1267</g:google_product_category>');
-      xmlLines.push(`            <g:price>${priceStr}</g:price>`);
+      xmlLines.push(`      <model>${escapeXml(v.model || 'Modelo')}</model>`);
+      xmlLines.push(`      <year>${v.modelYear || v.manufactureYear || new Date().getFullYear()}</year>`);
+      xmlLines.push('      <mileage>');
+      xmlLines.push(`        <value>${v.mileage ?? 0}</value>`);
+      xmlLines.push('        <unit>KM</unit>');
+      xmlLines.push('      </mileage>');
+      xmlLines.push(`      <drivetrain>${escapeXml(v.drivetrain ? String(v.drivetrain).toUpperCase() : 'FWD')}</drivetrain>`);
+      xmlLines.push(`      <vin>${escapeXml(vinStr)}</vin>`);
+      xmlLines.push(`      <body_style>${bodyStyle}</body_style>`);
+      xmlLines.push(`      <fuel_type>${fuelType}</fuel_type>`);
+      xmlLines.push(`      <transmission>${transmission}</transmission>`);
+      xmlLines.push('      <condition>EXCELLENT</condition>');
+      xmlLines.push(`      <price>${priceStr}</price>`);
       if (salePriceStr) {
-        xmlLines.push(`            <g:sale_price>${salePriceStr}</g:sale_price>`);
+        xmlLines.push(`      <sale_price>${salePriceStr}</sale_price>`);
       }
-      xmlLines.push(`            <g:size>${escapeXml(bodyStyleStr)}</g:size>`);
 
-      // Custom Labels de Campanhas
-      xmlLines.push(`            <g:custom_label_0>${escapeXml(labels.custom_label_0)}</g:custom_label_0>`);
-      xmlLines.push(`            <g:custom_label_1>${escapeXml(labels.custom_label_1)}</g:custom_label_1>`);
-      xmlLines.push(`            <g:custom_label_2>${escapeXml(labels.custom_label_2)}</g:custom_label_2>`);
-      xmlLines.push(`            <g:custom_label_3>${escapeXml(labels.custom_label_3)}</g:custom_label_3>`);
-      xmlLines.push(`            <g:custom_label_4>${escapeXml(labels.custom_label_4)}</g:custom_label_4>`);
+      if (options.dealership && (options.dealership.city || options.dealership.address || options.dealership.state)) {
+        xmlLines.push('      <address format="simple">');
+        if (options.dealership.address) {
+          xmlLines.push(`        <component name="addr1">${escapeXml(options.dealership.address)}</component>`);
+        }
+        if (options.dealership.city) {
+          xmlLines.push(`        <component name="city">${escapeXml(options.dealership.city)}</component>`);
+        }
+        if (options.dealership.state) {
+          xmlLines.push(`        <component name="region">${escapeXml(options.dealership.state)}</component>`);
+        }
+        if (options.dealership.postalCode) {
+          xmlLines.push(`        <component name="postal_code">${escapeXml(options.dealership.postalCode)}</component>`);
+        }
+        xmlLines.push('        <component name="country">BR</component>');
+        xmlLines.push('      </address>');
+      }
 
-      xmlLines.push('        </item>');
+      xmlLines.push(`      <exterior_color>${escapeXml(v.exteriorColor || 'Branco')}</exterior_color>`);
+      xmlLines.push(`      <availability>${availability}</availability>`);
+      xmlLines.push(`      <state_of_vehicle>${stateOfVehicle}</state_of_vehicle>`);
+
+      if (options.dealership) {
+        const dealerId = options.dealership.externalCode || options.dealership.id;
+        if (dealerId) {
+          xmlLines.push(`      <dealer_id>${escapeXml(dealerId)}</dealer_id>`);
+        }
+      }
+
+      xmlLines.push('    </listing>');
     }
 
-    xmlLines.push('    </channel>');
-    xmlLines.push('</rss>');
+    xmlLines.push('</listings>');
     const xml = xmlLines.join('\n');
 
     // Gera ETag SHA-256
