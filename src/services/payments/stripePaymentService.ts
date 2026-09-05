@@ -94,6 +94,14 @@ function mapStripeInvoice(invoice: Stripe.Invoice): StripeInvoiceItem {
   };
 }
 
+export const DRIVESYNC_CHECKOUT_BRANDING: Stripe.Checkout.SessionCreateParams.BrandingSettings = {
+  display_name: 'DriveSync',
+  button_color: '#0037B0',
+  background_color: '#F8FAFC',
+  border_style: 'rounded',
+  font_family: 'inter',
+};
+
 export class StripePaymentService {
   /**
    * Cria uma Stripe Checkout Session (modo subscription) para contratação SaaS
@@ -118,6 +126,7 @@ export class StripePaymentService {
       cancel_url: data.cancelUrl,
       customer_email: data.customer.email,
       locale: 'pt-BR',
+      branding_settings: DRIVESYNC_CHECKOUT_BRANDING,
       metadata: {
         plan: data.plan,
         billingInterval: data.billingInterval,
@@ -159,6 +168,7 @@ export class StripePaymentService {
       cancel_url: data.cancelUrl,
       customer_email: customerEmail,
       locale: 'pt-BR',
+      branding_settings: DRIVESYNC_CHECKOUT_BRANDING,
       metadata: {
         workspaceId,
         plan: data.plan,

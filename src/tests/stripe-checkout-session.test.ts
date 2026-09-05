@@ -145,6 +145,9 @@ async function runStripeCheckoutSessionTests() {
       assert(metadata?.customerDocument === validSessionPayload.customer.document, 'metadata.customerDocument set');
       assert(result.sessionId === 'cs_test_sdk_mock_123', 'Returns SDK session id');
       assert(result.url.includes('checkout.stripe.com'), 'Returns SDK session url');
+      assert((sdkCreateParams as any)?.branding_settings?.display_name === 'DriveSync', 'branding_settings.display_name is DriveSync');
+      assert((sdkCreateParams as any)?.branding_settings?.button_color === '#0037B0', 'branding_settings.button_color is #0037B0');
+      assert((sdkCreateParams as any)?.branding_settings?.font_family === 'inter', 'branding_settings.font_family is inter');
     } finally {
       resetStripeClientForTests();
       process.env.NODE_ENV = savedNodeEnv;
@@ -369,6 +372,8 @@ async function runStripeCheckoutSessionTests() {
       assert(metadata?.plan === 'PRO', 'metadata.plan is PRO');
       assert(metadata?.customerEmail === 'owner@example.com', 'metadata.customerEmail set');
       assert(result.sessionId === 'cs_test_workspace_mock_123', 'Returns workspace SDK session id');
+      assert((workspaceSdkCreateParams as any)?.branding_settings?.display_name === 'DriveSync', 'workspace branding_settings.display_name is DriveSync');
+      assert((workspaceSdkCreateParams as any)?.branding_settings?.button_color === '#0037B0', 'workspace branding_settings.button_color is #0037B0');
     } finally {
       resetStripeClientForTests();
       process.env.NODE_ENV = savedNodeEnv3;
