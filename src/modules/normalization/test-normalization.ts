@@ -1,5 +1,6 @@
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
+import assert from 'node:assert/strict';
 import { AutoMatchingEngine } from './index.js';
 
 async function runNormalizationTests() {
@@ -45,6 +46,29 @@ async function runNormalizationTests() {
   console.log(`  ✅ Combustível: ${normJrca.fuelType} | Câmbio: ${normJrca.transmission}`);
   console.log(`  ✅ Garantia: ${normJrca.hasWarranty} (${normJrca.warrantyDetails})`);
   console.log(`  ✅ Elegível para Meta Ads: ${normJrca.eligibleForMetaAds ? 'SIM' : 'NÃO'}`);
+  console.log(`  ✅ Capa (hero): ${normJrca.heroImageUrl}`);
+  console.log(`  ✅ Galeria: ${normJrca.images.length} ${normJrca.images.length === 1 ? 'foto' : 'fotos'} | URL canônica: ${normJrca.canonicalUrl}`);
+
+  const SPICE_MEDIA_WARNING = 'Veículo sem imagens válidas em HTTPS (inelegível para o catálogo do Meta Ads).';
+
+  // Asserções estritas (JRCA / Spice Digital)
+  assert.equal(normJrca.eligibleForMetaAds, true, 'JRCA deve ser elegível para o Meta Ads DAA');
+  assert.ok(
+    normJrca.heroImageUrl.startsWith('https://'),
+    `heroImageUrl deve ser HTTPS (recebido: "${normJrca.heroImageUrl}")`
+  );
+  assert.ok(normJrca.heroImageUrl.length > 0, 'heroImageUrl não pode ser vazia');
+  assert.ok(
+    !normJrca.validationWarnings.includes(SPICE_MEDIA_WARNING),
+    'Não deve haver aviso de "sem imagens válidas" para o Spice Digital'
+  );
+  assert.ok(
+    normJrca.canonicalUrl?.startsWith('https://'),
+    `canonicalUrl deve ser uma URL absoluta HTTPS (recebido: "${normJrca.canonicalUrl}")`
+  );
+  assert.ok(normJrca.images.length > 0, 'Deve existir ao menos uma imagem na galeria');
+
+  console.log('  ✅ [ASSERT] JRCA elegível, hero HTTPS, sem aviso de mídia e URL canônica absoluta.');
 
   // 3. Teste com Payloads XML Simulados (AutoCerto, Sisvag, BomControle)
   console.log('\n📄 3. Teste de Normalização de Layouts XML Tradicionais:');

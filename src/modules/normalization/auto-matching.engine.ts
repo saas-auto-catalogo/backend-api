@@ -81,20 +81,30 @@ export function sanitizeCanonicalUrl(
   let candidate = url && typeof url === 'string' ? url.trim() : undefined;
 
   // 1. Um urlSlug + fallback garante uma URL determinística em /v/:slug.
-  if (!candidate && options?.urlSlug) {
+  if (options?.urlSlug) {
     const origin = extractOrigin(options.fallbackBaseUrl);
     if (origin && options.sourceType === 'BASE44') {
       return `${origin}/v/${encodeURIComponent(String(options.urlSlug))}`;
     }
   }
 
+  // 2. Um candidate sem protocolo (ex: bloco "slug" de feeds Spice Digital) é
+  //    montado sobre o origin do fallback para gerar uma URL de anúncio válida.
+  if (candidate && options?.fallbackBaseUrl && !candidate.startsWith('http://') && !candidate.startsWith('https://')) {
+    const origin = extractOrigin(options.fallbackBaseUrl);
+    if (origin) {
+      const base = origin === options.fallbackBaseUrl ? options.fallbackBaseUrl.trim() : origin;
+      candidate = `${base.replace(/\/+$/, '')}/${candidate.replace(/^\/+/, '')}`;
+    }
+  }
+
   if (!candidate) return undefined;
 
-  // 2. Renormaliza o origin, descartando caminho profundo legado (ex: /api/vehicles).
+  // 3. Renormaliza o origin, descartando caminho profundo legado (ex: /api/vehicles).
   const origin = extractOrigin(candidate);
   if (!origin) return candidate;
 
-  // 3. Extrai o slug a partir de rotas legadas conhecidas da 4Boss/Base44.
+  // 4. Extrai o slug a partir de rotas legadas conhecidas da 4Boss/Base44.
   const legacyPrefixes = [
     /\/api\/vehicles\/veiculo\/(.+)/i,
     /\/api\/vehicles\/v\/(.+)/i,
@@ -110,12 +120,12 @@ export function sanitizeCanonicalUrl(
     }
   }
 
-  // 4. Se encontrou padrão legado, devolve a URL no novo formato /v/:slug.
+  // 5. Se encontrou padrão legado, devolve a URL no novo formato /v/:slug.
   if (slugFromLegacy) {
     return `${origin}/v/${encodeURIComponent(String(slugFromLegacy))}`;
   }
 
-  // 5. Se o origin veio com caminho /api/vehicles, normaliza para o origin limpo.
+  // 6. Se o origin veio com caminho /api/vehicles, normaliza para o origin limpo.
   const pathWithApi = candidate.slice(origin.length);
   if (pathWithApi.startsWith('/api/vehicles')) {
     // Sem slug disponível, mantém o origin base apenas.
@@ -215,7 +225,7 @@ export class AutoMatchingEngine {
     const interiorColor = (raw.corInterna || raw.interiorColor) ? String(raw.corInterna || raw.interiorColor).trim() : undefined;
 
     // 9. Mídia e Imagens
-    const rawPhotos = raw.photos || raw.images || raw.fotos || raw.imagens || raw.galleryMedium || raw.galleryLarge || raw.gallery || raw.gallerySmall;
+    const rawPhotos = raw.photos || raw.images || raw.fotos || raw.imagens || raw.galeria || raw.galleryMedium || raw.galleryLarge || raw.gallery || raw.gallerySmall;
     const media = normalizeImages(rawPhotos, raw.heroImage || raw.imagem_destaque, raw.image);
     if (media.warnings) warnings.push(...media.warnings);
 
@@ -232,7 +242,6 @@ export class AutoMatchingEngine {
         urlSlug: raw.urlSlug ? String(raw.urlSlug) : (raw.slug ? String(raw.slug) : null),
       }
     );
-
     // 11. Garantia
     const hasWarranty =
       raw.hasWarranty === true ||

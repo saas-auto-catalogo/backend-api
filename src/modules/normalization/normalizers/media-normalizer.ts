@@ -88,7 +88,7 @@ export function normalizeImages(
     const items = obj.foto || obj.imagem || obj.photos || Object.values(obj);
     if (Array.isArray(items)) {
       for (const it of items) {
-        const u = typeof it === 'string' ? it : it?.url || it?._text;
+        const u = typeof it === 'string' ? it : it?.full || it?.url || it?._text || it?.imagem;
         if (u) rawList.push({ url: u });
       }
     } else if (typeof items === 'string') {
