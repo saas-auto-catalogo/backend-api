@@ -67,7 +67,7 @@ async function main() {
   // Super Admin
   const superAdmin = await prisma.user.create({
     data: {
-      email: 'admin@autocatalogo.com.br',
+      email: 'admin@drivesync.me',
       name: 'Super Administrador SaaS',
       passwordHash: '$2b$10$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGga31lW',
       isSuperAdmin: true,
@@ -1296,7 +1296,7 @@ async function main() {
   console.log('🎉 Carga de seeds finalizada com 100% de sucesso!');
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
   console.log('📊 Resumo da carga:');
-  console.log('  - 1 Super Admin (admin@autocatalogo.com.br)');
+  console.log('  - 1 Super Admin (admin@drivesync.me)');
   console.log('  - 2 Workspaces (Auto Elite Motors [PRO], JR Casa Seminovos [STARTER])');
   console.log('  - 5 Usuários de Tenant (Owners, Managers, Viewers)');
   console.log('  - 2 Concessionárias e 2 FeedConfigs');

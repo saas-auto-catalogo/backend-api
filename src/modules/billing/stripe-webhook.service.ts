@@ -116,7 +116,7 @@ export class StripeWebhookService {
           planName: `Plano ${plan}`,
           amountFormatted: 'Assinatura ativa',
           paymentMethod: 'Cartão de Crédito',
-          dashboardUrl: `${process.env.FRONTEND_URL || 'https://app.autocatalogo.com.br'}/dashboard`,
+          dashboardUrl: `${process.env.FRONTEND_URL || 'https://app.drivesync.me'}/dashboard`,
         });
       }
 
@@ -220,7 +220,7 @@ export class StripeWebhookService {
       };
     }
 
-    const customerEmail = (stripeSub.metadata?.customerEmail as string) || 'cliente@autocatalogo.com.br';
+    const customerEmail = (stripeSub.metadata?.customerEmail as string) || 'cliente@drivesync.me';
 
     await writeBillingAuditLog({
       workspaceId: subscription.workspaceId,
@@ -233,7 +233,7 @@ export class StripeWebhookService {
       userName: 'Cliente',
       planName: `Plano ${subscription.planTier}`,
       accessUntilDate: subscription.currentPeriodEnd.toLocaleDateString('pt-BR'),
-      reactivateUrl: `${process.env.FRONTEND_URL || 'https://app.autocatalogo.com.br'}/settings/billing`,
+      reactivateUrl: `${process.env.FRONTEND_URL || 'https://app.drivesync.me'}/settings/billing`,
     });
 
     return {

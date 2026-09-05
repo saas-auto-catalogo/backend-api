@@ -72,7 +72,7 @@ export async function registerHandler(
   } catch (err) {
     if (err instanceof LegalAcceptanceMismatchError) {
       reply.status(422).send({
-        type: 'https://autocatalogo.com.br/errors/validation-error',
+        type: 'https://drivesync.me/errors/validation-error',
         title: 'Validation Error',
         status: 422,
         detail: err.message,

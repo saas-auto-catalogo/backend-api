@@ -28,7 +28,7 @@ function section(title: string): void {
 async function runProfileTestSuite() {
   console.log('╔══════════════════════════════════════════════════════════════╗');
   console.log('║   👤 QA — APIs de Perfil (User + Workspace/Dealership)        ║');
-  console.log('║   SaaS Auto Catálogo Backend API                            ║');
+  console.log('║   DriveSync Backend API                            ║');
   console.log('╚══════════════════════════════════════════════════════════════╝');
 
   const app = await buildServer();

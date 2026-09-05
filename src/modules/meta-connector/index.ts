@@ -1,5 +1,5 @@
 // ==============================================================================
-// SaaS Auto Catálogo - Módulo Conector Meta Graph API e OAuth 2.0
+// DriveSync - Módulo Conector Meta Graph API e OAuth 2.0
 // ==============================================================================
 
 export * from './meta-oauth.service.js';

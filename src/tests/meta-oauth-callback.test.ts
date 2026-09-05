@@ -33,7 +33,7 @@ function section(title: string): void {
 async function runMetaOAuthCallbackTestSuite() {
   console.log('╔══════════════════════════════════════════════════════════════╗');
   console.log('║   🔗 QA — OAuth Meta Callback / MetaCatalog Upsert           ║');
-  console.log('║   SaaS Auto Catálogo Backend API                            ║');
+  console.log('║   DriveSync Backend API                            ║');
   console.log('╚══════════════════════════════════════════════════════════════╝');
 
   const app = await buildServer();

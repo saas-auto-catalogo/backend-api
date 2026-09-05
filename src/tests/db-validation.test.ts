@@ -25,7 +25,7 @@ function section(title: string): void {
 async function runDatabaseValidation() {
   console.log('╔══════════════════════════════════════════════════════════════╗');
   console.log('║   🗄️ QA — Validação de Banco de Dados, Migrations e Seeds   ║');
-  console.log('║   SaaS Auto Catálogo Backend API                            ║');
+  console.log('║   DriveSync Backend API                            ║');
   console.log('╚══════════════════════════════════════════════════════════════╝');
 
   const prisma = new PrismaClient();
@@ -103,7 +103,7 @@ async function runDatabaseValidation() {
       // Super Admin
       const superAdmin = await prisma.user.findFirst({ where: { isSuperAdmin: true } });
       assert(superAdmin !== null, 'Super Admin cadastrado');
-      assert(superAdmin?.email === 'admin@autocatalogo.com.br', `Email do Super Admin: ${superAdmin?.email}`);
+      assert(superAdmin?.email === 'admin@drivesync.me', `Email do Super Admin: ${superAdmin?.email}`);
 
       // Workspaces
       const workspaces = await prisma.workspace.findMany({ include: { subscription: true, vehicles: true } });

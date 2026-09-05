@@ -18,7 +18,7 @@ async function runMetaConnectorTests() {
   });
 
   const workspaceId = 'ws-test-oauth-tenant-001';
-  const redirectUri = 'https://app.autocatalogo.com.br/meta/callback';
+  const redirectUri = 'https://app.drivesync.me/meta/callback';
 
   const { url, state } = oauth.generateAuthorizationUrl(workspaceId, redirectUri);
 

@@ -1,5 +1,5 @@
 // ==============================================================================
-// SaaS Auto Catálogo - Contratos de Filas e Jobs Assíncronos (BullMQ)
+// DriveSync - Contratos de Filas e Jobs Assíncronos (BullMQ)
 // ==============================================================================
 
 export const QUEUE_NAMES = {

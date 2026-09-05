@@ -17,7 +17,7 @@ export function renderRenewalReminderEmail(data: RenewalReminderEmailData): { su
       Lembrete de Renovação de Assinatura
     </h1>
     <p>Olá <strong>${data.userName}</strong>,</p>
-    <p>Este é um lembrete amigável de que a sua assinatura do SaaS Auto Catálogo será renovada automaticamente em <strong>${data.renewalDate}</strong>.</p>
+    <p>Este é um lembrete amigável de que a sua assinatura do DriveSync será renovada automaticamente em <strong>${data.renewalDate}</strong>.</p>
     
     <div class="highlight-box">
       <table style="width: 100%; font-size: 14px; color: #cbd5e1;" cellpadding="4">

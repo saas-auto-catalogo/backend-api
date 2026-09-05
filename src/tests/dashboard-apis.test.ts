@@ -1,4 +1,4 @@
-﻿import { buildServer } from '../server.js';
+import { buildServer } from '../server.js';
 import { AuthUser } from '../modules/auth/auth.middleware.js';
 import { prisma } from '../lib/prisma.js';
 import { dashboardService } from '../modules/dashboard/dashboard.service.js';
@@ -29,7 +29,7 @@ function section(title: string): void {
 async function runDashboardApiTests() {
   console.log('╔══════════════════════════════════════════════════════════════╗');
   console.log('║   📊 QA — Dashboard APIs (Stats, Vehicles, Meta, Audit)      ║');
-  console.log('║   SaaS Auto Catálogo Backend API                            ║');
+  console.log('║   DriveSync Backend API                            ║');
   console.log('╚══════════════════════════════════════════════════════════════╝');
 
   const app = await buildServer();

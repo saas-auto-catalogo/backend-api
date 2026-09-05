@@ -26,7 +26,7 @@ function section(title: string): void {
 async function runFeedCrudTestSuite() {
   console.log('╔══════════════════════════════════════════════════════════════╗');
   console.log('║   📡 QA — CRUD de Feeds, Sync BullMQ e Histórico             ║');
-  console.log('║   SaaS Auto Catálogo Backend API                            ║');
+  console.log('║   DriveSync Backend API                            ║');
   console.log('╚══════════════════════════════════════════════════════════════╝');
 
   const app = await buildServer();

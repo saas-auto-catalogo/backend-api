@@ -38,15 +38,15 @@ const validSessionPayload = {
     email: 'financeiro@sagaprime.com.br',
     phone: '(11) 98765-4321',
   },
-  successUrl: 'https://app.autocatalogo.com.br/checkout/success',
-  cancelUrl: 'https://app.autocatalogo.com.br/checkout/cancel',
+  successUrl: 'https://app.drivesync.me/checkout/success',
+  cancelUrl: 'https://app.drivesync.me/checkout/cancel',
 };
 
 const workspaceCheckoutPayload = {
   plan: 'PRO' as const,
   billingInterval: 'MONTHLY' as const,
-  successUrl: 'https://app.autocatalogo.com.br/subscribe/success',
-  cancelUrl: 'https://app.autocatalogo.com.br/subscribe/cancel',
+  successUrl: 'https://app.drivesync.me/subscribe/success',
+  cancelUrl: 'https://app.drivesync.me/subscribe/cancel',
 };
 
 async function runStripeCheckoutSessionTests() {

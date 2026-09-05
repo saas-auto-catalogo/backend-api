@@ -24,7 +24,7 @@ export async function getLegalDocumentHandler(
 
   if (!document) {
     reply.status(404).send({
-      type: 'https://autocatalogo.com.br/errors/not-found',
+      type: 'https://drivesync.me/errors/not-found',
       title: 'Documento Jurídico Não Encontrado',
       status: 404,
       detail: `Nenhum documento vigente encontrado para o slug "${slug}".`,
@@ -51,7 +51,7 @@ export async function createLegalAcceptanceHandler(
   } catch (err) {
     if (err instanceof LegalAcceptanceMismatchError) {
       reply.status(422).send({
-        type: 'https://autocatalogo.com.br/errors/validation-error',
+        type: 'https://drivesync.me/errors/validation-error',
         title: 'Validation Error',
         status: 422,
         detail: err.message,
@@ -62,7 +62,7 @@ export async function createLegalAcceptanceHandler(
 
     if (err instanceof LegalWorkspaceForbiddenError) {
       reply.status(403).send({
-        type: 'https://autocatalogo.com.br/errors/forbidden',
+        type: 'https://drivesync.me/errors/forbidden',
         title: 'Acesso Proibido',
         status: 403,
         detail: err.message,

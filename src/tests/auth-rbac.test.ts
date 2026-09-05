@@ -32,7 +32,7 @@ function section(title: string): void {
 async function runAuthRbacTests() {
   console.log('╔══════════════════════════════════════════════════════════════╗');
   console.log('║   🔒 QA — Autenticação JWT, RBAC e Isolamento Multi-Tenant  ║');
-  console.log('║   SaaS Auto Catálogo Backend API                            ║');
+  console.log('║   DriveSync Backend API                            ║');
   console.log('╚══════════════════════════════════════════════════════════════╝');
 
   const app = await buildServer();
@@ -158,7 +158,7 @@ async function runAuthRbacTests() {
     // ─────────────────────────────────────────────────────────────────────────
     section('5. RBAC — Permissões de Integração Meta (/api/v1/integrations/meta/auth-url)');
 
-    const validOAuthQuery = `?workspaceId=${seed.workspaceAId}&redirectUri=https://app.autocatalogo.com.br/oauth/callback`;
+    const validOAuthQuery = `?workspaceId=${seed.workspaceAId}&redirectUri=https://app.drivesync.me/oauth/callback`;
 
     // VIEWER tentando acessar rota restrita a OWNER
     const resViewerMeta = await app.inject({

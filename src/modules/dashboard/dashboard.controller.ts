@@ -38,7 +38,7 @@ export async function getVehicleByIdHandler(
 
   if (!vehicle) {
     return reply.status(404).send({
-      type: 'https://autocatalogo.com.br/errors/not-found',
+      type: 'https://drivesync.me/errors/not-found',
       title: 'Veiculo Nao Encontrado',
       status: 404,
       detail: `O veiculo com identificador "${vehicleId}" nao foi encontrado neste workspace.`,

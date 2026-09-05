@@ -36,7 +36,7 @@ async function loginRateLimit(request: FastifyRequest, reply: FastifyReply): Pro
 
   if (!result.allowed) {
     reply.status(429).send({
-      type: 'https://autocatalogo.com.br/errors/rate-limited',
+      type: 'https://drivesync.me/errors/rate-limited',
       title: 'Limite de Requisicoes Excedido',
       status: 429,
       detail: `Muitas tentativas de login. Tente novamente em ${Math.ceil((result.resetTimeMs - Date.now()) / 60000)} minuto(s).`,

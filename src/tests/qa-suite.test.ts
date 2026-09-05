@@ -377,7 +377,7 @@ async function testRealApiFixtures() {
 
 async function runQaSuite() {
   console.log('╔══════════════════════════════════════════════════════════════╗');
-  console.log('║   🧪 QA Suite — SaaS Auto Catálogo Backend API              ║');
+  console.log('║   🧪 QA Suite — DriveSync Backend API              ║');
   console.log('║   Bateria de Testes: Validador Meta DAA + Benchmarks XML     ║');
   console.log('║   + Fixtures Reais (4boss & JR Casa Seminovos)              ║');
   console.log('╚══════════════════════════════════════════════════════════════╝');

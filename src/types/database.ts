@@ -1,5 +1,5 @@
 // ==============================================================================
-// SaaS Auto Catálogo - Tipagens de Banco de Dados e Campos JSON Canônicos
+// DriveSync - Tipagens de Banco de Dados e Campos JSON Canônicos
 // ==============================================================================
 
 export interface VehicleImage {

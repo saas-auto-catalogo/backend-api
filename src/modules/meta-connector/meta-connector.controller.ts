@@ -153,7 +153,7 @@ export async function postMetaSelectCatalogHandler(
     } catch (err) {
       const metaMessage = err instanceof Error ? err.message : 'Falha ao criar catálogo na Meta.';
       return reply.status(422).send({
-        type: 'https://autocatalogo.com.br/errors/meta-graph',
+        type: 'https://drivesync.me/errors/meta-graph',
         title: 'Erro ao criar catálogo na Meta',
         status: 422,
         detail: metaMessage,
@@ -180,7 +180,7 @@ export async function postMetaSelectCatalogHandler(
   } catch (err) {
     if (err instanceof DealershipNotFoundError) {
       return reply.status(404).send({
-        type: 'https://autocatalogo.com.br/errors/not-found',
+        type: 'https://drivesync.me/errors/not-found',
         title: 'Concessionaria Nao Encontrada',
         status: 404,
         detail: err.message,
@@ -227,7 +227,7 @@ export async function postMetaSelectCatalogHandler(
     try {
       await graphClient.createProductFeed(
         resolvedCatalogId,
-        `Feed Auto Catálogo - ${resolvedCatalogName || 'Veículos'}`,
+        `Feed DriveSync - ${resolvedCatalogName || 'Veículos'}`,
         resolvedFeedUrl,
         session.accessToken,
       );

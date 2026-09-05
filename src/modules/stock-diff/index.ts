@@ -1,5 +1,5 @@
 // ==============================================================================
-// SaaS Auto Catálogo - Módulo de Detecção de Mudanças e Diffs de Estoque
+// DriveSync - Módulo de Detecção de Mudanças e Diffs de Estoque
 // ==============================================================================
 
 export * from './diff-types.js';

@@ -26,7 +26,7 @@ export async function authenticate(request: FastifyRequest, reply: FastifyReply)
     const authHeader = request.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       reply.status(401).send({
-        type: 'https://autocatalogo.com.br/errors/unauthorized',
+        type: 'https://drivesync.me/errors/unauthorized',
         title: 'Não Autorizado',
         status: 401,
         detail: 'Token JWT de autenticação ausente ou formato inválido. Utilize o formato: Bearer <token>',
@@ -40,7 +40,7 @@ export async function authenticate(request: FastifyRequest, reply: FastifyReply)
     request.user = decoded;
   } catch (err) {
     reply.status(401).send({
-      type: 'https://autocatalogo.com.br/errors/unauthorized',
+      type: 'https://drivesync.me/errors/unauthorized',
       title: 'Token Inválido ou Expirado',
       status: 401,
       detail: (err as Error).message || 'Assinatura JWT inválida ou token expirado.',
@@ -57,7 +57,7 @@ export function requireRole(allowedRoles: Role[]) {
     const user = request.user as AuthUser | undefined;
     if (!user) {
       reply.status(401).send({
-        type: 'https://autocatalogo.com.br/errors/unauthorized',
+        type: 'https://drivesync.me/errors/unauthorized',
         title: 'Não Autenticado',
         status: 401,
         detail: 'Autenticação necessária antes de validar permissões.',
@@ -70,7 +70,7 @@ export function requireRole(allowedRoles: Role[]) {
 
     if (!isRoleAllowed(userRole, allowedRoles)) {
       reply.status(403).send({
-        type: 'https://autocatalogo.com.br/errors/forbidden',
+        type: 'https://drivesync.me/errors/forbidden',
         title: 'Acesso Proibido',
         status: 403,
         detail: `Seu papel atual (${userRole}) não possui permissão para executar esta ação. Papéis permitidos: ${allowedRoles.join(', ')}`,
@@ -88,7 +88,7 @@ export function requirePermission(permission: PermissionKey) {
     const user = request.user as AuthUser | undefined;
     if (!user) {
       reply.status(401).send({
-        type: 'https://autocatalogo.com.br/errors/unauthorized',
+        type: 'https://drivesync.me/errors/unauthorized',
         title: 'Não Autenticado',
         status: 401,
         detail: 'Autenticação necessária antes de validar permissões.',
@@ -101,7 +101,7 @@ export function requirePermission(permission: PermissionKey) {
 
     if (!hasPermission(userRole, permission)) {
       reply.status(403).send({
-        type: 'https://autocatalogo.com.br/errors/forbidden',
+        type: 'https://drivesync.me/errors/forbidden',
         title: 'Acesso Proibido',
         status: 403,
         detail: `Permissão negada: "${permission}".`,
@@ -120,7 +120,7 @@ export async function requireWorkspace(request: FastifyRequest, reply: FastifyRe
   const user = request.user as AuthUser | undefined;
   if (!user) {
     reply.status(401).send({
-      type: 'https://autocatalogo.com.br/errors/unauthorized',
+      type: 'https://drivesync.me/errors/unauthorized',
       title: 'Não Autenticado',
       status: 401,
       detail: 'Autenticação necessária para acessar recursos de workspace.',
@@ -143,7 +143,7 @@ export async function requireWorkspace(request: FastifyRequest, reply: FastifyRe
 
   if (user.workspaceId !== requestedWorkspaceId) {
     reply.status(403).send({
-      type: 'https://autocatalogo.com.br/errors/tenant-isolation-violation',
+      type: 'https://drivesync.me/errors/tenant-isolation-violation',
       title: 'Violação de Isolamento Multi-Tenant',
       status: 403,
       detail: `Você não tem autorização para acessar os dados do workspace "${requestedWorkspaceId}". Seu tenant autorizado é "${user.workspaceId || 'NENHUM'}".`,

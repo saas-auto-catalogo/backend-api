@@ -55,7 +55,7 @@ function closeServer(server: Server): Promise<void> {
 async function runFeedValidateUrlTestSuite() {
   console.log('╔══════════════════════════════════════════════════════════════╗');
   console.log('║   📡 QA — Validação de URL de Feed (validate-url)            ║');
-  console.log('║   SaaS Auto Catálogo Backend API                            ║');
+  console.log('║   DriveSync Backend API                            ║');
   console.log('╚══════════════════════════════════════════════════════════════╝');
 
   const app = await buildServer();

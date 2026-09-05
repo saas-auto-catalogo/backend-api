@@ -35,7 +35,7 @@ function section(title: string): void {
 async function runStripeLifecycleTestSuite() {
   console.log('╔══════════════════════════════════════════════════════════════╗');
   console.log('║   💳 QA — Ciclo Completo de Subscription Stripe e Gates      ║');
-  console.log('║   SaaS Auto Catálogo Backend API                            ║');
+  console.log('║   DriveSync Backend API                            ║');
   console.log('╚══════════════════════════════════════════════════════════════╝');
 
   const app = await buildServer();
@@ -320,7 +320,7 @@ async function runStripeLifecycleTestSuite() {
       method: 'POST',
       url: '/api/v1/billing/portal',
       headers: { authorization: `Bearer ${tokenOwnerA}` },
-      payload: { returnUrl: 'https://app.autocatalogo.com.br/settings/billing' },
+      payload: { returnUrl: 'https://app.drivesync.me/settings/billing' },
     });
     assert(resPortalAuth.statusCode === 200, 'POST /api/v1/billing/portal autenticado retorna 200 OK');
     const portalData = JSON.parse(resPortalAuth.payload);

@@ -1,5 +1,5 @@
 // ==============================================================================
-// SaaS Auto Catálogo - Módulo de Feed Meta Ads DAA
+// DriveSync - Módulo de Feed Meta Ads DAA
 // ==============================================================================
 
 export * from './meta-feed-generator.js';

@@ -32,7 +32,7 @@ function getAllowOrigin(headers: Record<string, unknown>): string | undefined {
 async function runCorsDevTestSuite() {
   console.log('╔══════════════════════════════════════════════════════════════╗');
   console.log('║   🌐 QA — CORS em development/test                           ║');
-  console.log('║   SaaS Auto Catálogo Backend API                            ║');
+  console.log('║   DriveSync Backend API                            ║');
   console.log('╚══════════════════════════════════════════════════════════════╝');
 
   const app = await buildServer();

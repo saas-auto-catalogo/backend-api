@@ -104,7 +104,7 @@ export class TrialLifecycleService {
       include: subscriptionInclude,
     });
 
-    const frontendUrl = process.env.FRONTEND_URL || 'https://app.autocatalogo.com.br';
+    const frontendUrl = process.env.FRONTEND_URL || 'https://app.drivesync.me';
     let remindersSent = 0;
 
     for (const subscription of trialsDueForReminder) {

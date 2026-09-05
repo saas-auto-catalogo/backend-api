@@ -22,7 +22,7 @@ export function errorHandler(error: any, request: FastifyRequest, reply: Fastify
     }));
 
     const problem = {
-      type: 'https://autocatalogo.com.br/errors/validation-error',
+      type: 'https://drivesync.me/errors/validation-error',
       title: 'Validation Error',
       status: 422,
       detail: errors.map((e: any) => `${e.path}: ${e.message}`).join('; '),
@@ -37,7 +37,7 @@ export function errorHandler(error: any, request: FastifyRequest, reply: Fastify
   // If error contains a statusCode, map to Problem Details
   if (error?.statusCode) {
     const problem = {
-      type: 'https://autocatalogo.com.br/errors/internal-error',
+      type: 'https://drivesync.me/errors/internal-error',
       title: error.message || 'Error',
       status: error.statusCode || 500,
       detail: error.message || String(error),
@@ -50,7 +50,7 @@ export function errorHandler(error: any, request: FastifyRequest, reply: Fastify
   // Fallback: 500 Internal Server Error
   Sentry.captureException(error);
   const problem = {
-    type: 'https://autocatalogo.com.br/errors/internal-server-error',
+    type: 'https://drivesync.me/errors/internal-server-error',
     title: 'Internal Server Error',
     status: 500,
     detail: error?.message || 'Unexpected error',
